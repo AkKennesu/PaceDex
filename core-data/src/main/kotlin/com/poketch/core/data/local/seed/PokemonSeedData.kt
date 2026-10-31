@@ -289,6 +289,7 @@ object PokemonSeedData {
         threshold: Int
     ): PokemonEntity {
         val padded = id.toString().padStart(3, '0')
+        val isDefaultStarter = id in listOf(1, 4, 7, 25)
         return PokemonEntity(
             pokedexNumber = id,
             name = name,
@@ -298,9 +299,9 @@ object PokemonSeedData {
             unlockRuleCode = ruleCode,
             unlockDescription = description,
             requiredProgress = threshold,
-            currentProgress = 0,
-            isUnlocked = false,
-            unlockedAtMillis = null,
+            currentProgress = if (isDefaultStarter) 1 else 0,
+            isUnlocked = isDefaultStarter,
+            unlockedAtMillis = if (isDefaultStarter) 1700000000000L else null,
             spriteAssetPath = "sprites/pokemon_$padded.png"
         )
     }

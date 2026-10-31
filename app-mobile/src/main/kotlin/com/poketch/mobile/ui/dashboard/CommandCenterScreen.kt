@@ -91,14 +91,19 @@ fun CommandCenterScreen(
             budgetState = budgetState
         )
 
-        // 3. Active Buddy Pokémon Card
+        // 3. Snorlax Recovery Tracker Card
+        SnorlaxRecoveryBadgeCard(
+            recovery = uiState.snorlaxRecovery
+        )
+
+        // 4. Active Buddy Pokémon Card
         ActiveBuddyCard(
             buddy = uiState.activeBuddy,
             onQuickAddWater = { viewModel.quickAddWater(250.0) },
             onQuickLogRun = { viewModel.quickLogRun(1.0) }
         )
 
-        // 4. Daily Habit Progress Section
+        // 5. Daily Habit Progress Section
         DailyHabitsCard(
             todayWaterMl = uiState.todayWaterMl,
             dailyWaterGoalMl = uiState.dailyWaterGoalMl,
@@ -109,7 +114,114 @@ fun CommandCenterScreen(
 }
 
 @Composable
-private fun OverCalorieWarningCard(
+private fun SnorlaxRecoveryBadgeCard(
+    recovery: SnorlaxRecoveryState,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                recovery.isUnlocked -> Color(0xFF1B5E20).copy(alpha = 0.12f)
+                recovery.isCurrentlyInSurplus -> Color(0xFFB71C1C).copy(alpha = 0.12f)
+                recovery.recoveryDays > 0 -> Color(0xFFE65100).copy(alpha = 0.12f)
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data("file:///android_asset/sprites/pokemon_143.png")
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Snorlax #143",
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+            )
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Snorlax Recovery (#143)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Surface(
+                        shape = CircleShape,
+                        color = when {
+                            recovery.isUnlocked -> Color(0xFF2E7D32)
+                            recovery.isCurrentlyInSurplus -> Color(0xFFC62828)
+                            recovery.recoveryDays > 0 -> Color(0xFFEF6C00)
+                            else -> Color(0xFF757575)
+                        }
+                    ) {
+                        Text(
+                            text = when {
+                                recovery.isUnlocked -> "✓ AWAKENED"
+                                recovery.isCurrentlyInSurplus -> "SURPLUS"
+                                recovery.recoveryDays > 0 -> "DAY ${recovery.recoveryDays}/3"
+                                else -> "SLEEPING"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    text = when {
+                        recovery.isUnlocked -> "You conquered over-target days and awakened Snorlax in your Pokédex!"
+                        recovery.isCurrentlyInSurplus -> "Over target by +${recovery.surplusAmountKcal} kcal today. Stay within target tomorrow to start recovery!"
+                        recovery.recoveryDays > 0 -> "On track! Stay at or below ceiling for ${3 - recovery.recoveryDays} more day(s) to awaken Snorlax."
+                        else -> "Route 12 slumber. If you exceed your ceiling, stay on target for 3 consecutive days to awaken Snorlax!"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (!recovery.isUnlocked) {
+                    LinearProgressIndicator(
+                        progress = { recovery.progressFraction },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = when {
+                            recovery.isCurrentlyInSurplus -> Color(0xFFE53935)
+                            recovery.recoveryDays > 0 -> Color(0xFFFFB300)
+                            else -> Color(0xFF757575)
+                        },
+                        trackColor = Color.Gray.copy(alpha = 0.2f),
+                        strokeCap = StrokeCap.Round
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun OverCalorieWarningCard(
     warning: CalorieBudgetState.OverTargetWarning,
     modifier: Modifier = Modifier
 ) {

@@ -34,6 +34,10 @@ class OfflineFirstHabitRepository @Inject constructor(
         return habitDao.observeDailyHabitTotal(dateIso, HabitType.DAILY_STEPS.name)
     }
 
+    override fun observeDailySleepHours(dateIso: String): Flow<Double> {
+        return habitDao.observeDailyHabitTotal(dateIso, HabitType.SLEEP_HOURS.name)
+    }
+
     override suspend fun getLifetimeHabitTotal(habitType: HabitType): Double {
         return habitDao.getLifetimeHabitTotal(habitType.name)
     }

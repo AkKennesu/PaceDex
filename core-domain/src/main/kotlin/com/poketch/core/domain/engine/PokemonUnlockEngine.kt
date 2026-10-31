@@ -1,5 +1,6 @@
 package com.poketch.core.domain.engine
 
+import com.poketch.core.domain.model.KantoEvolutionChains
 import com.poketch.core.domain.model.Pokemon
 
 object PokemonUnlockEngine {
@@ -37,11 +38,15 @@ object PokemonUnlockEngine {
                     unlockedAtMillis = nowMillis
                 )
                 workingMap[pokedexNumber] = unlocked
+                val preEvolutionId = KantoEvolutionChains.getPreEvolutionId(pokedexNumber)
+                val preEvolution = preEvolutionId?.let { workingMap[it] }
                 newlyUnlockedList.add(
                     UnlockEvent.NewPokemonUnlocked(
                         pokemon = unlocked,
                         triggerReason = reason,
-                        timestampMillis = nowMillis
+                        timestampMillis = nowMillis,
+                        isEvolution = preEvolutionId != null,
+                        preEvolution = preEvolution
                     )
                 )
             } else if (newProgress > current.currentProgress) {
@@ -186,15 +191,48 @@ object PokemonUnlockEngine {
         }
 
         // Recovery after surplus
-        if (context.recoveryDaysAfterSurplus >= 1) updateProgressAndUnlock(104, 1, "Recovered from calorie surplus") // #104 Cubone
-        if (context.recoveryDaysAfterSurplus >= 3) updateProgressAndUnlock(143, 3, "Recovered 3 consecutive days after surplus") // #143 Snorlax
+        if (context.recoveryDaysAfterSurplus > 0) {
+            updateProgressAndUnlock(104, minOf(1, context.recoveryDaysAfterSurplus), "Recovered from calorie surplus") // #104 Cubone
+            updateProgressAndUnlock(143, minOf(3, context.recoveryDaysAfterSurplus), "Recovered 3 consecutive days after surplus") // #143 Snorlax
+        }
 
-        // 5. Sleep & Recovery
+        // 5. Sleep & Recovery (Android Health Connect integration)
+        val hasSleepSession = context.hasSleepSessionToday || context.todaySleepHours > 0.0 || context.sleepStreakDays > 0
+        if (hasSleepSession) {
+            updateProgressAndUnlock(10, 1, "Logged first night of sleep") // #010 Caterpie
+            updateProgressAndUnlock(23, 1, "Logged evening wind-down stretch") // #023 Ekans
+            updateProgressAndUnlock(79, 1, "Logged evening relaxation habit") // #079 Slowpoke
+            updateProgressAndUnlock(96, 1, "Logged power nap or sleep session") // #096 Drowzee
+            updateProgressAndUnlock(109, 1, "Fresh air & recovery sleep") // #109 Koffing
+        }
+
+        if (context.todaySleepHours >= 8.0) {
+            updateProgressAndUnlock(14, 1, "Logged 8+ hours recovery sleep") // #014 Kakuna
+            updateProgressAndUnlock(124, 1, "Logged 8+ hours deep recovery sleep") // #124 Jynx
+        }
+
         if (context.sleepStreakDays > 0) {
-            updateProgressAndUnlock(10, context.sleepStreakDays, "Logged first night of sleep") // #010 Caterpie
+            updateProgressAndUnlock(11, minOf(1, context.sleepStreakDays), "Active recovery rest day") // #011 Metapod
+            updateProgressAndUnlock(80, context.sleepStreakDays, "Weekend recovery rest") // #080 Slowbro
+            updateProgressAndUnlock(92, context.sleepStreakDays, "Screen-free bedtime routine") // #092 Gastly
             updateProgressAndUnlock(12, context.sleepStreakDays, "3 days of quality sleep") // #012 Butterfree
+            updateProgressAndUnlock(13, context.sleepStreakDays, "Consistent sleep schedule") // #013 Weedle
+            updateProgressAndUnlock(29, context.sleepStreakDays, "Morning hydration & sleep balance") // #029 Nidoran♀
+            updateProgressAndUnlock(41, context.sleepStreakDays, "Uninterrupted sleep streak") // #041 Zubat
+            updateProgressAndUnlock(48, context.sleepStreakDays, "Consistent bedtime routine") // #048 Venonat
+            updateProgressAndUnlock(110, context.sleepStreakDays, "Evening breathing & relaxation streak") // #110 Weezing
+            updateProgressAndUnlock(24, context.sleepStreakDays, "5 nights of bedtime check-ins") // #024 Arbok
+            updateProgressAndUnlock(30, context.sleepStreakDays, "5 nights of 7+ hours sleep") // #030 Nidorina
+            updateProgressAndUnlock(35, context.sleepStreakDays, "Logged sleep before midnight 5 nights") // #035 Clefairy
+            updateProgressAndUnlock(93, context.sleepStreakDays, "5 nights consistent sleep schedule") // #093 Haunter
             updateProgressAndUnlock(15, context.sleepStreakDays, "7 consecutive nights of quality sleep") // #015 Beedrill
+            updateProgressAndUnlock(31, context.sleepStreakDays, "Consistent sleep window for a week") // #031 Nidoqueen
             updateProgressAndUnlock(39, context.sleepStreakDays, "7 nights of 7+ hours sleep") // #039 Jigglypuff
+            updateProgressAndUnlock(42, context.sleepStreakDays, "7 nights uninterrupted sleep") // #042 Golbat
+            updateProgressAndUnlock(49, context.sleepStreakDays, "Complete full sleep cycles 7 nights") // #049 Venomoth
+            updateProgressAndUnlock(97, context.sleepStreakDays, "10 nights of healthy 8-hour sleep") // #097 Hypno
+            updateProgressAndUnlock(36, context.sleepStreakDays, "14 restful nights with 7+ hours") // #036 Clefable
+            updateProgressAndUnlock(94, context.sleepStreakDays, "14 nights optimal sleep schedule") // #094 Gengar
             updateProgressAndUnlock(40, context.sleepStreakDays, "21 nights of 7+ hours sleep") // #040 Wigglytuff
         }
 

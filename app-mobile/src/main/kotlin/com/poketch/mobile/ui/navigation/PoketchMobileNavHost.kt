@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -52,6 +53,9 @@ import com.poketch.core.data.gamification.UnlockEventDispatcher
 import com.poketch.core.domain.engine.UnlockEvent
 import com.poketch.mobile.ui.dashboard.CommandCenterScreen
 import com.poketch.mobile.ui.dashboard.CommandCenterViewModel
+import com.poketch.mobile.ui.diagnostics.SyncDiagnosticsScreen
+import com.poketch.mobile.ui.diagnostics.SyncDiagnosticsViewModel
+import com.poketch.mobile.ui.evolution.EvolutionCeremonyDialog
 import com.poketch.mobile.ui.nutrition.NutritionScreen
 import com.poketch.mobile.ui.nutrition.NutritionViewModel
 import com.poketch.mobile.ui.pokedex.PokedexScreen
@@ -65,6 +69,7 @@ enum class MobileTab(
     DASHBOARD("dashboard", "Dashboard", Icons.Default.Home),
     NUTRITION("nutrition", "Nutrition", Icons.Default.Add),
     POKEDEX("pokedex", "Pokédex", Icons.Default.Star),
+    DIAGNOSTICS("diagnostics", "Sync", Icons.Default.Refresh),
 }
 
 @Composable
@@ -74,6 +79,7 @@ fun PoketchMobileNavHost(
     commandCenterViewModel: CommandCenterViewModel = viewModel(),
     nutritionViewModel: NutritionViewModel = viewModel(),
     pokedexViewModel: PokedexViewModel = viewModel(),
+    syncDiagnosticsViewModel: SyncDiagnosticsViewModel = viewModel(),
 ) {
     var currentTab by rememberSaveable { mutableStateOf(MobileTab.DASHBOARD) }
     var unlockedPokemonDialog by remember { mutableStateOf<UnlockEvent.NewPokemonUnlocked?>(null) }
@@ -108,15 +114,26 @@ fun PoketchMobileNavHost(
                 MobileTab.DASHBOARD -> CommandCenterScreen(viewModel = commandCenterViewModel)
                 MobileTab.NUTRITION -> NutritionScreen(viewModel = nutritionViewModel)
                 MobileTab.POKEDEX -> PokedexScreen(viewModel = pokedexViewModel)
+                MobileTab.DIAGNOSTICS -> SyncDiagnosticsScreen(viewModel = syncDiagnosticsViewModel)
             }
         }
     }
 
     unlockedPokemonDialog?.let { unlockEvent ->
-        UnlockedPokemonCelebrationDialog(
-            event = unlockEvent,
-            onDismiss = { unlockedPokemonDialog = null }
-        )
+        if (unlockEvent.isEvolution && unlockEvent.preEvolution != null) {
+            EvolutionCeremonyDialog(
+                event = unlockEvent,
+                onSetAsActiveBuddy = { buddyId ->
+                    commandCenterViewModel.setActiveBuddy(buddyId)
+                },
+                onDismiss = { unlockedPokemonDialog = null }
+            )
+        } else {
+            UnlockedPokemonCelebrationDialog(
+                event = unlockEvent,
+                onDismiss = { unlockedPokemonDialog = null }
+            )
+        }
     }
 }
 

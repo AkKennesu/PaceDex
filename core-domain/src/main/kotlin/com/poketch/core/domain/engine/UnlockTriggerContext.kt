@@ -16,5 +16,8 @@ data class UnlockTriggerContext(
     val isWithinCalorieTargetToday: Boolean = true,
     val calorieDeficitStreakDays: Int = 0,
     val recoveryDaysAfterSurplus: Int = 0,
-    val sleepStreakDays: Int = 0
+    val sleepStreakDays: Int = 0,
+    val todaySleepHours: Double = 0.0,
+    val hasSleepSessionToday: Boolean = false,
+    val cumulativeSleepSessionsCount: Int = 0
 )

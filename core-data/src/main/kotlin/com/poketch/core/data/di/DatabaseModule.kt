@@ -11,6 +11,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.launch
 import javax.inject.Singleton
 
 @Module
@@ -22,7 +23,11 @@ object DatabaseModule {
     fun providePoketchDatabase(
         @ApplicationContext context: Context
     ): PoketchDatabase {
-        return PoketchDatabase.getInstance(context)
+        val db = PoketchDatabase.getInstance(context)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            db.ensureSeeded(context)
+        }
+        return db
     }
 
     @Provides

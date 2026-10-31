@@ -36,6 +36,7 @@ object PokemonSeedParser {
                         null
                     }
 
+                    val isStarter = id in listOf(1, 4, 7, 25)
                     list.add(
                         PokemonEntity(
                             pokedexNumber = id,
@@ -46,9 +47,9 @@ object PokemonSeedParser {
                             unlockRuleCode = obj.getString("unlockRuleCode"),
                             unlockDescription = obj.getString("unlockDescription"),
                             requiredProgress = obj.getInt("requiredProgress"),
-                            currentProgress = 0,
-                            isUnlocked = false,
-                            unlockedAtMillis = null,
+                            currentProgress = if (isStarter) 1 else 0,
+                            isUnlocked = isStarter,
+                            unlockedAtMillis = if (isStarter) 1700000000000L else null,
                             spriteAssetPath = obj.optString("spriteAssetPath", "sprites/pokemon_$padded.png")
                         )
                     )

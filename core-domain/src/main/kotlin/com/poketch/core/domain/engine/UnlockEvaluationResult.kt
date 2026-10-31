@@ -6,7 +6,9 @@ sealed interface UnlockEvent {
     data class NewPokemonUnlocked(
         val pokemon: Pokemon,
         val triggerReason: String,
-        val timestampMillis: Long
+        val timestampMillis: Long,
+        val isEvolution: Boolean = false,
+        val preEvolution: Pokemon? = null
     ) : UnlockEvent
 
     data class ProgressAdvanced(

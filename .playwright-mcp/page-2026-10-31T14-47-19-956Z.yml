@@ -1,0 +1,177 @@
+- generic [ref=e2]:
+  - banner [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - link [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img "FontStruct Logo" [ref=e11]
+        - generic [ref=e12]:
+          - text: Hi there,
+          - link "sign in!" [ref=e13] [cursor=pointer]:
+            - /url: /login?go=https://fontstruct.com/fontstructions/download/1182741
+      - list [ref=e14]:
+        - listitem [ref=e15] [cursor=pointer]:
+          - link "My FontStruct" [ref=e16]:
+            - /url: /private/user/home
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Sign in" [ref=e19]:
+                - /url: /login
+            - listitem [ref=e20]:
+              - link "New FontStruction" [ref=e21]:
+                - /url: /private/fontstructions/create
+            - listitem [ref=e22]:
+              - link "My FontStructions" [ref=e23]:
+                - /url: /private/user/home
+            - listitem [ref=e24]:
+              - link "Profile" [ref=e25]:
+                - /url: /private/user/edit-profile
+            - listitem [ref=e26]:
+              - link "Favorites" [ref=e27]:
+                - /url: /private/user/faves
+            - listitem [ref=e28]:
+              - link "Settings" [ref=e29]:
+                - /url: /private/user/settings
+            - listitem [ref=e30]:
+              - link "Cookie Preferences" [ref=e31]:
+                - /url: "#"
+            - listitem [ref=e32]:
+              - link "Account" [ref=e33]:
+                - /url: /private/user/account
+            - listitem [ref=e34]:
+              - link "Messages" [ref=e35]:
+                - /url: /private/messages/inbox
+        - listitem [ref=e36] [cursor=pointer]:
+          - link "Gallery" [ref=e37]:
+            - /url: /gallery
+          - list [ref=e38]:
+            - listitem [ref=e39]:
+              - link "What’s New" [ref=e40]:
+                - /url: /gallery
+            - listitem [ref=e41]:
+              - link "Everything" [ref=e42]:
+                - /url: /gallery?filters=all
+            - listitem [ref=e43]:
+              - link "Top Downloads" [ref=e44]:
+                - /url: /gallery?order=by-download-count
+            - listitem [ref=e45]:
+              - link "Top Rated" [ref=e46]:
+                - /url: /gallery?order=by-balanced-rating
+            - listitem [ref=e47]:
+              - link "Most Glyphs" [ref=e48]:
+                - /url: /gallery?order=by-glyph-count
+            - listitem [ref=e49]:
+              - link "Sets and Tags" [ref=e50]:
+                - /url: /collections
+            - listitem [ref=e51]:
+              - link "Hidden Gems" [ref=e52]:
+                - /url: /gallery/hidden-gems
+        - listitem [ref=e53] [cursor=pointer]:
+          - link "FontStructor" [ref=e54]:
+            - /url: /fontstructor/edit
+        - listitem [ref=e55] [cursor=pointer]:
+          - link "Live" [ref=e56]:
+            - /url: /live
+        - listitem [ref=e57] [cursor=pointer]:
+          - link "Blog" [ref=e58]:
+            - /url: /news
+        - listitem [ref=e59] [cursor=pointer]:
+          - link "Support" [ref=e60]:
+            - /url: /support
+          - list [ref=e61]:
+            - listitem [ref=e62]:
+              - link "FAQ" [ref=e63]:
+                - /url: /faq
+            - listitem [ref=e64]:
+              - link "Getting Started" [ref=e65]:
+                - /url: /help
+            - listitem [ref=e66]:
+              - link "Our Sponsors" [ref=e67]:
+                - /url: /sponsors
+            - listitem [ref=e68]:
+              - link "What is FontStruct?" [ref=e69]:
+                - /url: /learn-more
+            - listitem [ref=e70]:
+              - link "Contact" [ref=e71]:
+                - /url: /contact
+  - generic [ref=e72]:
+    - generic [ref=e73]: ADVERTISEMENT
+    - generic [ref=e74]:
+      - text: ADVERTISEMENT ADVERTISEMENT
+      - generic [ref=e75]:
+        - generic [ref=e76]:
+          - heading [level=1] [ref=e77]:
+            - text: Before downloading, please review and agree to the license for “
+            - link "Pokémon DS Font" [ref=e78] [cursor=pointer]:
+              - /url: /fontstructions/show/1182741/pokemon-ds-font
+            - text: ” by
+            - link "“sergalbutt”" [ref=e79] [cursor=pointer]:
+              - /url: /fontstructors/936595/sergalbutt
+          - textbox [ref=e80]: The FontStruction “Pokémon DS Font” (https://fontstruct.com/fontstructions/show/1182741) by “sergalbutt” is licensed under a Creative Commons CC0 Public Domain Dedication license (http://creativecommons.org/publicdomain/zero/1.0/). [ancestry]
+          - generic [ref=e81] [cursor=pointer]:
+            - checkbox "I have read and agree to comply with the End User License Agreement shown above and included as part of the download archive." [checked] [active] [ref=e82]
+            - text: I have read and agree to comply with the End User License Agreement shown above and included as part of the download archive.
+        - generic [ref=e83]:
+          - heading "Download" [level=1] [ref=e84]
+          - generic [ref=e85]:
+            - link "OpenType Font" [ref=e130] [cursor=pointer]:
+              - /url: /font_archives/download/1182741/otf
+            - paragraph [ref=e86]: For everyday desktop use. Uses “Postscript” outlines (more accurate curves than TrueType).
+          - separator [ref=e87]
+          - heading "Other Formats" [level=2] [ref=e88]
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - link "TrueType Font" [ref=e131] [cursor=pointer]:
+                - /url: /font_archives/download/1182741?wrapperFormat=0
+              - paragraph [ref=e91]: For everyday desktop use.
+            - generic [ref=e92]:
+              - link "WOFF2 Webfont" [ref=e132] [cursor=pointer]:
+                - /url: /font_archives/download/1182741/otf?wrapperFormat=woff2
+              - paragraph [ref=e93]: For use on webpages and in web apps.
+  - contentinfo [ref=e94]:
+    - generic [ref=e96]:
+      - generic [ref=e97]:
+        - link [ref=e98] [cursor=pointer]:
+          - /url: /
+        - list [ref=e100]:
+          - listitem [ref=e101]:
+            - link "Typo.Social" [ref=e102] [cursor=pointer]:
+              - /url: https://typo.social/@fontstruct
+          - listitem [ref=e103]:
+            - link "Terms of Use" [ref=e104] [cursor=pointer]:
+              - /url: /terms
+          - listitem [ref=e105]:
+            - link "Privacy Policy" [ref=e106] [cursor=pointer]:
+              - /url: /privacy
+          - listitem [ref=e107]:
+            - link "Cookie Preferences" [ref=e108] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=e109]:
+            - link "Legal Notice" [ref=e110] [cursor=pointer]:
+              - /url: /legal_notice
+          - listitem [ref=e111]:
+            - link "About" [ref=e112] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e113]:
+            - link "Our Sponsors" [ref=e114] [cursor=pointer]:
+              - /url: /sponsors
+          - listitem [ref=e115]:
+            - link "Contact" [ref=e116] [cursor=pointer]:
+              - /url: /contact
+        - generic [ref=e117]:
+          - text: Copyright © 2010–2026
+          - link "Rob Meek" [ref=e118] [cursor=pointer]:
+            - /url: http://www.robmeek.com
+      - generic [ref=e119]:
+        - generic [ref=e120]:
+          - text: FontStruct thanks our
+          - link "sponsors" [ref=e121] [cursor=pointer]:
+            - /url: /sponsors
+          - text: ":"
+        - list [ref=e122]:
+          - listitem [ref=e123]:
+            - link "Glyphs" [ref=e124] [cursor=pointer]:
+              - /url: https://glyphsapp.com?source=fontstruct
+          - listitem [ref=e127]:
+            - link "Fontself" [ref=e128] [cursor=pointer]:
+              - /url: https://fontself.com?source=FontStruct

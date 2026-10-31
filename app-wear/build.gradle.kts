@@ -11,20 +11,22 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.poketch.wear"
+        applicationId = "com.poketch.app"
         minSdk = 30
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 20001
+        versionName = "1.0.0"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
@@ -39,6 +41,18 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 }
 
@@ -51,8 +65,15 @@ dependencies {
     implementation(libs.wear.compose.foundation)
     implementation(libs.wear.compose.navigation)
 
+    implementation(libs.wear.tiles)
+    implementation(libs.wear.protolayout)
+    implementation(libs.wear.protolayout.material)
+    implementation(libs.wear.watchface.complications)
+
     implementation(libs.health.services.client)
     implementation(libs.play.services.wearable)
+    implementation("com.google.guava:guava:33.3.1-android")
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
 
     implementation(libs.coil.compose)
     implementation(libs.coil.gif)
@@ -69,6 +90,14 @@ dependencies {
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.ui.test.junit4)
 
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)

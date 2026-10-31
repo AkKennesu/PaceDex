@@ -44,7 +44,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.CompactChip
@@ -57,6 +56,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.model.Pokemon
+import com.poketch.wear.R
+import com.poketch.wear.ui.layout.rememberResponsiveColumnState
 import kotlinx.coroutines.delay
 
 @Composable
@@ -64,7 +65,11 @@ fun AppScaffold(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
         content()
     }
 }
@@ -94,11 +99,11 @@ fun WatchDashboardScreen(
     viewModel: WatchDashboardViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val listState = rememberScalingLazyListState()
+    val columnState = rememberResponsiveColumnState()
     val haptic = LocalHapticFeedback.current
 
     AppScaffold(modifier = modifier) {
-        ScreenScaffold(scrollState = listState) {
+        ScreenScaffold(scrollState = columnState.listState) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -112,15 +117,13 @@ fun WatchDashboardScreen(
 
                 // 2. Center Content: Interactive Buddy & Compact Wrist Action Chips
                 ScalingLazyColumn(
-                    state = listState,
+                    state = columnState.listState,
+                    contentPadding = columnState.contentPadding,
+                    autoCentering = columnState.autoCentering,
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    item {
-                        Spacer(modifier = Modifier.height(20.dp))
-                    }
-
                     // Active Buddy Sprite with Tap Animation
                     item {
                         ActiveBuddySection(
@@ -208,8 +211,29 @@ fun WatchDashboardScreen(
                         )
                     }
 
+                    // Chip 4: "Sync & Diagnostics" -> sync_diagnostics
                     item {
-                        Spacer(modifier = Modifier.height(24.dp))
+                        CompactChip(
+                            onClick = { onNavigate("sync_diagnostics") },
+                            label = {
+                                Text(
+                                    text = "Sync & Diagnostics",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            colors = ChipDefaults.chipColors(
+                                backgroundColor = Color(0xFF1E293B),
+                                contentColor = Color(0xFF90CAF9)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth(0.82f)
+                                .height(32.dp)
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }
@@ -327,6 +351,9 @@ private fun ActiveBuddySection(
             model = ImageRequest.Builder(context)
                 .data(imageUri)
                 .crossfade(true)
+                .error(R.drawable.splash_icon)
+                .fallback(R.drawable.splash_icon)
+                .placeholder(R.drawable.splash_icon)
                 .build(),
             contentDescription = buddy?.name ?: "Buddy",
             filterQuality = FilterQuality.None,

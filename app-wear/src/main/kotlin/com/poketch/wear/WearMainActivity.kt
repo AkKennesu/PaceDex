@@ -1,243 +1,151 @@
 package com.poketch.wear
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CompactChip
+import androidx.compose.runtime.LaunchedEffect
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.poketch.wear.ui.alert.OverTargetRedAlertScreen
+import com.poketch.wear.ui.alert.OverTargetRedAlertViewModel
 import com.poketch.wear.ui.calorie.RotaryCalorieLoggerScreen
+import com.poketch.wear.ui.calorie.RotaryCalorieLoggerViewModel
+import com.poketch.wear.ui.battle.GbaBagSettingsScreen
+import com.poketch.wear.ui.battle.GbaBatterySaverScreen
+import com.poketch.wear.ui.battle.GbaPokedexMissionsScreen
+import com.poketch.wear.ui.battle.GbaWatchBattleHomeScreen
+import com.poketch.wear.ui.battle.GbaWatchBattleViewModel
 import com.poketch.wear.ui.dashboard.WatchDashboardScreen
+import com.poketch.wear.ui.dashboard.WatchDashboardViewModel
+import com.poketch.wear.ui.diagnostics.SyncDiagnosticsScreen
+import com.poketch.wear.ui.diagnostics.SyncDiagnosticsViewModel
+import com.poketch.wear.ui.habits.QuickHabitActionsScreen
+import com.poketch.wear.ui.habits.QuickHabitActionsViewModel
+import com.poketch.wear.ui.run.RunTrackerScreen
+import com.poketch.wear.ui.run.RunTrackerViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @AndroidEntryPoint
 class WearMainActivity : ComponentActivity() {
 
+    private val battleViewModel: GbaWatchBattleViewModel by viewModels()
+    private val dashboardViewModel: WatchDashboardViewModel by viewModels()
+    private val calorieLoggerViewModel: RotaryCalorieLoggerViewModel by viewModels()
+    private val alertViewModel: OverTargetRedAlertViewModel by viewModels()
+    private val habitsViewModel: QuickHabitActionsViewModel by viewModels()
+    private val runTrackerViewModel: RunTrackerViewModel by viewModels()
+    private val diagnosticsViewModel: SyncDiagnosticsViewModel by viewModels()
+
+    private val pendingRoute = MutableStateFlow<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val initialRoute = intent?.getStringExtra("destination_route") ?: "watch_dashboard"
+
         setContent {
             MaterialTheme {
                 val navController = rememberSwipeDismissableNavController()
 
+                LaunchedEffect(Unit) {
+                    pendingRoute.collect { route ->
+                        if (route != null) {
+                            navController.navigate(route)
+                            pendingRoute.value = null
+                        }
+                    }
+                }
+
                 SwipeDismissableNavHost(
                     navController = navController,
-                    startDestination = "watch_dashboard",
+                    startDestination = initialRoute,
                 ) {
                     composable("watch_dashboard") {
-                        WatchDashboardScreen(
-                            onNavigate = { route -> navController.navigate(route) }
+                        GbaWatchBattleHomeScreen(
+                            onNavigate = { route -> navController.navigate(route) },
+                            viewModel = battleViewModel
+                        )
+                    }
+
+                    composable("watch_battle") {
+                        GbaWatchBattleHomeScreen(
+                            onNavigate = { route -> navController.navigate(route) },
+                            viewModel = battleViewModel
+                        )
+                    }
+
+                    composable("bag_settings") {
+                        GbaBagSettingsScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            viewModel = battleViewModel
+                        )
+                    }
+
+                    composable("pokedex_missions") {
+                        GbaPokedexMissionsScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            viewModel = battleViewModel
+                        )
+                    }
+
+                    composable("battery_saver_mode") {
+                        GbaBatterySaverScreen(
+                            onResumeBattle = { navController.popBackStack() },
+                            viewModel = battleViewModel
                         )
                     }
 
                     composable("rotary_calorie_logger") {
                         RotaryCalorieLoggerScreen(
                             onNavigateToAlert = { navController.navigate("over_calorie_red_alert") },
-                            onNavigateBack = { navController.popBackStack() }
+                            onNavigateBack = { navController.popBackStack() },
+                            viewModel = calorieLoggerViewModel
                         )
                     }
 
                     composable("over_calorie_red_alert") {
-                        OverCalorieRedAlertDestination(
-                            onBack = { navController.popBackStack() },
-                            onGoToRun = { navController.navigate("run_tracker") }
+                        OverTargetRedAlertScreen(
+                            onStartRun = { navController.navigate("run_tracker") },
+                            onAcknowledge = { navController.popBackStack() },
+                            viewModel = alertViewModel
                         )
                     }
 
                     composable("quick_habit_actions") {
-                        QuickHabitActionsDestination(
-                            onBack = { navController.popBackStack() },
-                            onStartRun = { navController.navigate("run_tracker") }
+                        QuickHabitActionsScreen(
+                            onStartRun = { navController.navigate("run_tracker") },
+                            viewModel = habitsViewModel
                         )
                     }
 
                     composable("run_tracker") {
-                        RunTrackerDestination(
-                            onBack = { navController.popBackStack() }
+                        RunTrackerScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            viewModel = runTrackerViewModel
+                        )
+                    }
+
+                    composable("sync_diagnostics") {
+                        SyncDiagnosticsScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            viewModel = diagnosticsViewModel
                         )
                     }
                 }
             }
         }
     }
-}
 
-@Composable
-private fun OverCalorieRedAlertDestination(
-    onBack: () -> Unit,
-    onGoToRun: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val scrollState = rememberScalingLazyListState()
-
-    Scaffold(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFF330000)),
-        timeText = { TimeText() },
-        positionIndicator = { PositionIndicator(scalingLazyListState = scrollState) }
-    ) {
-        ScalingLazyColumn(
-            state = scrollState,
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            item {
-                Text(
-                    text = "⚠️ OVER TARGET ALERT",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color(0xFFFF5252),
-                    textAlign = TextAlign.Center
-                )
-            }
-            item {
-                Text(
-                    text = "Surplus detected! Offset with a brisk walk or 1-mile jog to keep your Pokémon energized.",
-                    fontSize = 10.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 14.dp)
-                )
-            }
-            item {
-                CompactChip(
-                    onClick = onGoToRun,
-                    label = { Text("Start 1-Mi Run", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    colors = ChipDefaults.primaryChipColors(backgroundColor = Color(0xFFD32F2F)),
-                    modifier = Modifier.fillMaxWidth(0.8f)
-                )
-            }
-            item {
-                CompactChip(
-                    onClick = onBack,
-                    label = { Text("Dismiss", fontSize = 10.sp) },
-                    modifier = Modifier.fillMaxWidth(0.8f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickHabitActionsDestination(
-    onBack: () -> Unit,
-    onStartRun: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val scrollState = rememberScalingLazyListState()
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        timeText = { TimeText() },
-        positionIndicator = { PositionIndicator(scalingLazyListState = scrollState) }
-    ) {
-        ScalingLazyColumn(
-            state = scrollState,
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            item {
-                Text(
-                    text = "Quick Habit Actions",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            item {
-                CompactChip(
-                    onClick = onStartRun,
-                    label = { Text("Log 1-Mile Run", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    colors = ChipDefaults.primaryChipColors(backgroundColor = Color(0xFF2E7D32)),
-                    modifier = Modifier.fillMaxWidth(0.85f)
-                )
-            }
-            item {
-                CompactChip(
-                    onClick = onBack,
-                    label = { Text("Back", fontSize = 10.sp) },
-                    modifier = Modifier.fillMaxWidth(0.85f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RunTrackerDestination(
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val scrollState = rememberScalingLazyListState()
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        timeText = { TimeText() },
-        positionIndicator = { PositionIndicator(scalingLazyListState = scrollState) }
-    ) {
-        ScalingLazyColumn(
-            state = scrollState,
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            item {
-                Text(
-                    text = "🏃 1-Mile Run Tracker",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4CAF50)
-                )
-            }
-            item {
-                Text(
-                    text = "GPS & Step pace tracking active. Complete 1.0 mile to unlock Ponyta & Rapidash!",
-                    fontSize = 10.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 14.dp)
-                )
-            }
-            item {
-                CompactChip(
-                    onClick = onBack,
-                    label = { Text("Complete & Save", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
-                    colors = ChipDefaults.primaryChipColors(backgroundColor = Color(0xFF2E7D32)),
-                    modifier = Modifier.fillMaxWidth(0.85f)
-                )
-            }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.getStringExtra("destination_route")?.let {
+            pendingRoute.value = it
         }
     }
 }

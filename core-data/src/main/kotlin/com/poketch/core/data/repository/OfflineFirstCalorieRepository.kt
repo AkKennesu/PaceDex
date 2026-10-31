@@ -7,6 +7,7 @@ import com.poketch.core.data.local.entity.toEntity
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.calculator.CalorieDeficitCalculator
 import com.poketch.core.domain.model.CalorieLog
+import com.poketch.core.domain.model.DailyNutritionSummary
 import com.poketch.core.domain.repository.CalorieRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -26,6 +27,14 @@ class OfflineFirstCalorieRepository @Inject constructor(
 
     override fun observeTotalCaloriesByDate(dateIso: String): Flow<Int> {
         return calorieDao.observeTotalCaloriesByDate(dateIso)
+    }
+
+    override fun observeRecentDailyNutrition(days: Int): Flow<List<DailyNutritionSummary>> {
+        return calorieDao.observeRecentDailyNutrition(days)
+    }
+
+    override suspend fun getRecentDailyNutrition(days: Int): List<DailyNutritionSummary> {
+        return calorieDao.getRecentDailyNutrition(days)
     }
 
     override fun observeDailyBudgetState(dateIso: String): Flow<CalorieBudgetState> {

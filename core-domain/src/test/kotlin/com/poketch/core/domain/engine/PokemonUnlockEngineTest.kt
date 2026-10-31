@@ -287,4 +287,39 @@ class PokemonUnlockEngineTest {
         assertThat(resultDay2.newlyUnlockedEvents.map { it.pokemon.pokedexNumber }).doesNotContain(17)
         assertThat(resultDay2.newlyUnlockedEvents.map { it.pokemon.pokedexNumber }).doesNotContain(18)
     }
+
+    @Test
+    fun snorlaxAndCuboneUnlock_progressivelyTracksRecoveryDaysAfterSurplus() {
+        val catalog = createStandardCatalog()
+        val nowMillis = 1730000000000L
+
+        // Day 1 of recovery: Cubone (#104) unlocks, Snorlax (#143) advances to 1/3 progress
+        val contextDay1 = UnlockTriggerContext(recoveryDaysAfterSurplus = 1)
+        val resultDay1 = PokemonUnlockEngine.evaluate(catalog, contextDay1, nowMillis)
+        val mapDay1 = resultDay1.updatedCatalog.associateBy { it.pokedexNumber }
+
+        assertThat(mapDay1[104]?.isUnlocked).isTrue()
+        assertThat(mapDay1[143]?.isUnlocked).isFalse()
+        assertThat(mapDay1[143]?.currentProgress).isEqualTo(1)
+        assertThat(resultDay1.newlyUnlockedEvents.map { it.pokemon.pokedexNumber }).contains(104)
+
+        // Day 2 of recovery: Snorlax advances to 2/3 progress
+        val contextDay2 = UnlockTriggerContext(recoveryDaysAfterSurplus = 2)
+        val resultDay2 = PokemonUnlockEngine.evaluate(resultDay1.updatedCatalog, contextDay2, nowMillis + 86400000L)
+        val mapDay2 = resultDay2.updatedCatalog.associateBy { it.pokedexNumber }
+
+        assertThat(mapDay2[104]?.isUnlocked).isTrue()
+        assertThat(mapDay2[143]?.isUnlocked).isFalse()
+        assertThat(mapDay2[143]?.currentProgress).isEqualTo(2)
+
+        // Day 3 of recovery: Snorlax (#143) unlocks!
+        val contextDay3 = UnlockTriggerContext(recoveryDaysAfterSurplus = 3)
+        val resultDay3 = PokemonUnlockEngine.evaluate(resultDay2.updatedCatalog, contextDay3, nowMillis + 172800000L)
+        val mapDay3 = resultDay3.updatedCatalog.associateBy { it.pokedexNumber }
+
+        assertThat(mapDay3[143]?.isUnlocked).isTrue()
+        assertThat(mapDay3[143]?.currentProgress).isEqualTo(3)
+        assertThat(resultDay3.newlyUnlockedEvents.map { it.pokemon.pokedexNumber }).contains(143)
+    }
 }
+

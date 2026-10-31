@@ -9,6 +9,7 @@ import com.poketch.core.domain.calculator.CalorieDeficitCalculator
 import com.poketch.core.domain.model.ActivityLevel
 import com.poketch.core.domain.model.BiologicalSex
 import com.poketch.core.domain.model.CalorieLog
+import com.poketch.core.domain.model.DailyNutritionSummary
 import com.poketch.core.domain.model.DeficitTier
 import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.MealCategory
@@ -27,6 +28,16 @@ import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
+enum class WeightUnit {
+    KG,
+    LBS
+}
+
+enum class HeightUnit {
+    CM,
+    FT_IN
+}
+
 data class NutritionUiState(
     val todayIso: String = "",
     // Biometrics Form State
@@ -34,11 +45,17 @@ data class NutritionUiState(
     val sex: BiologicalSex = BiologicalSex.MALE,
     val heightText: String = "175.0",
     val weightText: String = "75.0",
+    val weightUnit: WeightUnit = WeightUnit.KG,
+    val heightUnit: HeightUnit = HeightUnit.CM,
+    val weightLbsText: String = "165.3",
+    val heightFeetText: String = "5",
+    val heightInchesText: String = "8.9",
     val activityLevel: ActivityLevel = ActivityLevel.SEDENTARY,
     val deficitTier: DeficitTier = DeficitTier.STANDARD,
     val dailyWaterGoalMl: Int = 2500,
     val activeBuddyPokemonId: Int = 1,
     val calculationSummary: CalorieCalculationSummary? = null,
+    val targetCalorieCeiling: Int = 1800,
     val isBiometricsValid: Boolean = true,
     val isConfigCardExpanded: Boolean = false,
     val biometricsSavedMessage: String? = null,
@@ -54,6 +71,7 @@ data class NutritionUiState(
     val todayLogs: List<CalorieLog> = emptyList(),
     val totalCaloriesToday: Int = 0,
     val budgetState: CalorieBudgetState = CalorieBudgetState.OnTrack(0, 1800, 1800, 0.0),
+    val weeklyNutrition: List<DailyNutritionSummary> = emptyList(),
     val isLoading: Boolean = false,
 )
 
@@ -84,6 +102,7 @@ class NutritionViewModel @Inject constructor(
     private val logsFlow = calorieRepository.observeLogsByDate(todayIso)
     private val totalCaloriesFlow = calorieRepository.observeTotalCaloriesByDate(todayIso)
     private val budgetStateFlow = calorieRepository.observeDailyBudgetState(todayIso)
+    private val weeklyNutritionFlow = calorieRepository.observeRecentDailyNutrition(7)
 
     private var hasUserModifiedProfileForm = false
 
@@ -92,23 +111,31 @@ class NutritionViewModel @Inject constructor(
         logsFlow,
         totalCaloriesFlow,
         budgetStateFlow,
-    ) { form, logs, totalCalories, budgetState ->
+        combine(userProfileFlow, weeklyNutritionFlow) { profile, weekly -> Pair(profile, weekly) }
+    ) { form, logs, totalCalories, budgetState, (profile, weekly) ->
         val filteredLogs = if (form.filterCategory != null) {
             logs.filter { it.mealCategory == form.filterCategory }
         } else {
             logs
         }
+        val targetCeiling = profile?.targetCalorieCeiling ?: 1800
         NutritionUiState(
             todayIso = todayIso,
             ageText = form.ageText,
             sex = form.sex,
             heightText = form.heightText,
             weightText = form.weightText,
+            weightUnit = form.weightUnit,
+            heightUnit = form.heightUnit,
+            weightLbsText = form.weightLbsText,
+            heightFeetText = form.heightFeetText,
+            heightInchesText = form.heightInchesText,
             activityLevel = form.activityLevel,
             deficitTier = form.deficitTier,
             dailyWaterGoalMl = form.dailyWaterGoalMl,
             activeBuddyPokemonId = form.activeBuddyPokemonId,
             calculationSummary = form.calculationSummary,
+            targetCalorieCeiling = targetCeiling,
             isBiometricsValid = form.isBiometricsValid,
             isConfigCardExpanded = form.isConfigCardExpanded,
             biometricsSavedMessage = form.biometricsSavedMessage,
@@ -122,6 +149,7 @@ class NutritionViewModel @Inject constructor(
             todayLogs = filteredLogs,
             totalCaloriesToday = totalCalories,
             budgetState = budgetState,
+            weeklyNutrition = weekly,
             isLoading = false,
         )
     }.stateIn(
@@ -142,11 +170,19 @@ class NutritionViewModel @Inject constructor(
                         activityLevel = profile.activityLevel,
                         deficitTier = profile.deficitTier,
                     )
+                    val lbsVal = String.format(Locale.US, "%.1f", profile.weightKg * 2.20462262)
+                    val totalInches = profile.heightCm / 2.54
+                    val feetVal = (totalInches / 12).toInt().toString()
+                    val inchesVal = String.format(Locale.US, "%.1f", totalInches % 12)
+
                     _formState.value = _formState.value.copy(
                         ageText = profile.ageYears.toString(),
                         sex = profile.sex,
                         heightText = profile.heightCm.toString(),
                         weightText = profile.weightKg.toString(),
+                        weightLbsText = lbsVal,
+                        heightFeetText = feetVal,
+                        heightInchesText = inchesVal,
                         activityLevel = profile.activityLevel,
                         deficitTier = profile.deficitTier,
                         dailyWaterGoalMl = profile.dailyWaterGoalMl,
@@ -171,14 +207,131 @@ class NutritionViewModel @Inject constructor(
         updateBiometrics { copy(sex = newSex) }
     }
 
-    fun onHeightChanged(newHeight: String) {
+    fun onHeightChanged(newHeightCm: String) {
         hasUserModifiedProfileForm = true
-        updateBiometrics { copy(heightText = newHeight) }
+        val cm = newHeightCm.toDoubleOrNull()
+        val feetVal: String
+        val inchesVal: String
+        if (cm != null && cm > 0) {
+            val totalInches = cm / 2.54
+            val ft = (totalInches / 12).toInt()
+            feetVal = ft.toString()
+            inchesVal = String.format(Locale.US, "%.1f", totalInches - ft * 12)
+        } else {
+            feetVal = _formState.value.heightFeetText
+            inchesVal = _formState.value.heightInchesText
+        }
+        updateBiometrics {
+            copy(
+                heightText = newHeightCm,
+                heightFeetText = feetVal,
+                heightInchesText = inchesVal
+            )
+        }
     }
 
-    fun onWeightChanged(newWeight: String) {
+    fun onWeightChanged(newWeightKg: String) {
         hasUserModifiedProfileForm = true
-        updateBiometrics { copy(weightText = newWeight) }
+        val kg = newWeightKg.toDoubleOrNull()
+        val lbsVal = if (kg != null && kg > 0) {
+            String.format(Locale.US, "%.1f", kg * 2.20462262)
+        } else {
+            _formState.value.weightLbsText
+        }
+        updateBiometrics {
+            copy(
+                weightText = newWeightKg,
+                weightLbsText = lbsVal
+            )
+        }
+    }
+
+    fun onWeightUnitChanged(unit: WeightUnit) {
+        hasUserModifiedProfileForm = true
+        val state = _formState.value
+        if (unit == WeightUnit.LBS && state.weightUnit == WeightUnit.KG) {
+            val kg = state.weightText.toDoubleOrNull()
+            val lbs = if (kg != null && kg > 0) String.format(Locale.US, "%.1f", kg * 2.20462262) else state.weightLbsText
+            _formState.value = state.copy(weightUnit = unit, weightLbsText = lbs)
+        } else if (unit == WeightUnit.KG && state.weightUnit == WeightUnit.LBS) {
+            val lbs = state.weightLbsText.toDoubleOrNull()
+            val kg = if (lbs != null && lbs > 0) String.format(Locale.US, "%.1f", lbs * 0.45359237) else state.weightText
+            _formState.value = state.copy(weightUnit = unit, weightText = kg)
+        } else {
+            _formState.value = state.copy(weightUnit = unit)
+        }
+    }
+
+    fun onHeightUnitChanged(unit: HeightUnit) {
+        hasUserModifiedProfileForm = true
+        val state = _formState.value
+        if (unit == HeightUnit.FT_IN && state.heightUnit == HeightUnit.CM) {
+            val cm = state.heightText.toDoubleOrNull()
+            if (cm != null && cm > 0) {
+                val totalInches = cm / 2.54
+                val ft = (totalInches / 12).toInt()
+                val inc = String.format(Locale.US, "%.1f", totalInches - ft * 12)
+                _formState.value = state.copy(heightUnit = unit, heightFeetText = ft.toString(), heightInchesText = inc)
+            } else {
+                _formState.value = state.copy(heightUnit = unit)
+            }
+        } else if (unit == HeightUnit.CM && state.heightUnit == HeightUnit.FT_IN) {
+            val ft = state.heightFeetText.toIntOrNull() ?: 0
+            val inc = state.heightInchesText.toDoubleOrNull() ?: 0.0
+            val totalInches = ft * 12.0 + inc
+            if (totalInches > 0) {
+                val cm = String.format(Locale.US, "%.1f", totalInches * 2.54)
+                _formState.value = state.copy(heightUnit = unit, heightText = cm)
+            } else {
+                _formState.value = state.copy(heightUnit = unit)
+            }
+        } else {
+            _formState.value = state.copy(heightUnit = unit)
+        }
+    }
+
+    fun onWeightLbsChanged(newLbs: String) {
+        hasUserModifiedProfileForm = true
+        val lbs = newLbs.toDoubleOrNull()
+        val kgVal = if (lbs != null && lbs > 0) {
+            String.format(Locale.US, "%.1f", lbs * 0.45359237)
+        } else {
+            ""
+        }
+        updateBiometrics {
+            copy(
+                weightLbsText = newLbs,
+                weightText = kgVal
+            )
+        }
+    }
+
+    fun onHeightFeetChanged(newFeet: String) {
+        hasUserModifiedProfileForm = true
+        val ft = newFeet.toIntOrNull() ?: 0
+        val inc = _formState.value.heightInchesText.toDoubleOrNull() ?: 0.0
+        val totalInches = ft * 12.0 + inc
+        val cmVal = if (totalInches > 0) String.format(Locale.US, "%.1f", totalInches * 2.54) else ""
+        updateBiometrics {
+            copy(
+                heightFeetText = newFeet,
+                heightText = cmVal
+            )
+        }
+    }
+
+    fun onHeightInchesChanged(newInches: String) {
+        hasUserModifiedProfileForm = true
+        val ft = _formState.value.heightFeetText.toIntOrNull() ?: 0
+        val inc = newInches.toDoubleOrNull() ?: 0.0
+        val totalInches = ft * 12.0 + inc
+        val cmVal = if (totalInches > 0) String.format(Locale.US, "%.1f", totalInches * 2.54) else ""
+        updateBiometrics {
+            copy(
+                heightInchesText = newInches,
+                heightText = cmVal
+            )
+        }
     }
 
     fun onActivityLevelChanged(newLevel: ActivityLevel) {
@@ -224,9 +377,11 @@ class NutritionViewModel @Inject constructor(
         val height = state.heightText.toDoubleOrNull() ?: return
         val weight = state.weightText.toDoubleOrNull() ?: return
 
+        // Validate bounds in strictly metric values
         if (age !in 13..120 || height !in 100.0..250.0 || weight !in 30.0..300.0) return
 
         viewModelScope.launch {
+            // Strictly metric storage in Room
             userRepository.saveUserProfile(
                 ageYears = age,
                 sex = state.sex,
@@ -273,6 +428,38 @@ class NutritionViewModel @Inject constructor(
 
     fun onFilterCategorySelected(category: MealCategory?) {
         _formState.value = _formState.value.copy(filterCategory = category)
+    }
+
+    fun applyMealTemplate(template: KantoMealTemplate) {
+        _formState.value = _formState.value.copy(
+            inputCategory = template.category,
+            foodNameText = template.name,
+            caloriesText = template.caloriesKcal.toString(),
+            proteinText = template.proteinG.toString(),
+            carbsText = template.carbsG.toString(),
+            fatText = template.fatG.toString()
+        )
+    }
+
+    fun quickLogMealTemplate(template: KantoMealTemplate) {
+        val log = CalorieLog(
+            logId = UUID.randomUUID().toString(),
+            dateIso = todayIso,
+            mealCategory = template.category,
+            foodDescription = template.name,
+            caloriesKcal = template.caloriesKcal,
+            proteinG = template.proteinG,
+            carbsG = template.carbsG,
+            fatG = template.fatG,
+            sourceDevice = DeviceSource.MOBILE,
+            timestampMillis = System.currentTimeMillis(),
+            isSynced = false,
+        )
+
+        viewModelScope.launch {
+            calorieRepository.upsertCalorieLog(log)
+            evaluateAchievementsUseCase.evaluate(todayIso)
+        }
     }
 
     fun logMeal() {
@@ -374,6 +561,11 @@ private data class NutritionFormState(
     val sex: BiologicalSex = BiologicalSex.MALE,
     val heightText: String = "175.0",
     val weightText: String = "75.0",
+    val weightUnit: WeightUnit = WeightUnit.KG,
+    val heightUnit: HeightUnit = HeightUnit.CM,
+    val weightLbsText: String = "165.3",
+    val heightFeetText: String = "5",
+    val heightInchesText: String = "8.9",
     val activityLevel: ActivityLevel = ActivityLevel.SEDENTARY,
     val deficitTier: DeficitTier = DeficitTier.STANDARD,
     val dailyWaterGoalMl: Int = 2500,

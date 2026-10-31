@@ -19,5 +19,6 @@ interface UserRepository {
         dailyWaterGoalMl: Int = 2500,
         activeBuddyPokemonId: Int = 1
     )
+    suspend fun upsertUserProfile(profile: UserProfile)
     suspend fun updateActiveBuddy(pokemonId: Int)
 }

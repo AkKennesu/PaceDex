@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Poketch</string>
     <string name="hello_world">Hello, %1$s!</string>
+    <string name="tile_name">Pokétch Deficit &amp; Buddy</string>
+    <string name="tile_description">Quick view of today\'s deficit progress, hydration, and buddy Pokémon</string>
+    <string name="complication_name">Pokétch Calorie Deficit</string>
+    <string name="complication_description">Displays remaining daily calories or over-target warning</string>
 </resources>

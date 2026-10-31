@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
@@ -45,6 +44,7 @@ import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
+import com.poketch.wear.ui.layout.rememberResponsiveColumnState
 
 @Composable
 fun RotaryCalorieLoggerScreen(
@@ -54,7 +54,7 @@ fun RotaryCalorieLoggerScreen(
     viewModel: RotaryCalorieLoggerViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val scrollState = rememberScalingLazyListState()
+    val columnState = rememberResponsiveColumnState()
     val haptic = LocalHapticFeedback.current
     val focusRequester = remember { FocusRequester() }
     var accumulatedDelta by remember { mutableFloatStateOf(0f) }
@@ -70,11 +70,13 @@ fun RotaryCalorieLoggerScreen(
             .focusRequester(focusRequester)
             .focusable()
             .onRotaryScrollEvent { event ->
+                val isHighVelocity = kotlin.math.abs(event.verticalScrollPixels) > 80f
+                val stepKcal = if (isHighVelocity) 100 else 50
                 accumulatedDelta += event.verticalScrollPixels
                 if (accumulatedDelta >= deltaThreshold) {
                     val steps = (accumulatedDelta / deltaThreshold).toInt()
                     accumulatedDelta %= deltaThreshold
-                    val changed = viewModel.adjustCalories(steps * 50)
+                    val changed = viewModel.adjustCalories(steps * stepKcal)
                     if (changed) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     }
@@ -82,7 +84,7 @@ fun RotaryCalorieLoggerScreen(
                 } else if (accumulatedDelta <= -deltaThreshold) {
                     val steps = (accumulatedDelta / deltaThreshold).toInt()
                     accumulatedDelta %= deltaThreshold
-                    val changed = viewModel.adjustCalories(steps * 50)
+                    val changed = viewModel.adjustCalories(steps * stepKcal)
                     if (changed) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     }
@@ -92,16 +94,18 @@ fun RotaryCalorieLoggerScreen(
                 }
             },
         timeText = { TimeText() },
-        positionIndicator = { PositionIndicator(scalingLazyListState = scrollState) }
+        positionIndicator = { PositionIndicator(scalingLazyListState = columnState.listState) }
     ) {
         ScalingLazyColumn(
-            state = scrollState,
+            state = columnState.listState,
+            contentPadding = columnState.contentPadding,
+            autoCentering = columnState.autoCentering,
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(10.dp))
             }
 
             // Header title

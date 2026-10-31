@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import com.poketch.core.data.gamification.UnlockEventDispatcher
 import com.poketch.mobile.ui.dashboard.CommandCenterViewModel
+import com.poketch.mobile.ui.diagnostics.SyncDiagnosticsViewModel
 import com.poketch.mobile.ui.navigation.PoketchMobileNavHost
 import com.poketch.mobile.ui.nutrition.NutritionViewModel
 import com.poketch.mobile.ui.pokedex.PokedexViewModel
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
     private val commandCenterViewModel: CommandCenterViewModel by viewModels()
     private val nutritionViewModel: NutritionViewModel by viewModels()
     private val pokedexViewModel: PokedexViewModel by viewModels()
+    private val syncDiagnosticsViewModel: SyncDiagnosticsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +36,7 @@ class MainActivity : ComponentActivity() {
                     commandCenterViewModel = commandCenterViewModel,
                     nutritionViewModel = nutritionViewModel,
                     pokedexViewModel = pokedexViewModel,
+                    syncDiagnosticsViewModel = syncDiagnosticsViewModel,
                 )
             }
         }

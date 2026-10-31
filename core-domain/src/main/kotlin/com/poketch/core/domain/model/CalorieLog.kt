@@ -22,3 +22,12 @@ data class CalorieLog(
         require(fatG >= 0) { "fatG must be non-negative, got: $fatG" }
     }
 }
+
+data class DailyNutritionSummary(
+    val dateIso: String,
+    val totalCalories: Int,
+    val totalProtein: Int,
+    val totalCarbs: Int,
+    val totalFat: Int
+)
+

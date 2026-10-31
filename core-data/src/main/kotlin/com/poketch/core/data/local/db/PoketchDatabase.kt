@@ -42,6 +42,25 @@ abstract class PoketchDatabase : RoomDatabase() {
             val seedList = PokemonSeedParser.loadPokemonSeed(context)
             pokemonDao().upsertAllPokemon(seedList)
         }
+        if (userDao().getUserProfileOnce() == null) {
+            val defaultProfile = UserProfileEntity(
+                id = 1,
+                ageYears = 25,
+                sex = "MALE",
+                heightCm = 175.0,
+                weightKg = 70.0,
+                activityLevel = "MODERATELY_ACTIVE",
+                deficitTier = "STANDARD",
+                bmrKcal = 1650,
+                tdeeKcal = 2300,
+                dailyDeficitGoalKcal = 500,
+                targetCalorieCeiling = 1800,
+                dailyWaterGoalMl = 2500,
+                activeBuddyPokemonId = 1,
+                updatedAtEpochMillis = System.currentTimeMillis()
+            )
+            userDao().upsertUserProfile(defaultProfile)
+        }
     }
 
     companion object {

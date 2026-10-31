@@ -65,8 +65,32 @@ class OfflineFirstUserRepository @Inject constructor(
         userDao.upsertUserProfile(updatedProfile.toEntity())
     }
 
+    override suspend fun upsertUserProfile(profile: UserProfile) {
+        userDao.upsertUserProfile(profile.toEntity())
+    }
+
     override suspend fun updateActiveBuddy(pokemonId: Int) {
         require(pokemonId in 1..151) { "Buddy Pokemon must be between 1 and 151, got: $pokemonId" }
-        userDao.updateActiveBuddy(pokemonId, System.currentTimeMillis())
+        val existing = userDao.getUserProfileOnce()
+        if (existing != null) {
+            userDao.updateActiveBuddy(pokemonId, System.currentTimeMillis())
+        } else {
+            val defaultProfile = UserProfile(
+                id = 1,
+                ageYears = 25,
+                sex = BiologicalSex.MALE,
+                heightCm = 175.0,
+                weightKg = 70.0,
+                activityLevel = ActivityLevel.MODERATELY_ACTIVE,
+                deficitTier = DeficitTier.STANDARD,
+                bmrKcal = 1650,
+                tdeeKcal = 2300,
+                targetCalorieCeiling = 1800,
+                dailyWaterGoalMl = 2500,
+                activeBuddyPokemonId = pokemonId,
+                updatedAtEpochMillis = System.currentTimeMillis()
+            )
+            userDao.upsertUserProfile(defaultProfile.toEntity())
+        }
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -89,13 +91,18 @@ fun NutritionScreen(
             fontWeight = FontWeight.Bold
         )
 
-        // 1. Mifflin-St Jeor Biometrics Card
+        // 1. Mifflin-St Jeor Biometrics Card with Unit Converter Toggles
         MifflinStJeorConfigCard(
             state = state,
             onAgeChanged = viewModel::onAgeChanged,
             onSexChanged = viewModel::onSexChanged,
             onHeightChanged = viewModel::onHeightChanged,
             onWeightChanged = viewModel::onWeightChanged,
+            onWeightUnitChanged = viewModel::onWeightUnitChanged,
+            onHeightUnitChanged = viewModel::onHeightUnitChanged,
+            onWeightLbsChanged = viewModel::onWeightLbsChanged,
+            onHeightFeetChanged = viewModel::onHeightFeetChanged,
+            onHeightInchesChanged = viewModel::onHeightInchesChanged,
             onActivityLevelChanged = viewModel::onActivityLevelChanged,
             onDeficitTierChanged = viewModel::onDeficitTierChanged,
             onToggleExpand = viewModel::toggleConfigCardExpanded,
@@ -103,12 +110,24 @@ fun NutritionScreen(
             onDismissSavedMessage = viewModel::clearSavedMessage
         )
 
-        // 2. Meal Quick-Add Buttons
+        // 2. 7-Day Calorie Deficit Trend & Macro Analytics Chart
+        WeeklyDeficitChart(
+            dailySummaries = state.weeklyNutrition,
+            targetCeilingKcal = state.targetCalorieCeiling
+        )
+
+        // 3. Preset Kanto-Themed Quick Meal Templates
+        KantoDelicaciesSection(
+            onApplyTemplate = viewModel::applyMealTemplate,
+            onQuickLogTemplate = viewModel::quickLogMealTemplate
+        )
+
+        // 4. Meal Quick-Add Buttons
         QuickAddMealSection(
             onQuickAdd = viewModel::quickAddMeal
         )
 
-        // 3. New Meal Entry Form
+        // 5. New Meal Entry Form
         MealEntryFormCard(
             state = state,
             onCategoryChanged = viewModel::onInputCategoryChanged,
@@ -120,7 +139,7 @@ fun NutritionScreen(
             onSubmit = viewModel::logMeal
         )
 
-        // 4. Today's Meals Chronological List
+        // 6. Today's Meals Chronological List
         LoggedMealsSection(
             logs = state.todayLogs,
             totalCalories = state.totalCaloriesToday,
@@ -140,6 +159,11 @@ private fun MifflinStJeorConfigCard(
     onSexChanged: (BiologicalSex) -> Unit,
     onHeightChanged: (String) -> Unit,
     onWeightChanged: (String) -> Unit,
+    onWeightUnitChanged: (WeightUnit) -> Unit,
+    onHeightUnitChanged: (HeightUnit) -> Unit,
+    onWeightLbsChanged: (String) -> Unit,
+    onHeightFeetChanged: (String) -> Unit,
+    onHeightInchesChanged: (String) -> Unit,
     onActivityLevelChanged: (ActivityLevel) -> Unit,
     onDeficitTierChanged: (DeficitTier) -> Unit,
     onToggleExpand: () -> Unit,
@@ -261,35 +285,125 @@ private fun MifflinStJeorConfigCard(
                         }
                     }
 
-                    // Age, Height, Weight
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedTextField(
-                            value = state.ageText,
-                            onValueChange = onAgeChanged,
-                            label = { Text("Age (yrs)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = state.heightText,
-                            onValueChange = onHeightChanged,
-                            label = { Text("Height (cm)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = state.weightText,
-                            onValueChange = onWeightChanged,
-                            label = { Text("Weight (kg)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
+                    // Age Field
+                    OutlinedTextField(
+                        value = state.ageText,
+                        onValueChange = onAgeChanged,
+                        label = { Text("Age (yrs)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    // Height Section with Unit Converter Toggle
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Height",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                FilterChip(
+                                    selected = state.heightUnit == HeightUnit.CM,
+                                    onClick = { onHeightUnitChanged(HeightUnit.CM) },
+                                    label = { Text("cm") },
+                                    modifier = Modifier.height(32.dp)
+                                )
+                                FilterChip(
+                                    selected = state.heightUnit == HeightUnit.FT_IN,
+                                    onClick = { onHeightUnitChanged(HeightUnit.FT_IN) },
+                                    label = { Text("ft / in") },
+                                    modifier = Modifier.height(32.dp)
+                                )
+                            }
+                        }
+
+                        if (state.heightUnit == HeightUnit.CM) {
+                            OutlinedTextField(
+                                value = state.heightText,
+                                onValueChange = onHeightChanged,
+                                label = { Text("Height (cm)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = state.heightFeetText,
+                                    onValueChange = onHeightFeetChanged,
+                                    label = { Text("Feet (ft)") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = state.heightInchesText,
+                                    onValueChange = onHeightInchesChanged,
+                                    label = { Text("Inches (in)") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                            }
+                        }
+                    }
+
+                    // Weight Section with Unit Converter Toggle
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Weight",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                FilterChip(
+                                    selected = state.weightUnit == WeightUnit.KG,
+                                    onClick = { onWeightUnitChanged(WeightUnit.KG) },
+                                    label = { Text("kg") },
+                                    modifier = Modifier.height(32.dp)
+                                )
+                                FilterChip(
+                                    selected = state.weightUnit == WeightUnit.LBS,
+                                    onClick = { onWeightUnitChanged(WeightUnit.LBS) },
+                                    label = { Text("lbs") },
+                                    modifier = Modifier.height(32.dp)
+                                )
+                            }
+                        }
+
+                        if (state.weightUnit == WeightUnit.KG) {
+                            OutlinedTextField(
+                                value = state.weightText,
+                                onValueChange = onWeightChanged,
+                                label = { Text("Weight (kg)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        } else {
+                            OutlinedTextField(
+                                value = state.weightLbsText,
+                                onValueChange = onWeightLbsChanged,
+                                label = { Text("Weight (lbs)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
                     }
 
                     // Activity Level
@@ -298,28 +412,33 @@ private fun MifflinStJeorConfigCard(
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         ActivityLevel.entries.forEach { level ->
                             val isSelected = state.activityLevel == level
                             FilterChip(
                                 selected = isSelected,
                                 onClick = { onActivityLevelChanged(level) },
-                                label = { Text("${level.displayName} (×${level.multiplier})") }
+                                label = {
+                                    Text(
+                                        text = "${level.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }} (x${level.multiplier})"
+                                    )
+                                },
+                                leadingIcon = if (isSelected) {
+                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                } else null,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
 
                     // Deficit Tier
                     Text(
-                        text = "Calorie Deficit Goal",
+                        text = "Target Deficit Tier",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         DeficitTier.entries.forEach { tier ->
@@ -329,7 +448,9 @@ private fun MifflinStJeorConfigCard(
                                 onClick = { onDeficitTierChanged(tier) },
                                 label = {
                                     Text(
-                                        text = "${tier.name.lowercase().replaceFirstChar { it.uppercase() }} (-${tier.dailyDeficitKcal})"
+                                        text = "${tier.name.lowercase().replaceFirstChar { it.uppercase() }}\n(-${tier.dailyDeficitKcal})",
+                                        textAlign = TextAlign.Center,
+                                        style = MaterialTheme.typography.labelSmall
                                     )
                                 },
                                 modifier = Modifier.weight(1f)
@@ -337,27 +458,15 @@ private fun MifflinStJeorConfigCard(
                         }
                     }
 
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     // Save & Sync Button
                     Button(
                         onClick = onSaveAndSync,
                         enabled = state.isBiometricsValid,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Save & Sync to Watch",
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text("Save Targets & Sync to Wear OS")
                     }
                 }
             }
@@ -371,50 +480,54 @@ private fun LiveCalculationBanner(
     sex: BiologicalSex,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        )
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            CalculationMetric(label = "BMR", value = "${summary.bmrKcal} kcal")
-            CalculationMetric(label = "TDEE", value = "${summary.tdeeKcal} kcal")
-            CalculationMetric(
-                label = "Target Ceiling",
-                value = "${summary.targetCalorieCeiling} kcal",
-                valueColor = Color(0xFF1B5E20),
-                isEmphasized = true
-            )
-        }
-
-        if (summary.isClampedToSafetyFloor) {
-            Surface(
-                color = Color(0xFFFFF3E0),
-                shape = RoundedCornerShape(6.dp),
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                CalculationMetric(label = "BMR", value = "${summary.bmrKcal} kcal")
+                CalculationMetric(label = "TDEE", value = "${summary.tdeeKcal} kcal")
+                CalculationMetric(
+                    label = "Target Ceiling",
+                    value = "${summary.targetCalorieCeiling} kcal",
+                    valueColor = MaterialTheme.colorScheme.primary,
+                    isEmphasized = true
+                )
+            }
+
+            if (summary.isClampedToSafetyFloor) {
+                Surface(
+                    color = Color(0xFFFFF3E0),
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = Color(0xFFE65100),
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "Safety Notice: Target clamped to ${sex.safeCalorieFloor} kcal floor to maintain metabolic health.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFBF360C)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = Color(0xFFE65100),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Safety Notice: Target clamped to ${sex.safeCalorieFloor} kcal floor to maintain metabolic health.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFBF360C)
+                        )
+                    }
                 }
             }
         }
@@ -448,6 +561,131 @@ private fun CalculationMetric(
 }
 
 @Composable
+private fun KantoDelicaciesSection(
+    onApplyTemplate: (KantoMealTemplate) -> Unit,
+    onQuickLogTemplate: (KantoMealTemplate) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "🍙 Kanto Delicacies (Quick Templates)",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Scroll ➔",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            KantoMealTemplates.ALL.forEach { template ->
+                KantoTemplateCard(
+                    template = template,
+                    onApply = { onApplyTemplate(template) },
+                    onQuickLog = { onQuickLogTemplate(template) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun KantoTemplateCard(
+    template: KantoMealTemplate,
+    onApply: () -> Unit,
+    onQuickLog: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.width(200.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${template.emoji} ${template.name}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Text(
+                    text = "${template.category.name.lowercase().replaceFirstChar { it.uppercase() }} • ${template.caloriesKcal} kcal",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                )
+            }
+
+            Text(
+                text = "P: ${template.proteinG}g • C: ${template.carbsG}g • F: ${template.fatG}g",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text(
+                text = template.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                lineHeight = 16.sp
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onApply,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Auto-Fill", style = MaterialTheme.typography.labelSmall)
+                }
+                Button(
+                    onClick = onQuickLog,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("+ Log", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun QuickAddMealSection(
     onQuickAdd: (MealCategory, Int, String, Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -457,7 +695,7 @@ private fun QuickAddMealSection(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "⚡ Quick-Add Meals",
+            text = "⚡ Quick-Add Calorie Packs",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -519,68 +757,59 @@ private fun MealEntryFormCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "📝 Log Meal",
+                text = "📝 Log Custom Meal",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
-            // Category Selection Chips
+            // Meal Category Chips
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                listOf(
-                    MealCategory.BREAKFAST to "Breakfast",
-                    MealCategory.LUNCH to "Lunch",
-                    MealCategory.DINNER to "Dinner",
-                    MealCategory.SNACK to "Snack"
-                ).forEach { (cat, name) ->
-                    val isSelected = state.inputCategory == cat
+                MealCategory.entries.forEach { category ->
+                    val isSelected = state.inputCategory == category
                     FilterChip(
                         selected = isSelected,
-                        onClick = { onCategoryChanged(cat) },
-                        label = { Text(name) }
+                        onClick = { onCategoryChanged(category) },
+                        label = { Text(category.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                        leadingIcon = if (isSelected) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null
                     )
                 }
             }
 
-            // Food Name & Calories
+            // Food description
+            OutlinedTextField(
+                value = state.foodNameText,
+                onValueChange = onFoodNameChanged,
+                label = { Text("Food Description (e.g., Grilled Chicken Salad)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            // Calories & Macros Inputs
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = state.foodNameText,
-                    onValueChange = onFoodNameChanged,
-                    label = { Text("Food Name") },
-                    placeholder = { Text("e.g. Grilled Chicken") },
-                    modifier = Modifier.weight(2f),
-                    singleLine = true
-                )
-                OutlinedTextField(
                     value = state.caloriesText,
                     onValueChange = onCaloriesChanged,
-                    label = { Text("Calories") },
-                    placeholder = { Text("kcal") },
+                    label = { Text("Calories* (kcal)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1.2f),
                     singleLine = true
                 )
-            }
-
-            // Macros (Protein, Carbs, Fat)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
                 OutlinedTextField(
                     value = state.proteinText,
                     onValueChange = onProteinChanged,
@@ -589,6 +818,12 @@ private fun MealEntryFormCard(
                     modifier = Modifier.weight(1f),
                     singleLine = true
                 )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 OutlinedTextField(
                     value = state.carbsText,
                     onValueChange = onCarbsChanged,
@@ -612,16 +847,9 @@ private fun MealEntryFormCard(
                 enabled = state.caloriesText.toIntOrNull()?.let { it > 0 } == true,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Add Meal Entry",
-                    fontWeight = FontWeight.Bold
-                )
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Add Meal Entry")
             }
         }
     }

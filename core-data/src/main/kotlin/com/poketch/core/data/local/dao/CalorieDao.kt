@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
 import com.poketch.core.data.local.entity.CalorieLogEntity
+import com.poketch.core.domain.model.DailyNutritionSummary
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,6 +18,32 @@ interface CalorieDao {
 
     @Query("SELECT COALESCE(SUM(caloriesKcal), 0) FROM calorie_logs WHERE dateIso = :dateIso")
     suspend fun getTotalCaloriesByDateOnce(dateIso: String): Int
+
+    @Query("""
+        SELECT dateIso,
+               COALESCE(SUM(caloriesKcal), 0) AS totalCalories,
+               COALESCE(SUM(proteinG), 0) AS totalProtein,
+               COALESCE(SUM(carbsG), 0) AS totalCarbs,
+               COALESCE(SUM(fatG), 0) AS totalFat
+        FROM calorie_logs
+        GROUP BY dateIso
+        ORDER BY dateIso DESC
+        LIMIT :days
+    """)
+    fun observeRecentDailyNutrition(days: Int): Flow<List<DailyNutritionSummary>>
+
+    @Query("""
+        SELECT dateIso,
+               COALESCE(SUM(caloriesKcal), 0) AS totalCalories,
+               COALESCE(SUM(proteinG), 0) AS totalProtein,
+               COALESCE(SUM(carbsG), 0) AS totalCarbs,
+               COALESCE(SUM(fatG), 0) AS totalFat
+        FROM calorie_logs
+        GROUP BY dateIso
+        ORDER BY dateIso DESC
+        LIMIT :days
+    """)
+    suspend fun getRecentDailyNutrition(days: Int): List<DailyNutritionSummary>
 
     @Upsert
     suspend fun upsertCalorieLog(log: CalorieLogEntity)

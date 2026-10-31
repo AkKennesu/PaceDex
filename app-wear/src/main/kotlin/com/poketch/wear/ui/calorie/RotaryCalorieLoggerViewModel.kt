@@ -10,6 +10,7 @@ import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.MealCategory
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.UserRepository
+import com.poketch.core.sync.PoketchSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,6 +40,7 @@ class RotaryCalorieLoggerViewModel @Inject constructor(
     userRepository: UserRepository,
     private val calorieRepository: CalorieRepository,
     private val evaluateAchievementsUseCase: EvaluateAchievementsUseCase,
+    private val syncManager: PoketchSyncManager,
 ) : ViewModel() {
 
     private val todayIso: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
@@ -110,6 +112,9 @@ class RotaryCalorieLoggerViewModel @Inject constructor(
         viewModelScope.launch {
             calorieRepository.upsertCalorieLog(log)
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncCalorie(log)
+            }
 
             val budgetStatus = CalorieDeficitCalculator.evaluateBudgetStatus(
                 consumedKcal = state.newTotalCalories,
@@ -117,6 +122,9 @@ class RotaryCalorieLoggerViewModel @Inject constructor(
             )
 
             if (budgetStatus is CalorieBudgetState.OverTargetWarning) {
+                runCatching {
+                    syncManager.sendOverCalorieAlert(budgetStatus.surplusKcal)
+                }
                 onOverTarget()
             } else {
                 onSuccess()

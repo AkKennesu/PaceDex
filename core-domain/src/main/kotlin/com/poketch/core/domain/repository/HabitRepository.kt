@@ -10,6 +10,7 @@ interface HabitRepository {
     fun observeDailyWaterMl(dateIso: String): Flow<Double>
     fun observeDailyRunMiles(dateIso: String): Flow<Double>
     fun observeDailySteps(dateIso: String): Flow<Double>
+    fun observeDailySleepHours(dateIso: String): Flow<Double>
     suspend fun getLifetimeHabitTotal(habitType: HabitType): Double
     suspend fun logHabit(
         dateIso: String,
