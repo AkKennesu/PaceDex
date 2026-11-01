@@ -7,10 +7,12 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.poketch.core.data.local.dao.CalorieDao
 import com.poketch.core.data.local.dao.HabitDao
+import com.poketch.core.data.local.dao.HourlyWeatherCacheDao
 import com.poketch.core.data.local.dao.PokemonDao
 import com.poketch.core.data.local.dao.UserDao
 import com.poketch.core.data.local.entity.CalorieLogEntity
 import com.poketch.core.data.local.entity.HabitLogEntity
+import com.poketch.core.data.local.entity.HourlyWeatherCacheEntity
 import com.poketch.core.data.local.entity.PokemonEntity
 import com.poketch.core.data.local.entity.UserProfileEntity
 import com.poketch.core.data.local.seed.PokemonSeedParser
@@ -23,9 +25,10 @@ import kotlinx.coroutines.launch
         UserProfileEntity::class,
         CalorieLogEntity::class,
         HabitLogEntity::class,
-        PokemonEntity::class
+        PokemonEntity::class,
+        HourlyWeatherCacheEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class PoketchDatabase : RoomDatabase() {
@@ -34,6 +37,7 @@ abstract class PoketchDatabase : RoomDatabase() {
     abstract fun calorieDao(): CalorieDao
     abstract fun habitDao(): HabitDao
     abstract fun pokemonDao(): PokemonDao
+    abstract fun hourlyWeatherCacheDao(): HourlyWeatherCacheDao
 
     suspend fun ensureSeeded(context: Context?) {
         val count = pokemonDao().getUnlockedCount()
@@ -87,7 +91,8 @@ abstract class PoketchDatabase : RoomDatabase() {
                 context.applicationContext,
                 PoketchDatabase::class.java,
                 DATABASE_NAME
-            ).addCallback(object : Callback() {
+            ).fallbackToDestructiveMigration()
+            .addCallback(object : Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
                     coroutineScope.launch {

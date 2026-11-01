@@ -49,4 +49,9 @@ object DatabaseModule {
     fun providePokemonDao(database: PoketchDatabase): PokemonDao {
         return database.pokemonDao()
     }
+
+    @Provides
+    fun provideHourlyWeatherCacheDao(database: PoketchDatabase): com.poketch.core.data.local.dao.HourlyWeatherCacheDao {
+        return database.hourlyWeatherCacheDao()
+    }
 }

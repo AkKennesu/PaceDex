@@ -17,10 +17,13 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Text
@@ -93,6 +96,7 @@ val PokemonDsFontFamily = FontFamily(
 
 /**
  * Crisp GBA/DS typography using the authentic Pokémon DS pixel font with exact scaling.
+ * Supports horizontal scaleX expansion, letter spacing, and PlatformTextStyle(includeFontPadding = false).
  */
 @Composable
 fun GbaText(
@@ -100,11 +104,14 @@ fun GbaText(
     scale: Float,
     modifier: Modifier = Modifier,
     color: Color = Color(0xFF383838),
-    fontSizeVirtualPx: Float = 8f,
-    fontWeight: FontWeight = FontWeight.Normal,
-    letterSpacingVirtualPx: Float = 0f,
+    fontSizeVirtualPx: Float = 10f,
+    lineHeightVirtualPx: Float = fontSizeVirtualPx,
+    fontWeight: FontWeight = FontWeight.Bold,
+    letterSpacingVirtualPx: Float = 0.4f,
+    scaleX: Float = 1.15f,
     textAlign: TextAlign = TextAlign.Start,
     fontFamily: FontFamily = PokemonDsFontFamily,
+    includeFontPadding: Boolean = false,
     maxLines: Int = 1,
     softWrap: Boolean = false,
 ) {
@@ -112,11 +119,15 @@ fun GbaText(
         text = text,
         color = color,
         fontSize = (fontSizeVirtualPx * scale).sp,
-        lineHeight = ((fontSizeVirtualPx + 2f) * scale).sp,
+        lineHeight = (lineHeightVirtualPx * scale).sp,
         fontWeight = fontWeight,
         fontFamily = fontFamily,
         letterSpacing = (letterSpacingVirtualPx * scale).sp,
         textAlign = textAlign,
+        style = TextStyle(
+            textGeometricTransform = TextGeometricTransform(scaleX = scaleX),
+            platformStyle = PlatformTextStyle(includeFontPadding = includeFontPadding)
+        ),
         maxLines = maxLines,
         softWrap = softWrap,
         modifier = modifier

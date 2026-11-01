@@ -1,7 +1,14 @@
 package com.poketch.wear
 
 import android.app.Application
+import android.os.Build
 import androidx.work.Configuration
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.HabitRepository
 import com.poketch.core.domain.repository.UserRepository
@@ -21,7 +28,31 @@ import java.util.Locale
 import javax.inject.Inject
 
 @HiltAndroidApp
-class PoketchWearApp : Application(), Configuration.Provider {
+class PoketchWearApp : Application(), Configuration.Provider, ImageLoaderFactory {
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .components {
+                if (Build.VERSION.SDK_INT >= 28) {
+                    add(ImageDecoderDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
+            }
+            .memoryCache {
+                MemoryCache.Builder(this)
+                    .maxSizePercent(0.25)
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(64L * 1024 * 1024)
+                    .build()
+            }
+            .respectCacheHeaders(false)
+            .build()
+    }
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -44,6 +75,7 @@ class PoketchWearApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        runCatching { com.poketch.core.sync.WeatherSyncWorker.schedulePeriodic(this) }
         appScope.launch {
             delay(1000)
             runCatching { reminderScheduler.scheduleAllReminders() }

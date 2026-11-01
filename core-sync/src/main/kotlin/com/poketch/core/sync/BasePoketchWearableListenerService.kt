@@ -22,6 +22,7 @@ import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.HabitRepository
 import com.poketch.core.domain.repository.PokemonRepository
 import com.poketch.core.domain.repository.UserRepository
+import com.poketch.core.domain.repository.WeatherRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,6 +54,9 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
     lateinit var pokemonRepository: PokemonRepository
 
     @Inject
+    lateinit var weatherRepository: WeatherRepository
+
+    @Inject
     lateinit var evaluateAchievementsUseCase: EvaluateAchievementsUseCase
 
     @Inject
@@ -68,6 +72,7 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
         fun calorieRepository(): CalorieRepository
         fun habitRepository(): HabitRepository
         fun pokemonRepository(): PokemonRepository
+        fun weatherRepository(): WeatherRepository
         fun evaluateAchievementsUseCase(): EvaluateAchievementsUseCase
         fun unlockEventDispatcher(): UnlockEventDispatcher
         fun syncManager(): PoketchSyncManager
@@ -91,6 +96,7 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
             calorieRepository = entryPoint.calorieRepository()
             habitRepository = entryPoint.habitRepository()
             pokemonRepository = entryPoint.pokemonRepository()
+            weatherRepository = entryPoint.weatherRepository()
             evaluateAchievementsUseCase = entryPoint.evaluateAchievementsUseCase()
             unlockEventDispatcher = entryPoint.unlockEventDispatcher()
             syncManager = entryPoint.syncManager()
@@ -142,7 +148,15 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
             path == PoketchSyncConstants.PATH_POKEDEX_UNLOCKS -> {
                 handlePokedexUnlocksSync(dataMap)
             }
+            path == PoketchSyncConstants.PATH_WEATHER_HOURLY_CACHE -> {
+                handleWeatherHourlyCacheSync(dataMap)
+            }
         }
+    }
+
+    private suspend fun handleWeatherHourlyCacheSync(dataMap: DataMap) {
+        val json = dataMap.getString("weather_json") ?: return
+        weatherRepository.cacheHourlyForecastJson(json)
     }
 
     private suspend fun handleProfileSettingsSync(dataMap: DataMap) {

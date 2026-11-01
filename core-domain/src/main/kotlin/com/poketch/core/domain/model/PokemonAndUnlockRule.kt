@@ -42,5 +42,5 @@ data class Pokemon(
     }
 
     val progressRatio: Double
-        get() = (currentProgress.toDouble() / unlockRule.targetThreshold).coerceIn(0.0, 1.0)
+        get() = if (isUnlocked) 1.0 else (currentProgress.toDouble() / unlockRule.targetThreshold).coerceIn(0.0, 1.0)
 }

@@ -10,29 +10,39 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.ContentScale
@@ -40,6 +50,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,6 +59,10 @@ import coil.request.ImageRequest
 import com.poketch.wear.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -91,18 +106,6 @@ fun GbaWatchBattleHomeScreen(
         viewModel.setCommandMenuState(GbaCommandMenuState.ROOT_MENU)
     }
 
-    // Flashing red HP bar animation for OverTargetWarning
-    val infiniteTransition = rememberInfiniteTransition(label = "hp_red_flash")
-    val redHpAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(400),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "red_alpha"
-    )
-
     // Buddy bounce animation on tap
     val buddyScale by animateFloatAsState(
         targetValue = if (isBuddyBouncing) 1.18f else 1.0f,
@@ -114,23 +117,23 @@ fun GbaWatchBattleHomeScreen(
     // Target virtual coordinates for arrow cursor based on active menu and option
     val targetCursorX = when (menuState) {
         GbaCommandMenuState.ROOT_MENU -> when (selectedRootOption) {
-            GbaRootOption.FIGHT, GbaRootOption.POKEMON -> 42f
-            GbaRootOption.BAG, GbaRootOption.RUN -> 98f
+            GbaRootOption.FIGHT, GbaRootOption.POKEMON -> 44f
+            GbaRootOption.BAG, GbaRootOption.RUN -> 104f
         }
         GbaCommandMenuState.FIGHT_MENU -> when (selectedFightOption) {
-            GbaFightOption.LOG_CAL, GbaFightOption.HABITS -> 40f
-            GbaFightOption.WATER, GbaFightOption.SYNC -> 96f
+            GbaFightOption.LOG_CAL, GbaFightOption.HABITS -> 44f
+            GbaFightOption.WATER, GbaFightOption.SYNC -> 104f
         }
     }
 
     val targetCursorY = when (menuState) {
         GbaCommandMenuState.ROOT_MENU -> when (selectedRootOption) {
-            GbaRootOption.FIGHT, GbaRootOption.BAG -> 131f
-            GbaRootOption.POKEMON, GbaRootOption.RUN -> 147f
+            GbaRootOption.FIGHT, GbaRootOption.BAG -> 133f
+            GbaRootOption.POKEMON, GbaRootOption.RUN -> 149f
         }
         GbaCommandMenuState.FIGHT_MENU -> when (selectedFightOption) {
-            GbaFightOption.LOG_CAL, GbaFightOption.WATER -> 130f
-            GbaFightOption.HABITS, GbaFightOption.SYNC -> 146f
+            GbaFightOption.LOG_CAL, GbaFightOption.WATER -> 133f
+            GbaFightOption.HABITS, GbaFightOption.SYNC -> 149f
         }
     }
 
@@ -226,18 +229,22 @@ fun GbaWatchBattleHomeScreen(
             modifier = Modifier.gbaVirtualBounds(0, 0, 192, 192, scale)
         )
 
-        // 2. WILD TARGET POKÉMON SPRITE (64x64 at (x = 102, y = 14))
-        // Wild encounter is viewed from the FRONT
-        // 2. WILD TARGET POKÉMON SPRITE (64x64 at (x = 102, y = 14))
-        // Wild encounter is viewed from the FRONT (full art on Battle Home Screen)
+        // 2. WILD TARGET POKÉMON SPRITE
+        // Uses PokemonSpriteMetricsTable for pixel-perfect platform anchoring and sizing
         val target = state.wildTarget
         val targetPokedexNum = target?.pokedexNumber ?: 77
         val targetUri = com.poketch.core.domain.model.Gen3PokemonSpriteResolver.getFrontSpriteUri(targetPokedexNum)
-        val targetFallbackUrl = com.poketch.core.domain.model.Gen3PokemonSpriteResolver.getPokeApiFrontUrl(targetPokedexNum)
+        val wildMetrics = com.poketch.core.domain.model.PokemonSpriteMetricsTable.get(targetPokedexNum)
+        val wildScale = wildMetrics.wildScaleFactor
+        val wildFrameSize = (64f * wildScale).roundToInt()
+        val wildVisibleBottomOffset = (64f - wildMetrics.frontBottomPad.toFloat()) * wildScale
+        val wildBaselineY = if (wildMetrics.isFlying) 65f else 70f
+        val wildTopY = (wildBaselineY - wildVisibleBottomOffset).roundToInt()
+        val wildLeftX = (146f - wildFrameSize / 2f).roundToInt()
 
         Box(
             modifier = Modifier
-                .gbaVirtualBounds(102, 14, 64, 64, scale)
+                .gbaVirtualBounds(wildLeftX, wildTopY, wildFrameSize, wildFrameSize, scale)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
@@ -260,16 +267,27 @@ fun GbaWatchBattleHomeScreen(
             )
         }
 
-        // 3. ACTIVE BUDDY POKÉMON SPRITE (64x64 at (x = 18, y = 62))
-        // Player's active Buddy is viewed from the BACK (authentic GBA battle perspective)
+        // 3. ACTIVE BUDDY POKÉMON SPRITE
+        // Uses PokemonSpriteMetricsTable for pixel-perfect baseline anchoring on top of Box 3 (menu)
         val buddy = state.activeBuddy
         val buddyPokedexNum = buddy?.pokedexNumber ?: 1
         val buddyUri = com.poketch.core.domain.model.Gen3PokemonSpriteResolver.getBackSpriteUri(buddyPokedexNum)
+        val buddyMetrics = com.poketch.core.domain.model.PokemonSpriteMetricsTable.get(buddyPokedexNum)
+        val buddySpriteScale = buddyMetrics.buddyScaleFactor
+        val buddyFrameSize = (64f * buddySpriteScale).roundToInt()
+        val buddyVisibleBottomOffset = (64f - buddyMetrics.backBottomPad.toFloat()) * buddySpriteScale
+        val buddyBaselineY = if (buddyMetrics.isFlying) 122f else 125f
+        val buddyTopY = (buddyBaselineY - buddyVisibleBottomOffset).roundToInt()
+        val buddyLeftX = 18
 
         Box(
             modifier = Modifier
-                .gbaVirtualBounds(18, 62, 64, 64, scale)
-                .scale(buddyScale)
+                .gbaVirtualBounds(buddyLeftX, buddyTopY, buddyFrameSize, buddyFrameSize, scale)
+                .graphicsLayer {
+                    scaleX = buddyScale
+                    scaleY = buddyScale
+                    transformOrigin = TransformOrigin(0.5f, 1.0f)
+                }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
@@ -303,162 +321,231 @@ fun GbaWatchBattleHomeScreen(
             )
         }
 
-        // 4. WILD TARGET STATUS BOX (100x29 at (x = 28, y = 18))
+        // 4. BOX 1 — TOP-LEFT TIME & SLIM HP UNLOCK PROGRESS BOX (86x34 at (x = 29, y = 34))
         GbaPixelImage(
-            resId = R.drawable.gba_enemy_status_box_empty_track,
-            contentDescription = "Enemy Status Box",
-            modifier = Modifier.gbaVirtualBounds(28, 18, 100, 29, scale)
+            resId = R.drawable.gba_box1_time_hp,
+            contentDescription = "Box 1 Time HP",
+            modifier = Modifier.gbaVirtualBounds(29, 34, 86, 34, scale)
         )
 
-        // Wild Target Name at (x = 34, y = 21)
-        val targetDisplayName = (target?.name ?: "PONYTA").uppercase()
-        GbaText(
-            text = targetDisplayName,
-            scale = scale,
-            color = Color(0xFF383838),
-            fontSizeVirtualPx = 9.5f,
-            letterSpacingVirtualPx = 0f,
-            modifier = Modifier.gbaVirtualBounds(34, 19, 66, 14, scale)
-        )
-
-        // Wild Target Level at (x = 107, y = 19)
-        GbaText(
-            text = "1",
-            scale = scale,
-            color = Color(0xFF383838),
-            fontSizeVirtualPx = 9.5f,
-            letterSpacingVirtualPx = 0f,
-            modifier = Modifier.gbaVirtualBounds(107, 19, 16, 14, scale)
-        )
-
-        // Mission Progress Bar at (x = 67, y = 35), max width = 48, height = 3
-        val missionProgressRatio = target?.progressRatio?.toFloat() ?: 0f
-        val missionBarWidth = (48f * missionProgressRatio).roundToInt().coerceIn(0, 48)
-        if (missionBarWidth > 0) {
-            GbaPixelImage(
-                resId = R.drawable.gba_hp_yellow,
-                contentDescription = "Mission Progress Bar",
-                modifier = Modifier.gbaVirtualBounds(67, 35, missionBarWidth, 3, scale)
-            )
-        }
-
-        // 5. PLAYER ACTIVE BUDDY STATUS BOX (104x37 at (x = 76, y = 82))
-        GbaPixelImage(
-            resId = R.drawable.gba_player_status_box_empty_track,
-            contentDescription = "Player Status Box",
-            modifier = Modifier.gbaVirtualBounds(76, 82, 104, 37, scale)
-        )
-
-        // Buddy Name at (x = 84, y = 83)
-        val buddyDisplayName = (buddy?.name ?: "BULBASAUR").uppercase()
-        GbaText(
-            text = buddyDisplayName,
-            scale = scale,
-            color = Color(0xFF383838),
-            fontSizeVirtualPx = 9.5f,
-            letterSpacingVirtualPx = 0f,
-            modifier = Modifier.gbaVirtualBounds(84, 83, 68, 14, scale)
-        )
-
-        // Streak Level at (x = 164, y = 83)
-        GbaText(
-            text = "1",
-            scale = scale,
-            color = Color(0xFF383838),
-            fontSizeVirtualPx = 9.5f,
-            letterSpacingVirtualPx = 0f,
-            modifier = Modifier.gbaVirtualBounds(164, 83, 14, 14, scale)
-        )
-
-        // Live Calorie Deficit HP Bar at (x = 124, y = 99), max width = 48, height = 3
-        val remainingRatio = ((ceiling - consumed).toFloat() / ceiling.toFloat()).coerceIn(0f, 1f)
-
-        if (isOverCalorie) {
-            // Flashing full red bar
-            GbaPixelImage(
-                resId = R.drawable.gba_hp_red,
-                contentDescription = "Red Alert HP Track",
-                alpha = redHpAlpha,
-                modifier = Modifier.gbaVirtualBounds(124, 99, 48, 3, scale)
-            )
-        } else {
-            val hpBarRes = if (consumed < 0.90f * ceiling) {
-                R.drawable.gba_hp_green
-            } else {
-                R.drawable.gba_hp_yellow
+        // Row 1 — Live Time (Left) & Offline Weather (Right) on opposite ends: (x = 33, y = 37, w = 78, h = 14)
+        val liveTime by produceState(
+            initialValue = LocalTime.now().format(DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)).uppercase()
+        ) {
+            while (true) {
+                value = LocalTime.now().format(DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)).uppercase()
+                delay(1000.milliseconds)
             }
-            val hpWidth = (48f * remainingRatio).roundToInt().coerceIn(1, 48)
-            GbaPixelImage(
-                resId = hpBarRes,
-                contentDescription = "Calorie Deficit HP Track",
-                modifier = Modifier.gbaVirtualBounds(124, 99, hpWidth, 3, scale)
-            )
         }
-
-        // Live Deficit Status Numbers at (x = 112, y = 103)
-        if (isOverCalorie) {
-            val surplus = consumed - ceiling
+        val weatherBadge = state.currentWeather.badgeText
+        Row(
+            modifier = Modifier.gbaVirtualBounds(33, 37, 78, 14, scale),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             GbaText(
-                text = "+$surplus OVER",
+                text = liveTime,
                 scale = scale,
-                color = Color(0xFFD32F2F),
-                fontSizeVirtualPx = 8.5f,
-                letterSpacingVirtualPx = 0f,
+                color = Color(0xFF202820),
+                fontSizeVirtualPx = 11.2f,
+                lineHeightVirtualPx = 11.5f,
+                letterSpacingVirtualPx = 0.05f,
+                scaleX = 0.98f,
                 fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.gbaVirtualBounds(112, 103, 64, 12, scale)
+                maxLines = 1,
+                includeFontPadding = false,
             )
-        } else {
-            val remainingKcal = ceiling - consumed
             GbaText(
-                text = "$remainingKcal/$ceiling",
+                text = weatherBadge,
                 scale = scale,
-                color = Color(0xFF383838),
-                fontSizeVirtualPx = 8.5f,
-                letterSpacingVirtualPx = 0f,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.gbaVirtualBounds(112, 103, 64, 12, scale)
+                color = Color(0xFF202820),
+                fontSizeVirtualPx = 11.2f,
+                lineHeightVirtualPx = 11.5f,
+                letterSpacingVirtualPx = 0.05f,
+                scaleX = 0.98f,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                includeFontPadding = false,
             )
         }
 
-        // Live Hydration & Habit EXP Bar at (x = 108, y = 115), max width = 64, height = 2
+        // Row 2 — Slim HP Progress Bar Fill: (x = 53, y = 57, maxWidth = 58, height = 3)
+        // Starts FULL (100% HP) and slowly DECREASES towards 0 as mission progress increases towards unlock
+        val missionProgressRatio = when {
+            target == null -> 0f
+            target.isUnlocked -> 1f
+            else -> target.progressRatio.toFloat()
+        }
+        val enemyHpRemainingRatio = (1.0f - missionProgressRatio).coerceIn(0f, 1f)
+        val animatedHpRatio by animateFloatAsState(
+            targetValue = enemyHpRemainingRatio,
+            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+            label = "EnemyHpRemainingRatio"
+        )
+        val enemyHpBarWidth = (58f * animatedHpRatio).roundToInt().coerceIn(0, 58)
+        if (enemyHpBarWidth > 0) {
+            val enemyHpBarRes = when {
+                animatedHpRatio > 0.50f -> R.drawable.gba_hp_green
+                animatedHpRatio > 0.20f -> R.drawable.gba_hp_yellow
+                else -> R.drawable.gba_hp_red
+            }
+            GbaPixelImage(
+                resId = enemyHpBarRes,
+                contentDescription = "Mission Progress Bar",
+                modifier = Modifier.gbaVirtualBounds(53, 57, enemyHpBarWidth, 3, scale)
+            )
+        }
+
+        // 5. BOX 2 — MIDDLE-RIGHT DATE/WEATHER + STP BAR + STEP COUNT + WTR BAR (86x36 at (x = 84, y = 86))
+        GbaPixelImage(
+            resId = R.drawable.gba_box2_date_stp_wtr,
+            contentDescription = "Box 2 Date STP WTR",
+            modifier = Modifier.gbaVirtualBounds(84, 86, 86, 36, scale)
+        )
+
+        // Row 1 — Date with Year: (x = 90, y = 88, w = 74, h = 11)
+        val currentDateWithYear = remember {
+            LocalDate.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH)).uppercase()
+        }
+        GbaText(
+            text = currentDateWithYear,
+            scale = scale,
+            color = Color(0xFF202820),
+            fontSizeVirtualPx = 9.5f,
+            lineHeightVirtualPx = 9.5f,
+            letterSpacingVirtualPx = 0.2f,
+            scaleX = 1.05f,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            includeFontPadding = false,
+            modifier = Modifier.gbaVirtualBounds(90, 88, 74, 11, scale)
+        )
+
+        // Row 2 — Full-Length Slim STP (Step) Bar Fill: (x = 108, y = 100, maxWidth = 54, height = 3)
+        // Starts FULL (100%) and goes LOWER as steps are taken towards daily step goal
+        val stepGoal = state.dailyStepGoal.coerceAtLeast(1)
+        val stepRemainingRatio = ((stepGoal - state.todaySteps).toFloat() / stepGoal.toFloat()).coerceIn(0f, 1f)
+        val stepBarWidth = (54f * stepRemainingRatio).roundToInt().coerceIn(0, 54)
+        if (stepBarWidth > 0) {
+            val stepBarRes = when {
+                stepRemainingRatio > 0.50f -> R.drawable.gba_hp_green
+                stepRemainingRatio > 0.20f -> R.drawable.gba_hp_yellow
+                else -> R.drawable.gba_hp_red
+            }
+            GbaPixelImage(
+                resId = stepBarRes,
+                contentDescription = "Step Bar",
+                modifier = Modifier.gbaVirtualBounds(108, 100, stepBarWidth, 3, scale)
+            )
+        }
+
+        // Row 3 — Bottom-Right Step Count Readout: (x = 104, y = 106, w = 60, h = 9), right-aligned
+        GbaText(
+            text = "${state.todaySteps} / 10k",
+            scale = scale,
+            color = Color(0xFF283028),
+            fontSizeVirtualPx = 6.3f,
+            lineHeightVirtualPx = 6.3f,
+            letterSpacingVirtualPx = 0.2f,
+            scaleX = 1.05f,
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            includeFontPadding = false,
+            modifier = Modifier.gbaVirtualBounds(104, 106, 60, 9, scale)
+        )
+
+        // Bottom Slate Lip — Slim WTR (Water) Bar Fill: (x = 110, y = 117, maxWidth = 54, height = 2)
         val waterGoal = state.dailyWaterGoalMl.coerceAtLeast(1)
-        val dailyHabitExpRatio = (state.todayWaterMl.toFloat() / waterGoal.toFloat()).coerceIn(0f, 1f)
-        val expBarWidth = (64f * dailyHabitExpRatio).roundToInt().coerceIn(0, 64)
-        if (expBarWidth > 0) {
+        val waterRatio = (state.todayWaterMl.toFloat() / waterGoal.toFloat()).coerceIn(0f, 1f)
+        val wtrWidth = (54f * waterRatio).roundToInt().coerceIn(0, 54)
+        if (wtrWidth > 0) {
             GbaPixelImage(
                 resId = R.drawable.gba_exp_cyan,
-                contentDescription = "Hydration EXP Bar",
-                modifier = Modifier.gbaVirtualBounds(108, 115, expBarWidth, 2, scale)
+                contentDescription = "Water Bar",
+                modifier = Modifier.gbaVirtualBounds(110, 117, wtrWidth, 2, scale)
             )
         }
 
-        // 6. BOTTOM COMMAND MENU (120x48 at (x = 36, y = 121))
+        // 6. BOX 3 — BOTTOM BLANK MENU / CHOICES BOX (122x43 at (x = 35, y = 124))
         val dialogMsg = state.dialogMessage
         if (dialogMsg != null) {
             // Teal Message Dialog Overlay
             GbaPixelImage(
-                resId = R.drawable.gba_watch_dialog_teal_120x48,
+                resId = R.drawable.gba_box3_dialog_teal_blank,
                 contentDescription = "GBA Dialog Box",
                 modifier = Modifier
-                    .gbaVirtualBounds(36, 121, 120, 48, scale)
+                    .gbaVirtualBounds(35, 124, 122, 43, scale)
                     .clickable { viewModel.clearDialog() }
             )
             GbaText(
                 text = dialogMsg,
                 scale = scale,
                 color = Color(0xFFF8F8F8),
-                fontSizeVirtualPx = 9f,
-                letterSpacingVirtualPx = 0f,
+                fontSizeVirtualPx = 7.5f,
+                lineHeightVirtualPx = 8.5f,
+                letterSpacingVirtualPx = 0.3f,
+                scaleX = 1.05f,
                 maxLines = 2,
                 softWrap = true,
-                modifier = Modifier.gbaVirtualBounds(42, 128, 108, 34, scale)
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(42, 129, 108, 33, scale)
             )
         } else if (menuState == GbaCommandMenuState.ROOT_MENU) {
             // ROOT COMMAND MENU (FIGHT | BAG / POKéMON | RUN)
             GbaPixelImage(
-                resId = R.drawable.gba_command_menu_box,
+                resId = R.drawable.gba_box3_menu_compact_blank,
                 contentDescription = "GBA Command Menu",
-                modifier = Modifier.gbaVirtualBounds(36, 121, 120, 48, scale)
+                modifier = Modifier.gbaVirtualBounds(35, 124, 122, 43, scale)
+            )
+
+            // 4 Action Labels for Root Menu
+            // Top-Left: (x = 53, y = 131) -> FIGHT
+            GbaText(
+                text = "FIGHT",
+                scale = scale,
+                color = Color(0xFF283038),
+                fontSizeVirtualPx = 13.5f,
+                lineHeightVirtualPx = 13.5f,
+                letterSpacingVirtualPx = 0.2f,
+                scaleX = 1.12f,
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(53, 131, 46, 15, scale)
+            )
+            // Top-Right: (x = 113, y = 131) -> BAG
+            GbaText(
+                text = "BAG",
+                scale = scale,
+                color = Color(0xFF283038),
+                fontSizeVirtualPx = 13.5f,
+                lineHeightVirtualPx = 13.5f,
+                letterSpacingVirtualPx = 0.2f,
+                scaleX = 1.12f,
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(113, 131, 44, 15, scale)
+            )
+            // Bottom-Left: (x = 53, y = 147) -> POKéMON
+            GbaText(
+                text = "POKéMON",
+                scale = scale,
+                color = Color(0xFF283038),
+                fontSizeVirtualPx = 13.5f,
+                lineHeightVirtualPx = 13.5f,
+                letterSpacingVirtualPx = 0.2f,
+                scaleX = 1.12f,
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(53, 147, 46, 15, scale)
+            )
+            // Bottom-Right: (x = 113, y = 147) -> RUN
+            GbaText(
+                text = "RUN",
+                scale = scale,
+                color = Color(0xFF283038),
+                fontSizeVirtualPx = 13.5f,
+                lineHeightVirtualPx = 13.5f,
+                letterSpacingVirtualPx = 0.2f,
+                scaleX = 1.12f,
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(113, 147, 44, 15, scale)
             )
 
             // Animated Cursor for Root Menu
@@ -473,11 +560,11 @@ fun GbaWatchBattleHomeScreen(
                     .size(width = (6 * scale).dp, height = (10 * scale).dp)
             )
 
-            // Interactive Quadrants:
-            // Top-Left: FIGHT
+            // Interactive Quadrants: Box 3 is (35, 124, 122, 43)
+            // Top-Left: FIGHT (35, 124, 61, 21)
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(36, 121, 60, 24, scale)
+                    .gbaVirtualBounds(35, 124, 61, 21, scale)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         val prev = selectedRootOption
@@ -490,10 +577,10 @@ fun GbaWatchBattleHomeScreen(
                         }
                     }
             )
-            // Top-Right: BAG
+            // Top-Right: BAG (96, 124, 61, 21)
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(96, 121, 60, 24, scale)
+                    .gbaVirtualBounds(96, 124, 61, 21, scale)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         val prev = selectedRootOption
@@ -506,10 +593,10 @@ fun GbaWatchBattleHomeScreen(
                         }
                     }
             )
-            // Bottom-Left: POKéMON
+            // Bottom-Left: POKéMON (35, 145, 61, 22)
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(36, 145, 60, 24, scale)
+                    .gbaVirtualBounds(35, 145, 61, 22, scale)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         val prev = selectedRootOption
@@ -522,10 +609,10 @@ fun GbaWatchBattleHomeScreen(
                         }
                     }
             )
-            // Bottom-Right: RUN
+            // Bottom-Right: RUN (96, 145, 61, 22)
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(96, 145, 60, 24, scale)
+                    .gbaVirtualBounds(96, 145, 61, 22, scale)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         val prev = selectedRootOption
@@ -543,39 +630,59 @@ fun GbaWatchBattleHomeScreen(
         } else {
             // FIGHT SUB-MENU (LOG CAL | WATER / HABITS | SYNC)
             GbaPixelImage(
-                resId = R.drawable.gba_command_menu_blank,
+                resId = R.drawable.gba_box3_menu_compact_blank,
                 contentDescription = "Fight Moves Blank Menu",
-                modifier = Modifier.gbaVirtualBounds(36, 121, 120, 48, scale)
+                modifier = Modifier.gbaVirtualBounds(35, 124, 122, 43, scale)
             )
 
-            // 4 Action Labels
+            // 4 Action Labels for Fight Menu
+            // Top-Left: (x = 53, y = 131) -> LOG CAL
             GbaText(
                 text = "LOG CAL",
                 scale = scale,
-                fontSizeVirtualPx = 9.5f,
-                letterSpacingVirtualPx = 0f,
-                modifier = Modifier.gbaVirtualBounds(48, 127, 48, 15, scale)
+                color = Color(0xFF283038),
+                fontSizeVirtualPx = 13.5f,
+                lineHeightVirtualPx = 13.5f,
+                letterSpacingVirtualPx = 0.2f,
+                scaleX = 1.12f,
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(53, 131, 46, 15, scale)
             )
+            // Top-Right: (x = 113, y = 131) -> WATER
             GbaText(
                 text = "WATER",
                 scale = scale,
-                fontSizeVirtualPx = 9.5f,
-                letterSpacingVirtualPx = 0f,
-                modifier = Modifier.gbaVirtualBounds(104, 127, 48, 15, scale)
+                color = Color(0xFF283038),
+                fontSizeVirtualPx = 13.5f,
+                lineHeightVirtualPx = 13.5f,
+                letterSpacingVirtualPx = 0.2f,
+                scaleX = 1.12f,
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(113, 131, 44, 15, scale)
             )
+            // Bottom-Left: (x = 53, y = 147) -> HABITS
             GbaText(
                 text = "HABITS",
                 scale = scale,
-                fontSizeVirtualPx = 9.5f,
-                letterSpacingVirtualPx = 0f,
-                modifier = Modifier.gbaVirtualBounds(48, 143, 48, 15, scale)
+                color = Color(0xFF283038),
+                fontSizeVirtualPx = 13.5f,
+                lineHeightVirtualPx = 13.5f,
+                letterSpacingVirtualPx = 0.2f,
+                scaleX = 1.12f,
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(53, 147, 46, 15, scale)
             )
+            // Bottom-Right: (x = 113, y = 147) -> SYNC
             GbaText(
                 text = "SYNC",
                 scale = scale,
-                fontSizeVirtualPx = 9.5f,
-                letterSpacingVirtualPx = 0f,
-                modifier = Modifier.gbaVirtualBounds(104, 143, 48, 15, scale)
+                color = Color(0xFF283038),
+                fontSizeVirtualPx = 13.5f,
+                lineHeightVirtualPx = 13.5f,
+                letterSpacingVirtualPx = 0.2f,
+                scaleX = 1.12f,
+                includeFontPadding = false,
+                modifier = Modifier.gbaVirtualBounds(113, 147, 44, 15, scale)
             )
 
             // Animated Cursor for Fight Menu
@@ -590,11 +697,11 @@ fun GbaWatchBattleHomeScreen(
                     .size(width = (6 * scale).dp, height = (10 * scale).dp)
             )
 
-            // Interactive Quadrants:
-            // 1. LOG CAL
+            // Interactive Quadrants: Box 3 is (35, 124, 122, 43)
+            // 1. LOG CAL (35, 124, 61, 21)
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(36, 121, 60, 24, scale)
+                    .gbaVirtualBounds(35, 124, 61, 21, scale)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         val prev = selectedFightOption
@@ -611,20 +718,20 @@ fun GbaWatchBattleHomeScreen(
                         }
                     }
             )
-            // 2. WATER (+250ml)
+            // 2. WATER (+250ml) (96, 124, 61, 21)
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(96, 121, 60, 24, scale)
+                    .gbaVirtualBounds(96, 124, 61, 21, scale)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         viewModel.setSelectedFightOption(GbaFightOption.WATER)
                         viewModel.logWaterQuick250()
                     }
             )
-            // 3. HABITS (1-Mile Run & Daily Habits)
+            // 3. HABITS (1-Mile Run & Daily Habits) (35, 145, 61, 22)
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(36, 145, 60, 24, scale)
+                    .gbaVirtualBounds(35, 145, 61, 22, scale)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         val prev = selectedFightOption
@@ -637,16 +744,236 @@ fun GbaWatchBattleHomeScreen(
                         }
                     }
             )
-            // 4. SYNC (Data Layer Flush)
+            // 4. SYNC (Data Layer Flush) (96, 145, 61, 22)
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(96, 145, 60, 24, scale)
+                    .gbaVirtualBounds(96, 145, 61, 22, scale)
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         viewModel.setSelectedFightOption(GbaFightOption.SYNC)
                         viewModel.triggerSync()
                     }
             )
+            // Animated Cursor for Fight Menu
+            GbaPixelImage(
+                resId = R.drawable.gba_cursor_black,
+                contentDescription = "Fight Cursor",
+                modifier = Modifier
+                    .offset(
+                        x = ((animatedCursorX + cursorIdleOffset) * scale).dp,
+                        y = (animatedCursorY * scale).dp
+                    )
+                    .size(width = (6 * scale).dp, height = (10 * scale).dp)
+            )
+
+            // Interactive Quadrants: Box 3 is (35, 124, 122, 43)
+            // 1. LOG CAL (35, 124, 61, 21)
+            Box(
+                modifier = Modifier
+                    .gbaVirtualBounds(35, 124, 61, 21, scale)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        val prev = selectedFightOption
+                        viewModel.setSelectedFightOption(GbaFightOption.LOG_CAL)
+                        coroutineScope.launch {
+                            if (prev != GbaFightOption.LOG_CAL) {
+                                delay(150.milliseconds)
+                            }
+                            if (isOverCalorie) {
+                                onNavigate("over_calorie_red_alert")
+                            } else {
+                                onNavigate("rotary_calorie_logger")
+                            }
+                        }
+                    }
+            )
+            // 2. WATER (+250ml) (96, 124, 61, 21)
+            Box(
+                modifier = Modifier
+                    .gbaVirtualBounds(96, 124, 61, 21, scale)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.setSelectedFightOption(GbaFightOption.WATER)
+                        viewModel.logWaterQuick250()
+                    }
+            )
+            // 3. HABITS (1-Mile Run & Daily Habits) (35, 145, 61, 22)
+            Box(
+                modifier = Modifier
+                    .gbaVirtualBounds(35, 145, 61, 22, scale)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        val prev = selectedFightOption
+                        viewModel.setSelectedFightOption(GbaFightOption.HABITS)
+                        coroutineScope.launch {
+                            if (prev != GbaFightOption.HABITS) {
+                                delay(150.milliseconds)
+                            }
+                            onNavigate("quick_habit_actions")
+                        }
+                    }
+            )
+            // 4. SYNC (Data Layer Flush) (96, 145, 61, 22)
+            Box(
+                modifier = Modifier
+                    .gbaVirtualBounds(96, 145, 61, 22, scale)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.setSelectedFightOption(GbaFightOption.SYNC)
+                        viewModel.triggerSync()
+                    }
+            )
+        }
+
+        // 7. POKÉMON UNLOCKED CELEBRATION POP-UP OVERLAY
+        val unlockEvent = state.newlyUnlockedPokemon
+        if (unlockEvent != null) {
+            val unlockedPoke = unlockEvent.pokemon
+            val frontSpriteUri = com.poketch.core.domain.model.Gen3PokemonSpriteResolver.getFrontSpriteUri(unlockedPoke.pokedexNumber)
+
+            // Dimmed scrim covering the whole 192x192 canvas
+            Box(
+                modifier = Modifier
+                    .gbaVirtualBounds(0, 0, 192, 192, scale)
+                    .background(Color(0xD8000000))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        viewModel.dismissUnlockCelebration()
+                    }
+            )
+
+            // GBA Dialogue / Specimen Card at (x = 18, y = 18, w = 156, h = 156)
+            Box(
+                modifier = Modifier
+                    .gbaVirtualBounds(18, 18, 156, 156, scale)
+                    .background(Color(0xFFF8F8F0), shape = RoundedCornerShape((12 * scale).dp))
+                    .border((2 * scale).dp, Color(0xFF204840), shape = RoundedCornerShape((12 * scale).dp))
+                    .padding(((6 * scale).dp).coerceAtLeast(4.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // Header Banner
+                    GbaText(
+                        text = "★ POKéMON UNLOCKED! ★",
+                        scale = scale,
+                        color = Color(0xFFD04800),
+                        fontSizeVirtualPx = 9.5f,
+                        lineHeightVirtualPx = 10f,
+                        fontWeight = FontWeight.Black,
+                        scaleX = 1.05f,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Specimen Monitor Box
+                    Box(
+                        modifier = Modifier
+                            .size((52 * scale).dp)
+                            .background(Color(0xFFE8F0E8), shape = RoundedCornerShape((8 * scale).dp))
+                            .border((1.5f * scale).dp, Color(0xFF507870), shape = RoundedCornerShape((8 * scale).dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(frontSpriteUri)
+                                .crossfade(false)
+                                .error(R.drawable.gba_ball_empty)
+                                .fallback(R.drawable.gba_ball_empty)
+                                .build(),
+                            contentDescription = unlockedPoke.name,
+                            filterQuality = FilterQuality.None,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.size((44 * scale).dp)
+                        )
+                    }
+
+                    // Pokémon Name & Number
+                    GbaText(
+                        text = "#%03d %s".format(unlockedPoke.pokedexNumber, unlockedPoke.name.uppercase()),
+                        scale = scale,
+                        color = Color(0xFF182820),
+                        fontSizeVirtualPx = 11f,
+                        lineHeightVirtualPx = 12f,
+                        fontWeight = FontWeight.Bold,
+                        scaleX = 1.08f,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Trigger Reason / Mission Description
+                    val reason = unlockEvent.triggerReason.ifBlank { unlockedPoke.unlockRule.description }
+                    GbaText(
+                        text = reason,
+                        scale = scale,
+                        color = Color(0xFF405848),
+                        fontSizeVirtualPx = 7.5f,
+                        lineHeightVirtualPx = 8.5f,
+                        scaleX = 1.02f,
+                        maxLines = 2,
+                        softWrap = true,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Action Buttons (Row: SET BUDDY | GOTCHA!)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy((6 * scale).dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // SET BUDDY Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height((22 * scale).dp)
+                                .background(Color(0xFFC83838), shape = RoundedCornerShape((4 * scale).dp))
+                                .border((1 * scale).dp, Color(0xFF701818), shape = RoundedCornerShape((4 * scale).dp))
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.setUnlockedAsActiveBuddy(unlockedPoke.pokedexNumber)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            GbaText(
+                                text = "SET BUDDY",
+                                scale = scale,
+                                color = Color.White,
+                                fontSizeVirtualPx = 8f,
+                                fontWeight = FontWeight.Bold,
+                                scaleX = 1.05f,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        // GOTCHA! Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height((22 * scale).dp)
+                                .background(Color(0xFF287060), shape = RoundedCornerShape((4 * scale).dp))
+                                .border((1 * scale).dp, Color(0xFF104038), shape = RoundedCornerShape((4 * scale).dp))
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    viewModel.dismissUnlockCelebration()
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            GbaText(
+                                text = "GOTCHA!",
+                                scale = scale,
+                                color = Color.White,
+                                fontSizeVirtualPx = 8f,
+                                fontWeight = FontWeight.Bold,
+                                scaleX = 1.05f,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

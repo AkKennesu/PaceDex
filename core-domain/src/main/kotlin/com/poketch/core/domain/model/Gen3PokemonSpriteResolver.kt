@@ -15,6 +15,13 @@ object Gen3PokemonSpriteResolver {
     const val BASE_POKEAPI_GEN3_SHINY =
         "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iii/firered-leafgreen/shiny"
 
+    const val BASE_POKEAPI_ANIMATED_FRONT =
+        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated"
+    const val BASE_POKEAPI_ANIMATED_BACK =
+        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/back"
+    const val BASE_POKEAPI_ANIMATED_SHINY =
+        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/shiny"
+
     /**
      * Formats a 1-based Pokédex number (1..151) into a 3-digit padded string (e.g. 1 -> "001", 151 -> "151").
      */
@@ -60,6 +67,30 @@ object Gen3PokemonSpriteResolver {
         val clamped = pokedexNumber.coerceIn(1, 151)
         return "$BASE_POKEAPI_GEN3_BACK/$clamped.png"
     }
+
+    /**
+     * Official PokeAPI animated GIF URL for front sprite.
+     */
+    fun getAnimatedFrontUrl(pokedexNumber: Int): String {
+        val clamped = pokedexNumber.coerceIn(1, 151)
+        return "$BASE_POKEAPI_ANIMATED_FRONT/$clamped.gif"
+    }
+
+    /**
+     * Official PokeAPI animated GIF URL for back sprite.
+     */
+    fun getAnimatedBackUrl(pokedexNumber: Int): String {
+        val clamped = pokedexNumber.coerceIn(1, 151)
+        return "$BASE_POKEAPI_ANIMATED_BACK/$clamped.gif"
+    }
+
+    /**
+     * Official PokeAPI animated GIF URL for shiny front sprite.
+     */
+    fun getAnimatedShinyUrl(pokedexNumber: Int): String {
+        val clamped = pokedexNumber.coerceIn(1, 151)
+        return "$BASE_POKEAPI_ANIMATED_SHINY/$clamped.gif"
+    }
 }
 
 val Pokemon.frontSpriteUri: String
@@ -70,3 +101,9 @@ val Pokemon.backSpriteUri: String
 
 val Pokemon.shinySpriteUri: String
     get() = Gen3PokemonSpriteResolver.getFrontSpriteUri(pokedexNumber, isShiny = true)
+
+val Pokemon.animatedFrontUrl: String
+    get() = Gen3PokemonSpriteResolver.getAnimatedFrontUrl(pokedexNumber)
+
+val Pokemon.animatedBackUrl: String
+    get() = Gen3PokemonSpriteResolver.getAnimatedBackUrl(pokedexNumber)

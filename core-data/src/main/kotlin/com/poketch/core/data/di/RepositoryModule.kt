@@ -4,10 +4,12 @@ import com.poketch.core.data.repository.OfflineFirstCalorieRepository
 import com.poketch.core.data.repository.OfflineFirstHabitRepository
 import com.poketch.core.data.repository.OfflineFirstPokemonRepository
 import com.poketch.core.data.repository.OfflineFirstUserRepository
+import com.poketch.core.data.repository.OfflineWeatherRepository
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.HabitRepository
 import com.poketch.core.domain.repository.PokemonRepository
 import com.poketch.core.domain.repository.UserRepository
+import com.poketch.core.domain.repository.WeatherRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -41,4 +43,10 @@ abstract class RepositoryModule {
     abstract fun bindPokemonRepository(
         repository: OfflineFirstPokemonRepository
     ): PokemonRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWeatherRepository(
+        repository: OfflineWeatherRepository
+    ): WeatherRepository
 }

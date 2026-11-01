@@ -332,6 +332,14 @@ class PoketchSyncManager @Inject constructor(
     private var _lastSyncTimestampMillis: Long = System.currentTimeMillis()
     val lastSyncTimestampMillis: Long get() = _lastSyncTimestampMillis
 
+    suspend fun syncWeatherHourlyCache(jsonString: String) {
+        val dataMap = DataMap().apply {
+            putString("weather_json", jsonString)
+            putLong("timestamp", System.currentTimeMillis())
+        }
+        transport.putDataMap(PoketchSyncConstants.PATH_WEATHER_HOURLY_CACHE, dataMap)
+    }
+
     suspend fun getSyncDiagnostics(): SyncDiagnosticsInfo {
         val nodes = runCatching { transport.getConnectedNodes() }.getOrElse { emptyList() }
         val unsyncedCalories = runCatching { calorieRepository.getUnsyncedLogs().size }.getOrElse { 0 }

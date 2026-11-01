@@ -87,7 +87,7 @@ class WearMainActivity : ComponentActivity() {
                     }
 
                     composable("pokedex_missions") {
-                        GbaPokedexMissionsScreen(
+                        com.poketch.wear.ui.battle.GbaWatchPokedexScreen(
                             onNavigateBack = { navController.popBackStack() },
                             viewModel = battleViewModel
                         )
