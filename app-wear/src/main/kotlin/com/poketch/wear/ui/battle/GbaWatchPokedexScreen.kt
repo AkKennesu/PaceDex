@@ -469,13 +469,14 @@ fun GbaWatchPokedexScreen(
                 modifier = Modifier.fillMaxSize()
             )
             val counterText = filterFeedbackText ?: "${selectedPokemon?.pokedexNumber?.toString()?.padStart(3, '0') ?: "001"}/151"
+            val counterFontSize = if (filterFeedbackText != null) 9.8f else 11.5f
             GbaText(
                 text = counterText,
                 scale = scale,
                 color = Color(0xFFF8F8F8),
-                fontSizeVirtualPx = 7.2f,
-                lineHeightVirtualPx = 8f,
-                fontWeight = FontWeight.Bold,
+                fontSizeVirtualPx = counterFontSize,
+                lineHeightVirtualPx = counterFontSize,
+                fontWeight = FontWeight.ExtraBold,
                 scaleX = 1.05f,
                 textAlign = TextAlign.Center
             )
@@ -569,18 +570,18 @@ fun GbaWatchPokedexScreen(
             }
         }
 
-        // Bottom Integrated Nameplate Strip: (x = 38, y = 92, w = 46, h = 9)
+        // Bottom Integrated Nameplate Strip: (x = 38, y = 91, w = 46, h = 10)
         val nameplateId = "#${selectedPokemon?.pokedexNumber?.toString()?.padStart(3, '0') ?: "001"}"
         GbaText(
             text = nameplateId,
             scale = scale,
             color = Color(0xFF283030),
-            fontSizeVirtualPx = 6.5f,
-            lineHeightVirtualPx = 7f,
-            fontWeight = FontWeight.Bold,
+            fontSizeVirtualPx = 10.5f,
+            lineHeightVirtualPx = 10.5f,
+            fontWeight = FontWeight.ExtraBold,
             scaleX = 1.05f,
             textAlign = TextAlign.Center,
-            modifier = Modifier.gbaVirtualBounds(38, 92, 46, 9, scale)
+            modifier = Modifier.gbaVirtualBounds(38, 91, 46, 10, scale)
         )
 
         // 4. ZONE 2 — RIGHT 3-SLOT GBA ROTARY WHEEL (x = 93..161, y = 50..104)
@@ -629,15 +630,20 @@ fun GbaWatchPokedexScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                         if (prevPokemon.isUnlocked) {
+                            val prevNameSize = when {
+                                prevPokemon.name.length > 9 -> 8.2f
+                                prevPokemon.name.length > 7 -> 9.0f
+                                else -> 9.8f
+                            }
                             GbaText(
                                 text = prevPokemon.name.uppercase(),
                                 scale = scale,
                                 color = Color(0xFF606858),
-                                fontSizeVirtualPx = 6.0f,
-                                lineHeightVirtualPx = 7f,
+                                fontSizeVirtualPx = prevNameSize,
+                                lineHeightVirtualPx = prevNameSize,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
-                                modifier = Modifier.gbaVirtualBounds(6, 3, 58, 9, scale)
+                                modifier = Modifier.gbaVirtualBounds(6, 2, 58, 11, scale)
                             )
                         } else {
                             GbaPixelImage(
@@ -649,10 +655,10 @@ fun GbaWatchPokedexScreen(
                                 text = "???",
                                 scale = scale,
                                 color = Color(0xFF606858),
-                                fontSizeVirtualPx = 6.2f,
-                                lineHeightVirtualPx = 7f,
+                                fontSizeVirtualPx = 9.8f,
+                                lineHeightVirtualPx = 9.8f,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.gbaVirtualBounds(17, 3, 46, 9, scale)
+                                modifier = Modifier.gbaVirtualBounds(16, 2, 48, 11, scale)
                             )
                         }
                     }
@@ -682,15 +688,20 @@ fun GbaWatchPokedexScreen(
                         )
 
                         if (selectedPokemon.isUnlocked) {
+                            val selectedNameSize = when {
+                                selectedPokemon.name.length > 9 -> 10.2f
+                                selectedPokemon.name.length > 7 -> 11.2f
+                                else -> 12.2f
+                            }
                             GbaText(
                                 text = selectedPokemon.name.uppercase(),
                                 scale = scale,
                                 color = Color(0xFF202828),
-                                fontSizeVirtualPx = 6.8f,
-                                lineHeightVirtualPx = 8f,
+                                fontSizeVirtualPx = selectedNameSize,
+                                lineHeightVirtualPx = selectedNameSize,
                                 fontWeight = FontWeight.ExtraBold,
                                 maxLines = 1,
-                                modifier = Modifier.gbaVirtualBounds(14, 5, 50, 10, scale)
+                                modifier = Modifier.gbaVirtualBounds(14, 3, 52, 14, scale)
                             )
                         } else {
                             GbaPixelImage(
@@ -702,10 +713,10 @@ fun GbaWatchPokedexScreen(
                                 text = "???",
                                 scale = scale,
                                 color = Color(0xFF202828),
-                                fontSizeVirtualPx = 6.8f,
-                                lineHeightVirtualPx = 8f,
+                                fontSizeVirtualPx = 12.0f,
+                                lineHeightVirtualPx = 12.0f,
                                 fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.gbaVirtualBounds(24, 5, 40, 10, scale)
+                                modifier = Modifier.gbaVirtualBounds(24, 3, 42, 14, scale)
                             )
                         }
                     }
@@ -724,15 +735,20 @@ fun GbaWatchPokedexScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                         if (nextPokemon.isUnlocked) {
+                            val nextNameSize = when {
+                                nextPokemon.name.length > 9 -> 8.2f
+                                nextPokemon.name.length > 7 -> 9.0f
+                                else -> 9.8f
+                            }
                             GbaText(
                                 text = nextPokemon.name.uppercase(),
                                 scale = scale,
                                 color = Color(0xFF606858),
-                                fontSizeVirtualPx = 6.0f,
-                                lineHeightVirtualPx = 7f,
+                                fontSizeVirtualPx = nextNameSize,
+                                lineHeightVirtualPx = nextNameSize,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
-                                modifier = Modifier.gbaVirtualBounds(6, 3, 58, 9, scale)
+                                modifier = Modifier.gbaVirtualBounds(6, 2, 58, 11, scale)
                             )
                         } else {
                             GbaPixelImage(
@@ -744,10 +760,10 @@ fun GbaWatchPokedexScreen(
                                 text = "???",
                                 scale = scale,
                                 color = Color(0xFF606858),
-                                fontSizeVirtualPx = 6.2f,
-                                lineHeightVirtualPx = 7f,
+                                fontSizeVirtualPx = 9.8f,
+                                lineHeightVirtualPx = 9.8f,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.gbaVirtualBounds(17, 3, 46, 9, scale)
+                                modifier = Modifier.gbaVirtualBounds(16, 2, 48, 11, scale)
                             )
                         }
                     }
@@ -762,20 +778,20 @@ fun GbaWatchPokedexScreen(
             modifier = Modifier.gbaVirtualBounds(38, 109, 117, 20, scale)
         )
 
-        // Left Status / Short Mission Label: (x = 43, y = 114, w = 31, h = 10)
+        // Left Status / Short Mission Label: (x = 42, y = 112, w = 33, h = 14)
         if (selectedPokemon != null) {
             val statusLabel = if (selectedPokemon.isUnlocked) "READY" else getCompactMissionTag(selectedPokemon)
-            val statusFontSize = if (selectedPokemon.isUnlocked) 6.2f else 5.8f
+            val statusFontSize = if (statusLabel.length > 6) 8.2f else 9.5f
             GbaText(
                 text = statusLabel,
                 scale = scale,
                 color = Color(0xFFF8F8F8),
                 fontSizeVirtualPx = statusFontSize,
-                lineHeightVirtualPx = 8f,
-                fontWeight = FontWeight.Bold,
+                lineHeightVirtualPx = statusFontSize,
+                fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Start,
                 maxLines = 1,
-                modifier = Modifier.gbaVirtualBounds(43, 114, 31, 10, scale)
+                modifier = Modifier.gbaVirtualBounds(42, 112, 33, 14, scale)
             )
 
             // Center Recessed Progress Bar Fill: (x = 76, y = 116, maxWidth = 46, height = 5)
@@ -789,18 +805,18 @@ fun GbaWatchPokedexScreen(
                 )
             }
 
-            // Right Percentage Readout: (x = 124, y = 114, w = 28, h = 10)
+            // Right Percentage Readout: (x = 123, y = 112, w = 29, h = 14)
             val percentText = "${(targetRatio * 100).roundToInt()}%"
             GbaText(
                 text = percentText,
                 scale = scale,
                 color = Color(0xFFF8D840),
-                fontSizeVirtualPx = 6.2f,
-                lineHeightVirtualPx = 8f,
-                fontWeight = FontWeight.Bold,
+                fontSizeVirtualPx = 9.5f,
+                lineHeightVirtualPx = 9.5f,
+                fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.End,
                 maxLines = 1,
-                modifier = Modifier.gbaVirtualBounds(124, 114, 28, 10, scale)
+                modifier = Modifier.gbaVirtualBounds(123, 112, 29, 14, scale)
             )
         }
 
@@ -828,8 +844,8 @@ fun GbaWatchPokedexScreen(
                 text = "BACK",
                 scale = scale,
                 color = Color(0xFF283038),
-                fontSizeVirtualPx = 6.5f,
-                lineHeightVirtualPx = 7f,
+                fontSizeVirtualPx = 12.0f,
+                lineHeightVirtualPx = 12.0f,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center
             )
@@ -868,25 +884,25 @@ fun GbaWatchPokedexScreen(
                     text = actionLabel,
                     scale = scale,
                     color = Color.White,
-                    fontSizeVirtualPx = 6.8f,
-                    lineHeightVirtualPx = 8f,
-                    fontWeight = FontWeight.Bold,
+                    fontSizeVirtualPx = 11.8f,
+                    lineHeightVirtualPx = 12.0f,
+                    fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center
                 )
             }
         }
 
-        // Bottom Footer Hint: (x = 36, y = 163, w = 120, h = 8)
+        // Bottom Footer Hint: (x = 26, y = 162, w = 140, h = 11)
         GbaText(
             text = "TURN CROWN TO SCROLL",
             scale = scale,
             color = Color(0xFF703028),
-            fontSizeVirtualPx = 5.2f,
-            lineHeightVirtualPx = 6f,
-            fontWeight = FontWeight.Bold,
+            fontSizeVirtualPx = 8.5f,
+            lineHeightVirtualPx = 9.0f,
+            fontWeight = FontWeight.ExtraBold,
             scaleX = 1.05f,
             textAlign = TextAlign.Center,
-            modifier = Modifier.gbaVirtualBounds(36, 163, 120, 8, scale)
+            modifier = Modifier.gbaVirtualBounds(26, 162, 140, 11, scale)
         )
     }
 }
