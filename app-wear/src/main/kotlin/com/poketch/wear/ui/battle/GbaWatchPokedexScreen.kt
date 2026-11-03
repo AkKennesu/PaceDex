@@ -778,21 +778,27 @@ fun GbaWatchPokedexScreen(
             modifier = Modifier.gbaVirtualBounds(38, 109, 117, 20, scale)
         )
 
-        // Left Status / Short Mission Label: (x = 42, y = 112, w = 33, h = 14)
+        // Left Status / Short Mission Label: (x = 41, y = 111, w = 34, h = 16)
         if (selectedPokemon != null) {
             val statusLabel = if (selectedPokemon.isUnlocked) "READY" else getCompactMissionTag(selectedPokemon)
-            val statusFontSize = if (statusLabel.length > 6) 8.2f else 9.5f
-            GbaText(
-                text = statusLabel,
-                scale = scale,
-                color = Color(0xFFF8F8F8),
-                fontSizeVirtualPx = statusFontSize,
-                lineHeightVirtualPx = statusFontSize,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Start,
-                maxLines = 1,
-                modifier = Modifier.gbaVirtualBounds(42, 112, 33, 14, scale)
-            )
+            val statusFontSize = if (statusLabel.length > 6) 8.0f else 9.2f
+            Box(
+                modifier = Modifier.gbaVirtualBounds(41, 111, 34, 16, scale),
+                contentAlignment = Alignment.Center
+            ) {
+                GbaText(
+                    text = statusLabel,
+                    scale = scale,
+                    color = Color(0xFFF8F8F8),
+                    fontSizeVirtualPx = statusFontSize,
+                    lineHeightVirtualPx = statusFontSize,
+                    fontWeight = FontWeight.ExtraBold,
+                    scaleX = 1.05f,
+                    letterSpacingVirtualPx = 0.2f,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+            }
 
             // Center Recessed Progress Bar Fill: (x = 76, y = 116, maxWidth = 46, height = 5)
             val barWidth = (46f * animatedProgressRatio).roundToInt().coerceIn(0, 46)
@@ -805,19 +811,25 @@ fun GbaWatchPokedexScreen(
                 )
             }
 
-            // Right Percentage Readout: (x = 123, y = 112, w = 29, h = 14)
+            // Right Percentage Readout: (x = 123, y = 111, w = 29, h = 16)
             val percentText = "${(targetRatio * 100).roundToInt()}%"
-            GbaText(
-                text = percentText,
-                scale = scale,
-                color = Color(0xFFF8D840),
-                fontSizeVirtualPx = 9.5f,
-                lineHeightVirtualPx = 9.5f,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                modifier = Modifier.gbaVirtualBounds(123, 112, 29, 14, scale)
-            )
+            Box(
+                modifier = Modifier.gbaVirtualBounds(123, 111, 29, 16, scale),
+                contentAlignment = Alignment.Center
+            ) {
+                GbaText(
+                    text = percentText,
+                    scale = scale,
+                    color = Color(0xFFF8D840),
+                    fontSizeVirtualPx = 9.2f,
+                    lineHeightVirtualPx = 9.2f,
+                    fontWeight = FontWeight.ExtraBold,
+                    scaleX = 1.05f,
+                    letterSpacingVirtualPx = 0.2f,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+            }
         }
 
         // 6. ZONE 4 — 3D GBA ACTION BUTTONS & FOOTER HINT (y = 134..171)
