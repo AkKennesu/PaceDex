@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -14,6 +15,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -151,15 +156,18 @@ fun GbaWatchPokedexScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
 
-    // Intercept Back gesture / physical button
-    BackHandler {
-        onNavigateBack()
-    }
-
-    // Filter selection state
     var currentFilter by remember { mutableStateOf(PokedexFilter.ALL) }
-    var selectedIndex by remember { mutableIntStateOf(0) }
     var filterFeedbackText by remember { mutableStateOf<String?>(null) }
+    var showMissionPopup by remember { mutableStateOf(false) }
+
+    // Intercept Back gesture / physical button (dismiss popup first if open)
+    BackHandler {
+        if (showMissionPopup) {
+            showMissionPopup = false
+        } else {
+            onNavigateBack()
+        }
+    }
 
     // Filtered list of Pokémon based on active mode
     val filteredPokemon = remember(state.allPokemon, currentFilter) {
@@ -171,10 +179,27 @@ fun GbaWatchPokedexScreen(
         list.ifEmpty { state.allPokemon }
     }
 
-    // Clamp / wrap index when list changes
-    LaunchedEffect(filteredPokemon.size) {
+    val currentTargetId = state.pinnedTargetPokemonId ?: state.wildTarget?.pokedexNumber
+    var selectedIndex by remember {
+        val initialIdx = if (currentTargetId != null) {
+            filteredPokemon.indexOfFirst { it.pokedexNumber == currentTargetId }.takeIf { it >= 0 } ?: 0
+        } else 0
+        mutableIntStateOf(initialIdx)
+    }
+
+    // Auto-select active wild target / pinned target when Pokémon list loads
+    var hasAutoSelectedTarget by remember { mutableStateOf(false) }
+    LaunchedEffect(filteredPokemon.size, currentTargetId) {
         if (filteredPokemon.isNotEmpty()) {
-            selectedIndex = selectedIndex.coerceIn(0, filteredPokemon.lastIndex)
+            if (!hasAutoSelectedTarget && currentTargetId != null) {
+                val targetIdx = filteredPokemon.indexOfFirst { it.pokedexNumber == currentTargetId }
+                if (targetIdx >= 0) {
+                    selectedIndex = targetIdx
+                }
+                hasAutoSelectedTarget = true
+            } else {
+                selectedIndex = selectedIndex.coerceIn(0, filteredPokemon.lastIndex)
+            }
         }
     }
 
@@ -482,12 +507,13 @@ fun GbaWatchPokedexScreen(
             )
         }
 
-        // 3. LEFT KANTO METALLIC CRT SPECIMEN MONITOR: (x = 32, y = 50, w = 56, h = 54)
+        // 3. LEFT KANTO METALLIC CRT SPECIMEN MONITOR — TAP TRIGGER #1: (x = 32, y = 50, w = 56, h = 54)
         Box(
             modifier = Modifier
                 .gbaVirtualBounds(32, 50, 56, 54, scale)
                 .clickable {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    showMissionPopup = true
                     coroutineScope.launch {
                         isSpecimenLedFlashing = true
                         for (i in 0..2) {
@@ -646,15 +672,16 @@ fun GbaWatchPokedexScreen(
                                 modifier = Modifier.gbaVirtualBounds(6, 2, 58, 11, scale)
                             )
                         } else {
+                            val isPrevPinned = prevPokemon.pokedexNumber == state.pinnedTargetPokemonId
                             GbaPixelImage(
                                 resId = R.drawable.gba_pokedex_icon_lock,
                                 contentDescription = "Locked",
                                 modifier = Modifier.gbaVirtualBounds(6, 3, 7, 9, scale)
                             )
                             GbaText(
-                                text = "???",
+                                text = if (isPrevPinned) "★ ???" else "???",
                                 scale = scale,
-                                color = Color(0xFF606858),
+                                color = if (isPrevPinned) Color(0xFFC04800) else Color(0xFF606858),
                                 fontSizeVirtualPx = 9.8f,
                                 lineHeightVirtualPx = 9.8f,
                                 fontWeight = FontWeight.Bold,
@@ -667,7 +694,12 @@ fun GbaWatchPokedexScreen(
                 // Center Active Selected Slot (index, x = 93, y = 67, w = 68, h = 20) -> local (0, 17, 68, 20)
                 if (selectedPokemon != null) {
                     Box(
-                        modifier = Modifier.gbaVirtualBounds(0, 17, 68, 20, scale)
+                        modifier = Modifier
+                            .gbaVirtualBounds(0, 17, 68, 20, scale)
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                showMissionPopup = true
+                            }
                     ) {
                         GbaPixelImage(
                             resId = R.drawable.gba_pokedex_row_selected,
@@ -704,15 +736,16 @@ fun GbaWatchPokedexScreen(
                                 modifier = Modifier.gbaVirtualBounds(14, 3, 52, 14, scale)
                             )
                         } else {
+                            val isCenterPinned = selectedPokemon.pokedexNumber == state.pinnedTargetPokemonId
                             GbaPixelImage(
                                 resId = R.drawable.gba_pokedex_icon_lock,
                                 contentDescription = "Locked",
                                 modifier = Modifier.gbaVirtualBounds(14, 5, 7, 9, scale)
                             )
                             GbaText(
-                                text = "???",
+                                text = if (isCenterPinned) "★ ???" else "???",
                                 scale = scale,
-                                color = Color(0xFF202828),
+                                color = if (isCenterPinned) Color(0xFFC04800) else Color(0xFF202828),
                                 fontSizeVirtualPx = 12.0f,
                                 lineHeightVirtualPx = 12.0f,
                                 fontWeight = FontWeight.ExtraBold,
@@ -751,15 +784,16 @@ fun GbaWatchPokedexScreen(
                                 modifier = Modifier.gbaVirtualBounds(6, 2, 58, 11, scale)
                             )
                         } else {
+                            val isNextPinned = nextPokemon.pokedexNumber == state.pinnedTargetPokemonId
                             GbaPixelImage(
                                 resId = R.drawable.gba_pokedex_icon_lock,
                                 contentDescription = "Locked",
                                 modifier = Modifier.gbaVirtualBounds(6, 3, 7, 9, scale)
                             )
                             GbaText(
-                                text = "???",
+                                text = if (isNextPinned) "★ ???" else "???",
                                 scale = scale,
-                                color = Color(0xFF606858),
+                                color = if (isNextPinned) Color(0xFFC04800) else Color(0xFF606858),
                                 fontSizeVirtualPx = 9.8f,
                                 lineHeightVirtualPx = 9.8f,
                                 fontWeight = FontWeight.Bold,
@@ -771,11 +805,16 @@ fun GbaWatchPokedexScreen(
             }
         }
 
-        // 5. ZONE 3 — GBA GOLD-FRAMED TEAL MISSION & PROGRESS BAR: (x = 38, y = 109, w = 117, h = 20)
+        // 5. ZONE 3 — GBA GOLD-FRAMED TEAL MISSION & PROGRESS BAR — TAP TRIGGER #2: (x = 38, y = 109, w = 117, h = 20)
         GbaPixelImage(
             resId = R.drawable.gba_pokedex_mission_bar,
             contentDescription = "Mission Bar Background",
-            modifier = Modifier.gbaVirtualBounds(38, 109, 117, 20, scale)
+            modifier = Modifier
+                .gbaVirtualBounds(38, 109, 117, 20, scale)
+                .clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    showMissionPopup = true
+                }
         )
 
         // Left Status / Short Mission Label: (x = 41, y = 111, w = 34, h = 16)
@@ -866,8 +905,13 @@ fun GbaWatchPokedexScreen(
         // Right Contextual Action Button: (x = 78, y = 134, w = 72, h = 26)
         if (selectedPokemon != null) {
             val isUnlocked = selectedPokemon.isUnlocked
+            val isPinned = !isUnlocked && selectedPokemon.pokedexNumber == state.pinnedTargetPokemonId
             val actionBtnRes = if (isUnlocked) R.drawable.gba_pokedex_btn_buddy else R.drawable.gba_pokedex_btn_pin
-            val actionLabel = if (isUnlocked) "SET BUDDY" else "PIN TARGET"
+            val actionLabel = when {
+                isUnlocked -> "SET BUDDY"
+                isPinned -> "PINNED ★"
+                else -> "PIN TARGET"
+            }
             val actionY = if (isActionPressed) 135 else 134
 
             Box(
@@ -880,6 +924,8 @@ fun GbaWatchPokedexScreen(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         if (isUnlocked) {
                             viewModel.setActiveBuddy(selectedPokemon.pokedexNumber)
+                        } else if (isPinned) {
+                            viewModel.unpinWildTarget()
                         } else {
                             viewModel.pinWildTarget(selectedPokemon.pokedexNumber)
                         }
@@ -916,5 +962,253 @@ fun GbaWatchPokedexScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.gbaVirtualBounds(26, 162, 140, 11, scale)
         )
+
+        // 7. GBA MISSION BRIEFING POP-UP MODAL OVERLAY (144x106 at (x = 24, y = 43))
+        AnimatedVisibility(
+            visible = showMissionPopup && selectedPokemon != null,
+            enter = fadeIn(tween(120)) + scaleIn(
+                initialScale = 0.88f,
+                animationSpec = tween(150, easing = FastOutSlowInEasing)
+            ),
+            exit = fadeOut(tween(90)) + scaleOut(
+                targetScale = 0.88f,
+                animationSpec = tween(110, easing = FastOutSlowInEasing)
+            )
+        ) {
+            val popupPoke = selectedPokemon ?: return@AnimatedVisibility
+            val paddedId = popupPoke.pokedexNumber.toString().padStart(3, '0')
+            val isUnlocked = popupPoke.isUnlocked
+            val fullMissionText = popupPoke.unlockRule.description.uppercase()
+
+            // 12ms typewriter character progression
+            var typewriterLength by remember(popupPoke.pokedexNumber, showMissionPopup) {
+                mutableIntStateOf(0)
+            }
+            LaunchedEffect(popupPoke.pokedexNumber, showMissionPopup) {
+                if (showMissionPopup) {
+                    typewriterLength = 0
+                    for (i in 1..fullMissionText.length) {
+                        typewriterLength = i
+                        delay(12)
+                    }
+                }
+            }
+            val displayedMissionText = fullMissionText.take(typewriterLength)
+
+            // Red down cursor bob: 0px <-> +1px every 350ms
+            val arrowBobStep by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 2f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(700, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "popup_arrow_bob"
+            )
+            val arrowBobPx = if (arrowBobStep >= 1f) 1f else 0f
+
+            // Smooth animated bar ratio for popup
+            val popupRatio = if (isUnlocked) 1f else popupPoke.progressRatio.toFloat().coerceIn(0f, 1f)
+            val animatedPopupRatio by animateFloatAsState(
+                targetValue = popupRatio,
+                animationSpec = tween(220, easing = FastOutSlowInEasing),
+                label = "popup_progress_ratio"
+            )
+
+            // 1. Dimmed Scrim Backdrop (0, 0, 192, 192): tapping outside dismisses modal
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.58f))
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        showMissionPopup = false
+                    }
+            ) {
+                // 2. Modal Card Frame: 144x106 at (x = 24, y = 43)
+                Box(
+                    modifier = Modifier
+                        .gbaVirtualBounds(24, 43, 144, 106, scale)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            // Consume clicks on card body so tap inside does not dismiss
+                        }
+                ) {
+                    // Modal Card Background Artwork
+                    GbaPixelImage(
+                        resId = R.drawable.gba_pokedex_mission_popup_base,
+                        contentDescription = "Mission Popup Frame",
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // 3. Top Crimson Pokédex Header Title: (x = 42, y = 49, w = 118, h = 10) -> local (18, 5, 120, 12)
+                    val headerTitle = if (isUnlocked) {
+                        "#$paddedId ${popupPoke.name.uppercase()} - ${popupPoke.primaryType.uppercase()}"
+                    } else {
+                        "#$paddedId ${popupPoke.name.uppercase()} - LOCKED"
+                    }
+                    val headerFontSize = if (headerTitle.length > 20) 8.5f else 9.5f
+                    GbaText(
+                        text = headerTitle,
+                        scale = scale,
+                        color = Color.White,
+                        fontSizeVirtualPx = headerFontSize,
+                        lineHeightVirtualPx = headerFontSize,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        modifier = Modifier.gbaVirtualBounds(18, 5, 120, 12, scale)
+                    )
+
+                    // 4. Dark-Teal GBA Mission Briefing Screen: local x = 8..136, y = 24..58
+                    // Status Header Line: local (10, 24, 124, 11)
+                    val statusText = if (isUnlocked) "MISSION COMPLETED!" else "MISSION TO UNLOCK:"
+                    val statusColor = if (isUnlocked) Color(0xFF78F088) else Color(0xFFF8D840)
+                    GbaText(
+                        text = statusText,
+                        scale = scale,
+                        color = statusColor,
+                        fontSizeVirtualPx = 9.2f,
+                        lineHeightVirtualPx = 9.5f,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        modifier = Modifier.gbaVirtualBounds(10, 24, 124, 11, scale)
+                    )
+
+                    // Full Typewriter Mission Requirement Text: local (10, 36, 114, 25)
+                    val missionFontSize = if (fullMissionText.length > 40) 8.2f else 9.0f
+                    val missionLineHeight = if (fullMissionText.length > 40) 9.5f else 10.5f
+                    GbaText(
+                        text = displayedMissionText,
+                        scale = scale,
+                        color = Color(0xFFF8F8F8),
+                        fontSizeVirtualPx = missionFontSize,
+                        lineHeightVirtualPx = missionLineHeight,
+                        letterSpacingVirtualPx = 0.2f,
+                        scaleX = 1.05f,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        softWrap = true,
+                        modifier = Modifier.gbaVirtualBounds(10, 36, 114, 25, scale)
+                    )
+
+                    // Blinking Red GBA Dialog Arrow: local (125, 49 + arrowBobPx, 10, 6)
+                    GbaPixelImage(
+                        resId = R.drawable.gba_cursor_red_down,
+                        contentDescription = "Dialog Arrow",
+                        modifier = Modifier.gbaVirtualBounds(125, 49 + arrowBobPx.toInt(), 10, 6, scale)
+                    )
+
+                    // 5. Pop-Up Progress Readout & 60x5 Recessed Bar: local y = 62..72
+                    // Left Exact Progress Fraction: local (10, 62, 60, 11)
+                    val percentVal = (popupRatio * 100).roundToInt()
+                    val fractionText = "${popupPoke.currentProgress} / ${popupPoke.unlockRule.targetThreshold} ($percentVal%)"
+                    val fractionColor = if (isUnlocked) Color(0xFF78F088) else Color(0xFFFFE870)
+                    GbaText(
+                        text = fractionText,
+                        scale = scale,
+                        color = fractionColor,
+                        fontSizeVirtualPx = 8.8f,
+                        lineHeightVirtualPx = 9.5f,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        modifier = Modifier.gbaVirtualBounds(10, 62, 60, 11, scale)
+                    )
+
+                    // Right Recessed Bar Fill: local (72, 65, maxW = 60, h = 5)
+                    val popupBarFillW = (60f * animatedPopupRatio).roundToInt().coerceIn(0, 60)
+                    if (popupBarFillW > 0) {
+                        val barRes = if (isUnlocked) R.drawable.gba_pokedex_bar_green_5px else R.drawable.gba_pokedex_bar_yellow_5px
+                        GbaPixelImage(
+                            resId = barRes,
+                            contentDescription = "Popup Progress Bar Fill",
+                            modifier = Modifier.gbaVirtualBounds(72, 65, popupBarFillW, 5, scale)
+                        )
+                    }
+
+                    // 6. Bottom Pop-Up Action Buttons: local y = 81..101 (20px high)
+                    // Left CLOSE Button: local (10, 81, 52, 20)
+                    val popupCloseSource = remember { MutableInteractionSource() }
+                    val isClosePressed by popupCloseSource.collectIsPressedAsState()
+                    val closeY = if (isClosePressed) 82 else 81
+                    Box(
+                        modifier = Modifier
+                            .gbaVirtualBounds(10, closeY, 52, 20, scale)
+                            .clickable(
+                                interactionSource = popupCloseSource,
+                                indication = null
+                            ) {
+                                triggerTickHaptic()
+                                showMissionPopup = false
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        GbaPixelImage(
+                            resId = R.drawable.gba_pokedex_popup_btn_close,
+                            contentDescription = "Close Button",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        GbaText(
+                            text = "CLOSE",
+                            scale = scale,
+                            color = Color(0xFF283038),
+                            fontSizeVirtualPx = 10.5f,
+                            lineHeightVirtualPx = 10.5f,
+                            fontWeight = FontWeight.ExtraBold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    // Right Contextual Action Button: local (66, 81, 68, 20)
+                    val popupActionSource = remember { MutableInteractionSource() }
+                    val isPopupActionPressed by popupActionSource.collectIsPressedAsState()
+                    val popupActionY = if (isPopupActionPressed) 82 else 81
+                    val popupBtnRes = if (isUnlocked) R.drawable.gba_pokedex_popup_btn_buddy else R.drawable.gba_pokedex_popup_btn_pin
+                    val isPinned = !isUnlocked && popupPoke.pokedexNumber == state.pinnedTargetPokemonId
+                    val popupActionLabel = when {
+                        isUnlocked -> "SET BUDDY"
+                        isPinned -> "PINNED ★"
+                        else -> "PIN MISSION"
+                    }
+                    Box(
+                        modifier = Modifier
+                            .gbaVirtualBounds(66, popupActionY, 68, 20, scale)
+                            .clickable(
+                                interactionSource = popupActionSource,
+                                indication = null
+                            ) {
+                                triggerTickHaptic()
+                                if (isUnlocked) {
+                                    viewModel.setActiveBuddy(popupPoke.pokedexNumber)
+                                } else if (isPinned) {
+                                    viewModel.unpinWildTarget()
+                                } else {
+                                    viewModel.pinWildTarget(popupPoke.pokedexNumber)
+                                }
+                                showMissionPopup = false
+                                onNavigateBack()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        GbaPixelImage(
+                            resId = popupBtnRes,
+                            contentDescription = popupActionLabel,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        GbaText(
+                            text = popupActionLabel,
+                            scale = scale,
+                            color = Color.White,
+                            fontSizeVirtualPx = 10.5f,
+                            lineHeightVirtualPx = 10.5f,
+                            fontWeight = FontWeight.ExtraBold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
     }
 }
+

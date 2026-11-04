@@ -18,7 +18,42 @@ interface UserRepository {
         deficitTier: DeficitTier,
         dailyWaterGoalMl: Int = 2500,
         activeBuddyPokemonId: Int = 1
-    )
+    ) {
+        saveUserProfile(
+            ageYears = ageYears,
+            sex = sex,
+            heightCm = heightCm,
+            weightKg = weightKg,
+            activityLevel = activityLevel,
+            deficitTier = deficitTier,
+            dailyDeficitKcal = deficitTier.dailyDeficitKcal,
+            dailyWaterGoalMl = dailyWaterGoalMl,
+            activeBuddyPokemonId = activeBuddyPokemonId
+        )
+    }
+
+    suspend fun saveUserProfile(
+        ageYears: Int,
+        sex: BiologicalSex,
+        heightCm: Double,
+        weightKg: Double,
+        activityLevel: ActivityLevel,
+        deficitTier: DeficitTier,
+        dailyDeficitKcal: Int,
+        dailyWaterGoalMl: Int = 2500,
+        activeBuddyPokemonId: Int = 1
+    ) {
+        saveUserProfile(
+            ageYears = ageYears,
+            sex = sex,
+            heightCm = heightCm,
+            weightKg = weightKg,
+            activityLevel = activityLevel,
+            deficitTier = deficitTier,
+            dailyWaterGoalMl = dailyWaterGoalMl,
+            activeBuddyPokemonId = activeBuddyPokemonId
+        )
+    }
     suspend fun upsertUserProfile(profile: UserProfile)
     suspend fun updateActiveBuddy(pokemonId: Int)
 }

@@ -1,5 +1,6 @@
 package com.poketch.wear.ui.battle
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.poketch.core.data.gamification.EvaluateAchievementsUseCase
@@ -23,6 +24,7 @@ import com.poketch.core.sync.PoketchSyncManager
 import com.poketch.wear.reminders.ReminderScheduler
 import com.poketch.wear.ui.alert.WearHapticController
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -65,6 +67,7 @@ data class GbaWatchBattleUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class GbaWatchBattleViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val userRepository: UserRepository,
     private val calorieRepository: CalorieRepository,
     private val habitRepository: HabitRepository,
@@ -79,6 +82,9 @@ class GbaWatchBattleViewModel @Inject constructor(
 
     private val todayIso: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
+    private val prefs by lazy { context.getSharedPreferences("poketch_gba_battle_prefs", Context.MODE_PRIVATE) }
+    private val initialPinnedId: Int? = prefs.getInt("pinned_target_id", -1).takeIf { it in 1..151 }
+
     private val userProfileFlow = userRepository.observeUserProfile()
     private val totalCaloriesFlow = calorieRepository.observeTotalCaloriesByDate(todayIso)
     private val budgetStateFlow = calorieRepository.observeDailyBudgetState(todayIso)
@@ -88,7 +94,7 @@ class GbaWatchBattleViewModel @Inject constructor(
     private val allPokemonFlow = pokemonRepository.observeAllPokemon()
     private val currentWeatherFlow = weatherRepository.observeCurrentWeather()
 
-    private val pinnedTargetIdFlow = MutableStateFlow<Int?>(null)
+    private val pinnedTargetIdFlow = MutableStateFlow<Int?>(initialPinnedId)
     private val isSyncingFlow = MutableStateFlow(false)
     private val dialogMessageFlow = MutableStateFlow<String?>(null)
     private val newlyUnlockedPokemonFlow = MutableStateFlow<UnlockEvent.NewPokemonUnlocked?>(null)
@@ -121,6 +127,7 @@ class GbaWatchBattleViewModel @Inject constructor(
                 newlyUnlockedPokemonFlow.value = event
                 if (pinnedTargetIdFlow.value == event.pokemon.pokedexNumber) {
                     pinnedTargetIdFlow.value = null
+                    prefs.edit().remove("pinned_target_id").apply()
                 }
             }
         }
@@ -159,8 +166,11 @@ class GbaWatchBattleViewModel @Inject constructor(
         // 4. First locked Pokémon fallback
         val lockedPokes = allPokes.filter { !it.isUnlocked }
         val target = if (pinnedId != null) {
-            allPokes.find { it.pokedexNumber == pinnedId }
-        } else {
+            lockedPokes.find { it.pokedexNumber == pinnedId }
+                ?: allPokes.find { it.pokedexNumber == pinnedId }
+        } else null
+
+        val finalTarget = target ?: run {
             val withProgress = lockedPokes.filter { it.currentProgress > 0 }.maxByOrNull { it.progressRatio }
             withProgress
                 ?: lockedPokes.find { it.pokedexNumber == 60 } // Poliwag (water)
@@ -183,7 +193,7 @@ class GbaWatchBattleViewModel @Inject constructor(
             todaySteps = steps.toInt(),
             dailyStepGoal = 10000,
             activeBuddy = buddy,
-            wildTarget = target,
+            wildTarget = finalTarget,
             allPokemon = allPokes,
             pinnedTargetPokemonId = pinnedId,
             userProfile = profile,
@@ -246,7 +256,25 @@ class GbaWatchBattleViewModel @Inject constructor(
     }
 
     fun pinWildTarget(pokedexNumber: Int) {
-        pinnedTargetIdFlow.value = pokedexNumber
+        if (pokedexNumber in 1..151) {
+            pinnedTargetIdFlow.value = pokedexNumber
+            prefs.edit().putInt("pinned_target_id", pokedexNumber).apply()
+            viewModelScope.launch {
+                val poke = pokemonRepository.observePokemonById(pokedexNumber).firstOrNull()
+                val name = (poke?.name ?: "POKéMON").uppercase()
+                showTemporaryDialog("TARGET: $name PINNED! ★", durationMillis = 3000L)
+                wearHapticController.playRunMilestoneQuarterHaptic()
+            }
+        }
+    }
+
+    fun unpinWildTarget() {
+        pinnedTargetIdFlow.value = null
+        prefs.edit().remove("pinned_target_id").apply()
+        viewModelScope.launch {
+            showTemporaryDialog("TARGET UNPINNED", durationMillis = 2000L)
+            wearHapticController.playRunMilestoneQuarterHaptic()
+        }
     }
 
     fun setActiveBuddy(pokedexNumber: Int) {
@@ -256,7 +284,7 @@ class GbaWatchBattleViewModel @Inject constructor(
             poketchSyncManager.syncUserProfile()
             val poke = pokemonRepository.observePokemonById(pokedexNumber).firstOrNull()
             val name = (poke?.name ?: "POKéMON").uppercase()
-            showTemporaryDialog("$name is now your Buddy! ★", durationMillis = 1500L)
+            showTemporaryDialog("$name is now your Buddy! ★", durationMillis = 3000L)
             wearHapticController.playUnlockFanfareHaptic()
         }
     }
@@ -302,6 +330,7 @@ class GbaWatchBattleViewModel @Inject constructor(
         weightKg: Double,
         activityLevel: ActivityLevel,
         tier: DeficitTier,
+        deficitKcal: Int = tier.dailyDeficitKcal,
     ) {
         viewModelScope.launch {
             userRepository.saveUserProfile(
@@ -311,6 +340,31 @@ class GbaWatchBattleViewModel @Inject constructor(
                 weightKg = weightKg,
                 activityLevel = activityLevel,
                 deficitTier = tier,
+                dailyDeficitKcal = deficitKcal,
+                dailyWaterGoalMl = uiState.value.dailyWaterGoalMl,
+                activeBuddyPokemonId = uiState.value.activeBuddy?.pokedexNumber ?: 1,
+            )
+        }
+    }
+
+    fun updateProfileDeficit(deficitKcal: Int) {
+        val p = uiState.value.userProfile ?: return
+        val clampedDeficit = deficitKcal.coerceIn(0, 1500)
+        viewModelScope.launch {
+            val tier = when (clampedDeficit) {
+                250 -> DeficitTier.MILD
+                500 -> DeficitTier.STANDARD
+                750 -> DeficitTier.AGGRESSIVE
+                else -> DeficitTier.CUSTOM
+            }
+            userRepository.saveUserProfile(
+                ageYears = p.ageYears,
+                sex = p.sex,
+                heightCm = p.heightCm,
+                weightKg = p.weightKg,
+                activityLevel = p.activityLevel,
+                deficitTier = tier,
+                dailyDeficitKcal = clampedDeficit,
                 dailyWaterGoalMl = uiState.value.dailyWaterGoalMl,
                 activeBuddyPokemonId = uiState.value.activeBuddy?.pokedexNumber ?: 1,
             )

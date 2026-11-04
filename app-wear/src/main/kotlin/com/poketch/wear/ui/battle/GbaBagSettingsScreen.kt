@@ -137,9 +137,18 @@ fun GbaBagSettingsScreen(
                 )
             }
 
-            // Pocket 1: KEY ITEMS (Mifflin-St Jeor BMR/TDEE & Deficit Calculator)
+            // Pocket 1: KEY ITEMS (Mifflin-St Jeor BMR/TDEE & Manual Deficit Calculator)
             if (selectedPocketIndex == 0) {
                 val profile = state.userProfile
+                val currentDeficit = profile?.dailyDeficitGoalKcal ?: profile?.deficitTier?.dailyDeficitKcal ?: 500
+                val tierLabel = when (currentDeficit) {
+                    0 -> "MAINTAIN (0)"
+                    250 -> "MILD (-250)"
+                    500 -> "STANDARD (-500)"
+                    750 -> "AGGRESSIVE (-750)"
+                    else -> "CUSTOM (-${currentDeficit})"
+                }
+
                 item {
                     Column(
                         modifier = Modifier
@@ -169,7 +178,7 @@ fun GbaBagSettingsScreen(
                             fontFamily = PokemonDsFontFamily
                         )
                         Text(
-                            text = "TIER: ${profile?.deficitTier?.name ?: "MODERATE_500"}",
+                            text = "DEFICIT: $tierLabel",
                             color = Color(0xFF80CBC4),
                             fontSize = 13.sp,
                             fontFamily = PokemonDsFontFamily
@@ -179,7 +188,7 @@ fun GbaBagSettingsScreen(
 
                 item {
                     Text(
-                        text = "CHANGE DEFICIT TIER:",
+                        text = "MANUAL DEFICIT ADJUST:",
                         color = Color(0xFFB0BEC5),
                         fontSize = 13.sp,
                         fontFamily = PokemonDsFontFamily,
@@ -187,39 +196,103 @@ fun GbaBagSettingsScreen(
                     )
                 }
 
+                // Interactive GBA Stepper Row: [-50]  -500 KCAL  [+50]
                 item {
-                    Chip(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            val p = state.userProfile ?: return@Chip
-                            val nextTier = when (p.deficitTier) {
-                                DeficitTier.MILD -> DeficitTier.STANDARD
-                                DeficitTier.STANDARD -> DeficitTier.AGGRESSIVE
-                                DeficitTier.AGGRESSIVE -> DeficitTier.MILD
-                            }
-                            viewModel.updateProfileBiometrics(
-                                age = p.ageYears,
-                                sex = p.sex,
-                                heightCm = p.heightCm,
-                                weightKg = p.weightKg,
-                                activityLevel = p.activityLevel,
-                                tier = nextTier
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(0.92f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF1E2820))
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CompactChip(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                val nextDeficit = (currentDeficit - 50).coerceAtLeast(0)
+                                viewModel.updateProfileDeficit(nextDeficit)
+                            },
+                            enabled = currentDeficit > 0,
+                            label = {
+                                Text(
+                                    text = "-50",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = PokemonDsFontFamily
+                                )
+                            },
+                            colors = ChipDefaults.chipColors(
+                                backgroundColor = Color(0xFFC62828),
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier.height(32.dp)
+                        )
+
+                        Text(
+                            text = "-$currentDeficit KCAL",
+                            color = Color(0xFFFFD54F),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = PokemonDsFontFamily
+                        )
+
+                        CompactChip(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                val nextDeficit = (currentDeficit + 50).coerceAtMost(1500)
+                                viewModel.updateProfileDeficit(nextDeficit)
+                            },
+                            enabled = currentDeficit < 1500,
+                            label = {
+                                Text(
+                                    text = "+50",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = PokemonDsFontFamily
+                                )
+                            },
+                            colors = ChipDefaults.chipColors(
+                                backgroundColor = Color(0xFF2E7D32),
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier.height(32.dp)
+                        )
+                    }
+                }
+
+                // Quick Presets Row: [250] [500] [750]
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(0.92f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf(250 to "MILD", 500 to "STD", 750 to "AGG").forEach { (presetKcal, label) ->
+                            val isSelected = currentDeficit == presetKcal
+                            CompactChip(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.updateProfileDeficit(presetKcal)
+                                },
+                                label = {
+                                    Text(
+                                        text = "$label ($presetKcal)",
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Normal,
+                                        fontFamily = PokemonDsFontFamily
+                                    )
+                                },
+                                colors = ChipDefaults.chipColors(
+                                    backgroundColor = if (isSelected) Color(0xFF2E7D32) else Color(0xFF263238),
+                                    contentColor = if (isSelected) Color.White else Color(0xFF90A4AE)
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(28.dp)
                             )
-                        },
-                        label = {
-                            Text(
-                                text = "CYCLE: ${profile?.deficitTier?.name ?: "STANDARD"}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = PokemonDsFontFamily
-                            )
-                        },
-                        colors = ChipDefaults.primaryChipColors(
-                            backgroundColor = Color(0xFF2E7D32),
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.fillMaxWidth(0.92f)
-                    )
+                        }
+                    }
                 }
             }
 

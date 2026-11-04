@@ -103,6 +103,7 @@ class PoketchSyncManager @Inject constructor(
             putDouble("weightKg", profile.weightKg)
             putString("activityLevel", profile.activityLevel.name)
             putString("deficitTier", profile.deficitTier.name)
+            putInt("dailyDeficitGoalKcal", profile.dailyDeficitGoalKcal)
             putInt("bmrKcal", profile.bmrKcal)
             putInt("tdeeKcal", profile.tdeeKcal)
             putInt("targetCalorieCeiling", profile.targetCalorieCeiling)

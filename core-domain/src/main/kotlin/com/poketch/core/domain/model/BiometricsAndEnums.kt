@@ -16,7 +16,8 @@ enum class ActivityLevel(val multiplier: Double, val displayName: String) {
 enum class DeficitTier(val dailyDeficitKcal: Int, val expectedWeeklyLossKg: Double) {
     MILD(250, 0.25),
     STANDARD(500, 0.50),
-    AGGRESSIVE(750, 0.75)
+    AGGRESSIVE(750, 0.75),
+    CUSTOM(0, 0.0)
 }
 
 enum class DeviceSource {

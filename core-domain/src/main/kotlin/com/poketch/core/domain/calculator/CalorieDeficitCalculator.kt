@@ -28,11 +28,11 @@ object CalorieDeficitCalculator {
         heightCm: Double,
         weightKg: Double,
         activityLevel: ActivityLevel,
-        deficitTier: DeficitTier
+        dailyDeficitKcal: Int
     ): CalorieCalculationSummary {
         val bmrKcal = calculateBmr(ageYears, sex, heightCm, weightKg)
         val tdeeKcal = calculateTdee(bmrKcal, activityLevel)
-        val rawDeficitTargetKcal = tdeeKcal - deficitTier.dailyDeficitKcal
+        val rawDeficitTargetKcal = tdeeKcal - dailyDeficitKcal
         val targetCalorieCeiling = maxOf(sex.safeCalorieFloor, rawDeficitTargetKcal)
         val isClampedToSafetyFloor = rawDeficitTargetKcal < sex.safeCalorieFloor
 
@@ -44,6 +44,22 @@ object CalorieDeficitCalculator {
             isClampedToSafetyFloor = isClampedToSafetyFloor
         )
     }
+
+    fun calculateTargetCeiling(
+        ageYears: Int,
+        sex: BiologicalSex,
+        heightCm: Double,
+        weightKg: Double,
+        activityLevel: ActivityLevel,
+        deficitTier: DeficitTier
+    ): CalorieCalculationSummary = calculateTargetCeiling(
+        ageYears = ageYears,
+        sex = sex,
+        heightCm = heightCm,
+        weightKg = weightKg,
+        activityLevel = activityLevel,
+        dailyDeficitKcal = deficitTier.dailyDeficitKcal
+    )
 
     fun evaluateBudgetStatus(consumedKcal: Int, targetCeilingKcal: Int): CalorieBudgetState {
         require(consumedKcal >= 0) { "consumedKcal must be non-negative, got: $consumedKcal" }

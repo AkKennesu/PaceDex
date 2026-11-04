@@ -299,7 +299,7 @@ fun GbaWatchBattleHomeScreen(
                     } else {
                         val buddyName = (buddy?.name ?: "BUDDY").uppercase()
                         val remaining = (ceiling - consumed).coerceAtLeast(0)
-                        viewModel.showTemporaryDialog("$buddyName is ready! $remaining kcal to goal!", durationMillis = 1500L)
+                        viewModel.showTemporaryDialog("$buddyName is ready! $remaining kcal to goal!", durationMillis = 3000L)
                     }
                 },
             contentAlignment = Alignment.Center
@@ -325,10 +325,16 @@ fun GbaWatchBattleHomeScreen(
         GbaPixelImage(
             resId = R.drawable.gba_box1_time_hp,
             contentDescription = "Box 1 Time HP",
-            modifier = Modifier.gbaVirtualBounds(29, 34, 86, 34, scale)
+            modifier = Modifier
+                .gbaVirtualBounds(29, 34, 86, 34, scale)
+                .clickable {
+                    val targetName = (target?.name ?: "TARGET").uppercase()
+                    val desc = target?.unlockRule?.description ?: "READY!"
+                    viewModel.showTemporaryDialog("WILD $targetName: $desc", durationMillis = 3500L)
+                }
         )
 
-        // Row 1 — Live Time (Left) & Offline Weather (Right) on opposite ends: (x = 33, y = 37, w = 78, h = 14)
+        // Row 1 — Live Time (Left) & Offline Weather (Right) aligned with HP bar unit: (x = 37, y = 36, w = 74, h = 14)
         val liveTime by produceState(
             initialValue = LocalTime.now().format(DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)).uppercase()
         ) {
@@ -339,7 +345,7 @@ fun GbaWatchBattleHomeScreen(
         }
         val weatherBadge = state.currentWeather.badgeText
         Row(
-            modifier = Modifier.gbaVirtualBounds(33, 37, 78, 14, scale),
+            modifier = Modifier.gbaVirtualBounds(37, 36, 74, 14, scale),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -347,10 +353,10 @@ fun GbaWatchBattleHomeScreen(
                 text = liveTime,
                 scale = scale,
                 color = Color(0xFF202820),
-                fontSizeVirtualPx = 11.2f,
-                lineHeightVirtualPx = 11.5f,
-                letterSpacingVirtualPx = 0.05f,
-                scaleX = 0.98f,
+                fontSizeVirtualPx = 12.8f,
+                lineHeightVirtualPx = 13.0f,
+                letterSpacingVirtualPx = 0.0f,
+                scaleX = 0.96f,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1,
                 includeFontPadding = false,
@@ -359,10 +365,10 @@ fun GbaWatchBattleHomeScreen(
                 text = weatherBadge,
                 scale = scale,
                 color = Color(0xFF202820),
-                fontSizeVirtualPx = 11.2f,
-                lineHeightVirtualPx = 11.5f,
-                letterSpacingVirtualPx = 0.05f,
-                scaleX = 0.98f,
+                fontSizeVirtualPx = 12.8f,
+                lineHeightVirtualPx = 13.0f,
+                letterSpacingVirtualPx = 0.0f,
+                scaleX = 0.96f,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1,
                 includeFontPadding = false,

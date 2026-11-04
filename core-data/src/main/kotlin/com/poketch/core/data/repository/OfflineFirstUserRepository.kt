@@ -34,6 +34,7 @@ class OfflineFirstUserRepository @Inject constructor(
         weightKg: Double,
         activityLevel: ActivityLevel,
         deficitTier: DeficitTier,
+        dailyDeficitKcal: Int,
         dailyWaterGoalMl: Int,
         activeBuddyPokemonId: Int
     ) {
@@ -43,8 +44,15 @@ class OfflineFirstUserRepository @Inject constructor(
             heightCm = heightCm,
             weightKg = weightKg,
             activityLevel = activityLevel,
-            deficitTier = deficitTier
+            dailyDeficitKcal = dailyDeficitKcal
         )
+
+        val resolvedTier = when (dailyDeficitKcal) {
+            250 -> DeficitTier.MILD
+            500 -> DeficitTier.STANDARD
+            750 -> DeficitTier.AGGRESSIVE
+            else -> DeficitTier.CUSTOM
+        }
 
         val updatedProfile = UserProfile(
             id = 1,
@@ -53,7 +61,8 @@ class OfflineFirstUserRepository @Inject constructor(
             heightCm = heightCm,
             weightKg = weightKg,
             activityLevel = activityLevel,
-            deficitTier = deficitTier,
+            deficitTier = if (deficitTier != DeficitTier.CUSTOM) deficitTier else resolvedTier,
+            dailyDeficitGoalKcal = dailyDeficitKcal,
             bmrKcal = summary.bmrKcal,
             tdeeKcal = summary.tdeeKcal,
             targetCalorieCeiling = summary.targetCalorieCeiling,
@@ -63,6 +72,29 @@ class OfflineFirstUserRepository @Inject constructor(
         )
 
         userDao.upsertUserProfile(updatedProfile.toEntity())
+    }
+
+    override suspend fun saveUserProfile(
+        ageYears: Int,
+        sex: BiologicalSex,
+        heightCm: Double,
+        weightKg: Double,
+        activityLevel: ActivityLevel,
+        deficitTier: DeficitTier,
+        dailyWaterGoalMl: Int,
+        activeBuddyPokemonId: Int
+    ) {
+        saveUserProfile(
+            ageYears = ageYears,
+            sex = sex,
+            heightCm = heightCm,
+            weightKg = weightKg,
+            activityLevel = activityLevel,
+            deficitTier = deficitTier,
+            dailyDeficitKcal = deficitTier.dailyDeficitKcal,
+            dailyWaterGoalMl = dailyWaterGoalMl,
+            activeBuddyPokemonId = activeBuddyPokemonId
+        )
     }
 
     override suspend fun upsertUserProfile(profile: UserProfile) {

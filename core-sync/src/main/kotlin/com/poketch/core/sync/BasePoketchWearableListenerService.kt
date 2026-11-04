@@ -175,6 +175,7 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
             val activityLevel = runCatching { ActivityLevel.valueOf(activityStr) }.getOrDefault(ActivityLevel.MODERATELY_ACTIVE)
             val deficitStr = dataMap.getString("deficitTier") ?: "STANDARD"
             val deficitTier = runCatching { DeficitTier.valueOf(deficitStr) }.getOrDefault(DeficitTier.STANDARD)
+            val dailyDeficitGoalKcal = dataMap.getInt("dailyDeficitGoalKcal", deficitTier.dailyDeficitKcal)
             val bmr = dataMap.getInt("bmrKcal", 1600)
             val tdee = dataMap.getInt("tdeeKcal", 2200)
             val ceiling = dataMap.getInt("targetCalorieCeiling", 1700)
@@ -189,6 +190,7 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
                 weightKg = weight.coerceIn(30.0, 300.0),
                 activityLevel = activityLevel,
                 deficitTier = deficitTier,
+                dailyDeficitGoalKcal = dailyDeficitGoalKcal,
                 bmrKcal = bmr,
                 tdeeKcal = tdee,
                 targetCalorieCeiling = ceiling,

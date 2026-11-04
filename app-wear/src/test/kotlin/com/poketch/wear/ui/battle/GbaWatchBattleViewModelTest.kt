@@ -150,6 +150,7 @@ class GbaWatchBattleViewModelTest {
     private fun createViewModel(): GbaWatchBattleViewModel {
         val context = ApplicationProvider.getApplicationContext<Context>()
         return GbaWatchBattleViewModel(
+            context = context,
             userRepository = fakeUserRepository,
             calorieRepository = fakeCalorieRepository,
             habitRepository = fakeHabitRepository,
