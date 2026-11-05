@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="18dp"
+    android:viewportWidth="28"
+    android:viewportHeight="18">
+    <!-- Outer Border -->
+    <path
+        android:fillColor="#381010"
+        android:pathData="M2,0 L26,0 A2,2 0 0,1 28,2 L28,16 A2,2 0 0,1 26,18 L2,18 A2,2 0 0,1 0,16 L0,2 A2,2 0 0,1 2,0 Z" />
+    <!-- Top Highlight Bevel -->
+    <path
+        android:fillColor="#E54D4D"
+        android:pathData="M1,2 L27,2 L27,4 L1,4 Z" />
+    <!-- Main Crimson Button Face -->
+    <path
+        android:fillColor="#C02828"
+        android:pathData="M1,4 L27,4 L27,15 L1,15 Z" />
+    <!-- Bottom Shadow Bevel -->
+    <path
+        android:fillColor="#7A1515"
+        android:pathData="M1,15 L27,15 L27,17 L1,17 Z" />
+</vector>

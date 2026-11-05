@@ -16,6 +16,7 @@ import com.poketch.wear.ui.alert.OverTargetRedAlertViewModel
 import com.poketch.wear.ui.calorie.RotaryCalorieLoggerScreen
 import com.poketch.wear.ui.calorie.RotaryCalorieLoggerViewModel
 import com.poketch.wear.ui.battle.GbaBagSettingsScreen
+import com.poketch.wear.ui.battle.GbaWatchBagSettingsScreen
 import com.poketch.wear.ui.battle.GbaBatterySaverScreen
 import com.poketch.wear.ui.battle.GbaPokedexMissionsScreen
 import com.poketch.wear.ui.battle.GbaWatchBattleHomeScreen
@@ -80,7 +81,7 @@ class WearMainActivity : ComponentActivity() {
                     }
 
                     composable("bag_settings") {
-                        GbaBagSettingsScreen(
+                        GbaWatchBagSettingsScreen(
                             onNavigateBack = { navController.popBackStack() },
                             viewModel = battleViewModel
                         )

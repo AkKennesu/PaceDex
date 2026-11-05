@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="18dp"
+    android:viewportWidth="64"
+    android:viewportHeight="18">
+    <!-- Outer Border -->
+    <path
+        android:fillColor="#24342C"
+        android:pathData="M2,0 L62,0 A2,2 0 0,1 64,2 L64,16 A2,2 0 0,1 62,18 L2,18 A2,2 0 0,1 0,16 L0,2 A2,2 0 0,1 2,0 Z" />
+    <!-- Top & Left Inner Shadow -->
+    <path
+        android:fillColor="#080E0B"
+        android:pathData="M1,1 L63,1 L63,3 L1,3 Z M1,3 L3,3 L3,17 L1,17 Z" />
+    <!-- Recessed Display Screen Face -->
+    <path
+        android:fillColor="#0F1813"
+        android:pathData="M3,3 L63,3 L63,16 L3,16 Z" />
+    <!-- Bottom & Right Inner Highlight -->
+    <path
+        android:fillColor="#1B2820"
+        android:pathData="M3,16 L63,16 L63,17 L3,17 Z" />
+</vector>

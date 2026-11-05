@@ -68,6 +68,7 @@ fun Modifier.gbaVirtualBounds(
 
 /**
  * Nearest-neighbor pixel-perfect Image rendering for GBA drawable assets.
+ * Supports both raster bitmaps (PNGs with FilterQuality.None) and vector drawables.
  */
 @Composable
 fun GbaPixelImage(
@@ -78,15 +79,37 @@ fun GbaPixelImage(
     colorFilter: ColorFilter? = null,
     contentScale: ContentScale = ContentScale.FillBounds,
 ) {
-    Image(
-        bitmap = ImageBitmap.imageResource(id = resId),
-        contentDescription = contentDescription,
-        filterQuality = FilterQuality.None,
-        contentScale = contentScale,
-        alpha = alpha,
-        colorFilter = colorFilter,
-        modifier = modifier
-    )
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isVector = androidx.compose.runtime.remember(resId) {
+        try {
+            val typedValue = android.util.TypedValue()
+            context.resources.getValue(resId, typedValue, true)
+            typedValue.string?.endsWith(".xml") == true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    if (isVector) {
+        Image(
+            painter = androidx.compose.ui.res.painterResource(id = resId),
+            contentDescription = contentDescription,
+            contentScale = contentScale,
+            alpha = alpha,
+            colorFilter = colorFilter,
+            modifier = modifier
+        )
+    } else {
+        Image(
+            bitmap = ImageBitmap.imageResource(id = resId),
+            contentDescription = contentDescription,
+            filterQuality = FilterQuality.None,
+            contentScale = contentScale,
+            alpha = alpha,
+            colorFilter = colorFilter,
+            modifier = modifier
+        )
+    }
 }
 
 val PokemonDsFontFamily = FontFamily(
