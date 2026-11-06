@@ -130,7 +130,6 @@ fun GbaWatchBagSettingsScreen(
         )
 
         // 2. TOP POCKET SELECTOR BAR (x = 43..149, y = 25..43)
-        // Background track bar if available
         GbaPixelImage(
             resId = R.drawable.gba_bag_pocket_tab_bar,
             contentDescription = "Tab Bar",
@@ -163,8 +162,8 @@ fun GbaWatchBagSettingsScreen(
                 text = "KEYS",
                 scale = scale,
                 color = if (selectedPocket == BagPocket.KEYS) Color.White else Color(0xFFB4CDDC),
-                fontSizeVirtualPx = 5.8f,
-                lineHeightVirtualPx = 6.0f,
+                fontSizeVirtualPx = 8.5f,
+                lineHeightVirtualPx = 9.0f,
                 letterSpacingVirtualPx = 0.0f,
                 scaleX = 1.0f,
                 fontWeight = if (selectedPocket == BagPocket.KEYS) FontWeight.ExtraBold else FontWeight.Bold,
@@ -198,8 +197,8 @@ fun GbaWatchBagSettingsScreen(
                 text = "BALLS",
                 scale = scale,
                 color = if (selectedPocket == BagPocket.BALLS) Color.White else Color(0xFFB4CDDC),
-                fontSizeVirtualPx = 5.8f,
-                lineHeightVirtualPx = 6.0f,
+                fontSizeVirtualPx = 8.5f,
+                lineHeightVirtualPx = 9.0f,
                 letterSpacingVirtualPx = 0.0f,
                 scaleX = 1.0f,
                 fontWeight = if (selectedPocket == BagPocket.BALLS) FontWeight.ExtraBold else FontWeight.Bold,
@@ -233,8 +232,8 @@ fun GbaWatchBagSettingsScreen(
                 text = "LINK",
                 scale = scale,
                 color = if (selectedPocket == BagPocket.LINK) Color.White else Color(0xFFB4CDDC),
-                fontSizeVirtualPx = 5.8f,
-                lineHeightVirtualPx = 6.0f,
+                fontSizeVirtualPx = 8.5f,
+                lineHeightVirtualPx = 9.0f,
                 letterSpacingVirtualPx = 0.0f,
                 scaleX = 1.0f,
                 fontWeight = if (selectedPocket == BagPocket.LINK) FontWeight.ExtraBold else FontWeight.Bold,
@@ -264,9 +263,9 @@ fun GbaWatchBagSettingsScreen(
                 text = selectedPocket.bannerTitle,
                 scale = scale,
                 color = Color(0xFF283030),
-                fontSizeVirtualPx = 6.2f,
-                lineHeightVirtualPx = 7.0f,
-                letterSpacingVirtualPx = 0.3f,
+                fontSizeVirtualPx = 9.5f,
+                lineHeightVirtualPx = 10.0f,
+                letterSpacingVirtualPx = 0.2f,
                 scaleX = 1.0f,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center
@@ -292,51 +291,51 @@ fun GbaWatchBagSettingsScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Line 1: Left BMR (39, 66) & Right TDEE (98, 66)
+                // Line 1: Left BMR (38, 65) & Right TDEE (96, 65)
                 GbaText(
                     text = "BMR: $bmr",
                     scale = scale,
                     color = Color(0xFFE6F0FF),
-                    fontSizeVirtualPx = 5.8f,
-                    lineHeightVirtualPx = 6.0f,
+                    fontSizeVirtualPx = 8.2f,
+                    lineHeightVirtualPx = 8.5f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
-                    modifier = Modifier.offset(x = (7 * scale).dp, y = (3 * scale).dp)
+                    modifier = Modifier.offset(x = (6 * scale).dp, y = (2 * scale).dp)
                 )
                 GbaText(
                     text = "TDEE: $tdee",
                     scale = scale,
                     color = Color(0xFFE6F0FF),
-                    fontSizeVirtualPx = 5.8f,
-                    lineHeightVirtualPx = 6.0f,
+                    fontSizeVirtualPx = 8.2f,
+                    lineHeightVirtualPx = 8.5f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
-                    modifier = Modifier.offset(x = (66 * scale).dp, y = (3 * scale).dp)
+                    modifier = Modifier.offset(x = (64 * scale).dp, y = (2 * scale).dp)
                 )
 
-                // Line 2: CEILING (39, 74)
+                // Line 2: CEILING (38, 73)
                 GbaText(
                     text = "CEILING: $ceiling KCAL",
                     scale = scale,
                     color = Color(0xFFF8D840),
-                    fontSizeVirtualPx = 6.0f,
-                    lineHeightVirtualPx = 6.5f,
-                    letterSpacingVirtualPx = 0.2f,
-                    scaleX = 1.05f,
+                    fontSizeVirtualPx = 9.5f,
+                    lineHeightVirtualPx = 10.0f,
+                    letterSpacingVirtualPx = 0.1f,
+                    scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.offset(x = (7 * scale).dp, y = (11 * scale).dp)
+                    modifier = Modifier.offset(x = (6 * scale).dp, y = (11 * scale).dp)
                 )
 
-                // Line 3: DEFICIT (39, 82)
+                // Line 3: DEFICIT (38, 83)
                 GbaText(
                     text = "DEFICIT: $deficitTierName (-$currentDeficit)",
                     scale = scale,
                     color = Color(0xFF78F0C8),
-                    fontSizeVirtualPx = 5.6f,
-                    lineHeightVirtualPx = 6.0f,
+                    fontSizeVirtualPx = 8.0f,
+                    lineHeightVirtualPx = 8.5f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
-                    modifier = Modifier.offset(x = (7 * scale).dp, y = (19 * scale).dp)
+                    modifier = Modifier.offset(x = (6 * scale).dp, y = (21 * scale).dp)
                 )
             }
 
@@ -349,9 +348,9 @@ fun GbaWatchBagSettingsScreen(
                     text = "MANUAL DEFICIT ADJUST:",
                     scale = scale,
                     color = Color(0xFF283030),
-                    fontSizeVirtualPx = 5.6f,
-                    lineHeightVirtualPx = 6.0f,
-                    letterSpacingVirtualPx = 0.1f,
+                    fontSizeVirtualPx = 8.2f,
+                    lineHeightVirtualPx = 8.5f,
+                    letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -391,8 +390,8 @@ fun GbaWatchBagSettingsScreen(
                     text = "-50",
                     scale = scale,
                     color = Color.White,
-                    fontSizeVirtualPx = 6.0f,
-                    lineHeightVirtualPx = 6.0f,
+                    fontSizeVirtualPx = 10.5f,
+                    lineHeightVirtualPx = 11.0f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
@@ -425,10 +424,10 @@ fun GbaWatchBagSettingsScreen(
                     text = "-$currentDeficit KCAL",
                     scale = scale,
                     color = Color(0xFFF8D840),
-                    fontSizeVirtualPx = 6.0f,
-                    lineHeightVirtualPx = 6.5f,
-                    letterSpacingVirtualPx = 0.3f,
-                    scaleX = 1.05f,
+                    fontSizeVirtualPx = 10.5f,
+                    lineHeightVirtualPx = 11.0f,
+                    letterSpacingVirtualPx = 0.1f,
+                    scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center
                 )
@@ -466,8 +465,8 @@ fun GbaWatchBagSettingsScreen(
                     text = "+50",
                     scale = scale,
                     color = Color.White,
-                    fontSizeVirtualPx = 6.0f,
-                    lineHeightVirtualPx = 6.0f,
+                    fontSizeVirtualPx = 10.5f,
+                    lineHeightVirtualPx = 11.0f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
@@ -502,42 +501,57 @@ fun GbaWatchBagSettingsScreen(
                         .size((12 * scale).dp)
                 )
 
-                // Title (x = 57 - 32 = 25, y = 69 - 65 = 4)
+                // Title (x = 55 - 32 = 23, y = 68 - 65 = 3)
                 GbaText(
                     text = "WATER (08-21)",
                     scale = scale,
                     color = Color(0xFF283030),
-                    fontSizeVirtualPx = 6.2f,
-                    lineHeightVirtualPx = 7.0f,
-                    letterSpacingVirtualPx = 0.2f,
+                    fontSizeVirtualPx = 8.5f,
+                    lineHeightVirtualPx = 9.0f,
+                    letterSpacingVirtualPx = 0.0f,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.offset(x = (25 * scale).dp, y = (4 * scale).dp)
+                    modifier = Modifier.offset(x = (23 * scale).dp, y = (3.5f * scale).dp)
                 )
 
-                // Subtitle (x = 57 - 32 = 25, y = 78 - 65 = 13)
+                // Subtitle (x = 55 - 32 = 23, y = 78 - 65 = 13)
                 GbaText(
                     text = "REMINDER NUDGE",
                     scale = scale,
                     color = Color(0xFF687060),
-                    fontSizeVirtualPx = 5.3f,
-                    lineHeightVirtualPx = 6.0f,
-                    letterSpacingVirtualPx = 0.1f,
-                    modifier = Modifier.offset(x = (25 * scale).dp, y = (13 * scale).dp)
+                    fontSizeVirtualPx = 7.5f,
+                    lineHeightVirtualPx = 8.0f,
+                    letterSpacingVirtualPx = 0.0f,
+                    modifier = Modifier.offset(x = (23 * scale).dp, y = (13.5f * scale).dp)
                 )
 
                 // Toggle Switch Badge (x = 127 - 32 = 95, y = 71 - 65 = 6, w = 28, h = 14)
-                val toggleRes = if (state.hydrationRemindersEnabled) {
+                val isHydrationOn = state.hydrationRemindersEnabled
+                val toggleRes = if (isHydrationOn) {
                     R.drawable.gba_bag_toggle_on
                 } else {
                     R.drawable.gba_bag_toggle_off
                 }
-                GbaPixelImage(
-                    resId = toggleRes,
-                    contentDescription = "Toggle Hydration",
+                Box(
                     modifier = Modifier
                         .offset(x = (95 * scale).dp, y = (6 * scale).dp)
-                        .size(width = (28 * scale).dp, height = (14 * scale).dp)
-                )
+                        .size(width = (28 * scale).dp, height = (14 * scale).dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    GbaPixelImage(
+                        resId = toggleRes,
+                        contentDescription = "Toggle Hydration",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    GbaText(
+                        text = if (isHydrationOn) "ON" else "OFF",
+                        scale = scale,
+                        color = Color.White,
+                        fontSizeVirtualPx = 8.5f,
+                        lineHeightVirtualPx = 9.0f,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
             // Row 2 — 1-Mile Run Challenge Slot Card (x = 32, y = 96, w = 128, h = 26)
@@ -564,42 +578,58 @@ fun GbaWatchBagSettingsScreen(
                         .size((12 * scale).dp)
                 )
 
-                // Title (x = 57 - 32 = 25, y = 100 - 96 = 4)
+                // Title (x = 55 - 32 = 23, y = 99 - 96 = 3)
                 GbaText(
                     text = "1-MI RUN (17:00)",
                     scale = scale,
                     color = Color(0xFF283030),
-                    fontSizeVirtualPx = 6.2f,
-                    lineHeightVirtualPx = 7.0f,
-                    letterSpacingVirtualPx = 0.2f,
+                    fontSizeVirtualPx = 8.0f,
+                    lineHeightVirtualPx = 8.5f,
+                    letterSpacingVirtualPx = 0.0f,
+                    scaleX = 0.98f,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.offset(x = (25 * scale).dp, y = (4 * scale).dp)
+                    modifier = Modifier.offset(x = (23 * scale).dp, y = (3.5f * scale).dp)
                 )
 
-                // Subtitle (x = 57 - 32 = 25, y = 109 - 96 = 13)
+                // Subtitle (x = 55 - 32 = 23, y = 109 - 96 = 13)
                 GbaText(
                     text = "DAILY CHALLENGE",
                     scale = scale,
                     color = Color(0xFF687060),
-                    fontSizeVirtualPx = 5.3f,
-                    lineHeightVirtualPx = 6.0f,
-                    letterSpacingVirtualPx = 0.1f,
-                    modifier = Modifier.offset(x = (25 * scale).dp, y = (13 * scale).dp)
+                    fontSizeVirtualPx = 7.5f,
+                    lineHeightVirtualPx = 8.0f,
+                    letterSpacingVirtualPx = 0.0f,
+                    modifier = Modifier.offset(x = (23 * scale).dp, y = (13.5f * scale).dp)
                 )
 
                 // Toggle Switch Badge (x = 127 - 32 = 95, y = 102 - 96 = 6, w = 28, h = 14)
-                val toggleRes = if (state.runRemindersEnabled) {
+                val isRunOn = state.runRemindersEnabled
+                val toggleRes = if (isRunOn) {
                     R.drawable.gba_bag_toggle_on
                 } else {
                     R.drawable.gba_bag_toggle_off
                 }
-                GbaPixelImage(
-                    resId = toggleRes,
-                    contentDescription = "Toggle Run",
+                Box(
                     modifier = Modifier
                         .offset(x = (95 * scale).dp, y = (6 * scale).dp)
-                        .size(width = (28 * scale).dp, height = (14 * scale).dp)
-                )
+                        .size(width = (28 * scale).dp, height = (14 * scale).dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    GbaPixelImage(
+                        resId = toggleRes,
+                        contentDescription = "Toggle Run",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    GbaText(
+                        text = if (isRunOn) "ON" else "OFF",
+                        scale = scale,
+                        color = Color.White,
+                        fontSizeVirtualPx = 8.5f,
+                        lineHeightVirtualPx = 9.0f,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
 
@@ -624,27 +654,27 @@ fun GbaWatchBagSettingsScreen(
                         .size((12 * scale).dp)
                 )
 
-                // Line 1: STATUS: ONLINE (x = 56 - 32 = 24, y = 70 - 65 = 5)
+                // Line 1: STATUS: ONLINE (x = 54 - 32 = 22, y = 69 - 65 = 4)
                 GbaText(
                     text = "STATUS: ONLINE",
                     scale = scale,
                     color = Color(0xFF78F890),
-                    fontSizeVirtualPx = 6.2f,
-                    lineHeightVirtualPx = 7.0f,
-                    letterSpacingVirtualPx = 0.2f,
+                    fontSizeVirtualPx = 9.5f,
+                    lineHeightVirtualPx = 10.0f,
+                    letterSpacingVirtualPx = 0.1f,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.offset(x = (24 * scale).dp, y = (5 * scale).dp)
+                    modifier = Modifier.offset(x = (22 * scale).dp, y = (4.5f * scale).dp)
                 )
 
-                // Line 2: WEAR DATA LAYER (x = 56 - 32 = 24, y = 79 - 65 = 14)
+                // Line 2: WEAR DATA LAYER (x = 54 - 32 = 22, y = 80 - 65 = 15)
                 GbaText(
                     text = "WEAR DATA LAYER",
                     scale = scale,
                     color = Color(0xFFDCEBFF),
-                    fontSizeVirtualPx = 5.5f,
-                    lineHeightVirtualPx = 6.0f,
-                    letterSpacingVirtualPx = 0.1f,
-                    modifier = Modifier.offset(x = (24 * scale).dp, y = (14 * scale).dp)
+                    fontSizeVirtualPx = 8.5f,
+                    lineHeightVirtualPx = 9.0f,
+                    letterSpacingVirtualPx = 0.0f,
+                    modifier = Modifier.offset(x = (22 * scale).dp, y = (15.5f * scale).dp)
                 )
             }
 
@@ -677,10 +707,10 @@ fun GbaWatchBagSettingsScreen(
                     text = if (state.isSyncing) "SYNCING..." else "FLUSH SYNC NOW",
                     scale = scale,
                     color = Color.White,
-                    fontSizeVirtualPx = 6.5f,
-                    lineHeightVirtualPx = 7.0f,
-                    letterSpacingVirtualPx = 0.3f,
-                    scaleX = 1.05f,
+                    fontSizeVirtualPx = 11.5f,
+                    lineHeightVirtualPx = 12.0f,
+                    letterSpacingVirtualPx = 0.2f,
+                    scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center
                 )
@@ -716,10 +746,10 @@ fun GbaWatchBagSettingsScreen(
                 text = "< BATTLE ARENA",
                 scale = scale,
                 color = Color(0xFF283038),
-                fontSizeVirtualPx = 6.5f,
-                lineHeightVirtualPx = 7.0f,
-                letterSpacingVirtualPx = 0.2f,
-                scaleX = 1.05f,
+                fontSizeVirtualPx = 11.5f,
+                lineHeightVirtualPx = 12.0f,
+                letterSpacingVirtualPx = 0.1f,
+                scaleX = 1.0f,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center
             )
