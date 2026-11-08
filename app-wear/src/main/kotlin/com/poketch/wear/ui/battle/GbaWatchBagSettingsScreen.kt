@@ -1,9 +1,6 @@
 package com.poketch.wear.ui.battle
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -46,6 +43,10 @@ enum class BagPocket(val tabLabel: String, val bannerTitle: String) {
 /**
  * Authentic Generation III GBA Item Bag & Settings Screen rendered on a fixed
  * 192x192 virtual coordinate canvas with nearest-neighbor FilterQuality.None pixel scaling.
+ *
+ * Pixel-perfect alignment: Coordinates are strictly matched to the base background artwork
+ * (gba_bag_watch_round_base / gba_bag_watch_square_base), ensuring perfect circular bezel
+ * inscription and balanced vertical/horizontal centering on Wear OS displays.
  */
 @Composable
 fun GbaWatchBagSettingsScreen(
@@ -83,6 +84,14 @@ fun GbaWatchBagSettingsScreen(
         else -> "CUSTOM"
     }
 
+    fun stepPocket(forward: Boolean) {
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        val pockets = BagPocket.entries
+        val delta = if (forward) 1 else -1
+        val nextIndex = (selectedPocket.ordinal + delta + pockets.size).mod(pockets.size)
+        selectedPocket = pockets[nextIndex]
+    }
+
     GbaWatchCanvas(
         modifier = modifier
             .fillMaxSize()
@@ -107,10 +116,7 @@ fun GbaWatchBagSettingsScreen(
                     if (abs(rotaryAccumulator) >= stepThreshold * 1.5f) {
                         val steps = (rotaryAccumulator / (stepThreshold * 1.5f)).toInt()
                         rotaryAccumulator %= (stepThreshold * 1.5f)
-                        val pockets = BagPocket.entries
-                        val nextIndex = (selectedPocket.ordinal + steps).mod(pockets.size)
-                        selectedPocket = pockets[nextIndex]
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        stepPocket(forward = steps > 0)
                     }
                     true
                 }
@@ -162,8 +168,8 @@ fun GbaWatchBagSettingsScreen(
                 text = "KEYS",
                 scale = scale,
                 color = if (selectedPocket == BagPocket.KEYS) Color.White else Color(0xFFB4CDDC),
-                fontSizeVirtualPx = 8.5f,
-                lineHeightVirtualPx = 9.0f,
+                fontSizeVirtualPx = 8.0f,
+                lineHeightVirtualPx = 8.5f,
                 letterSpacingVirtualPx = 0.0f,
                 scaleX = 1.0f,
                 fontWeight = if (selectedPocket == BagPocket.KEYS) FontWeight.ExtraBold else FontWeight.Bold,
@@ -197,8 +203,8 @@ fun GbaWatchBagSettingsScreen(
                 text = "BALLS",
                 scale = scale,
                 color = if (selectedPocket == BagPocket.BALLS) Color.White else Color(0xFFB4CDDC),
-                fontSizeVirtualPx = 8.5f,
-                lineHeightVirtualPx = 9.0f,
+                fontSizeVirtualPx = 8.0f,
+                lineHeightVirtualPx = 8.5f,
                 letterSpacingVirtualPx = 0.0f,
                 scaleX = 1.0f,
                 fontWeight = if (selectedPocket == BagPocket.BALLS) FontWeight.ExtraBold else FontWeight.Bold,
@@ -232,8 +238,8 @@ fun GbaWatchBagSettingsScreen(
                 text = "LINK",
                 scale = scale,
                 color = if (selectedPocket == BagPocket.LINK) Color.White else Color(0xFFB4CDDC),
-                fontSizeVirtualPx = 8.5f,
-                lineHeightVirtualPx = 9.0f,
+                fontSizeVirtualPx = 8.0f,
+                lineHeightVirtualPx = 8.5f,
                 letterSpacingVirtualPx = 0.0f,
                 scaleX = 1.0f,
                 fontWeight = if (selectedPocket == BagPocket.LINK) FontWeight.ExtraBold else FontWeight.Bold,
@@ -243,15 +249,7 @@ fun GbaWatchBagSettingsScreen(
 
         // 3. POCKET RIBBON SUB-HEADER BANNER (x = 44, y = 45, w = 104, h = 13)
         Box(
-            modifier = Modifier
-                .gbaVirtualBounds(44, 45, 104, 13, scale)
-                .clickable {
-                    // Tap banner to cycle pocket
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    val pockets = BagPocket.entries
-                    val nextIndex = (selectedPocket.ordinal + 1).mod(pockets.size)
-                    selectedPocket = pockets[nextIndex]
-                },
+            modifier = Modifier.gbaVirtualBounds(44, 45, 104, 13, scale),
             contentAlignment = Alignment.Center
         ) {
             GbaPixelImage(
@@ -259,29 +257,57 @@ fun GbaWatchBagSettingsScreen(
                 contentDescription = "Pocket Banner",
                 modifier = Modifier.fillMaxSize()
             )
+
+            // Centered banner title text
             GbaText(
                 text = selectedPocket.bannerTitle,
                 scale = scale,
                 color = Color(0xFF283030),
-                fontSizeVirtualPx = 9.5f,
-                lineHeightVirtualPx = 10.0f,
-                letterSpacingVirtualPx = 0.2f,
+                fontSizeVirtualPx = 9.0f,
+                lineHeightVirtualPx = 9.5f,
+                letterSpacingVirtualPx = 0.1f,
                 scaleX = 1.0f,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center
             )
+
+            // Left Touch Zone (< Previous Pocket)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(width = (32 * scale).dp, height = (13 * scale).dp)
+                    .clickable { stepPocket(forward = false) }
+            )
+
+            // Right Touch Zone (> Next Pocket)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(width = (32 * scale).dp, height = (13 * scale).dp)
+                    .clickable { stepPocket(forward = true) }
+            )
+
+            // Center Touch Zone (Cycle Forward)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(width = (40 * scale).dp, height = (13 * scale).dp)
+                    .clickable { stepPocket(forward = true) }
+            )
         }
 
         // 4. MAIN PARCHMENT WINDOW (x = 26, y = 59, w = 140, h = 72)
+        // Perfectly inscribed within the circular bezel (corners stay within r < 80px)
         GbaPixelImage(
             resId = R.drawable.gba_bag_parchment_panel,
             contentDescription = "Parchment Panel",
             modifier = Modifier.gbaVirtualBounds(26, 59, 140, 72, scale)
         )
 
-        // POCKET VIEW A: KEYS
+        // POCKET VIEW A: KEYS (Metabolic Stats + Manual Deficit Stepper)
         if (selectedPocket == BagPocket.KEYS) {
             // Gold-Teal GBA Stats Card (x = 32, y = 63, w = 128, h = 32)
+            // Two-column layout: Left (CEILING & DEFICIT) | Right (BMR & TDEE)
             Box(
                 modifier = Modifier.gbaVirtualBounds(32, 63, 128, 32, scale)
             ) {
@@ -291,51 +317,52 @@ fun GbaWatchBagSettingsScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Line 1: Left BMR (38, 65) & Right TDEE (96, 65)
+                // Row 1: Left CEILING (Hero Metric) & Right BMR
+                GbaText(
+                    text = "CEILING: $ceiling KCAL",
+                    scale = scale,
+                    color = Color(0xFFF8D840),
+                    fontSizeVirtualPx = 8.5f,
+                    lineHeightVirtualPx = 9.0f,
+                    letterSpacingVirtualPx = 0.1f,
+                    scaleX = 1.0f,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.offset(x = (6 * scale).dp, y = (5.5f * scale).dp)
+                )
                 GbaText(
                     text = "BMR: $bmr",
                     scale = scale,
                     color = Color(0xFFE6F0FF),
-                    fontSizeVirtualPx = 8.2f,
+                    fontSizeVirtualPx = 8.0f,
                     lineHeightVirtualPx = 8.5f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
-                    modifier = Modifier.offset(x = (6 * scale).dp, y = (2 * scale).dp)
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.offset(x = (78 * scale).dp, y = (5.5f * scale).dp)
+                )
+
+                // Row 2: Left DEFICIT & Right TDEE
+                GbaText(
+                    text = "DEFICIT: $deficitTierName (-$currentDeficit)",
+                    scale = scale,
+                    color = Color(0xFF78F0C8),
+                    fontSizeVirtualPx = 7.5f,
+                    lineHeightVirtualPx = 8.0f,
+                    letterSpacingVirtualPx = 0.0f,
+                    scaleX = 0.98f,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.offset(x = (6 * scale).dp, y = (17.5f * scale).dp)
                 )
                 GbaText(
                     text = "TDEE: $tdee",
                     scale = scale,
                     color = Color(0xFFE6F0FF),
-                    fontSizeVirtualPx = 8.2f,
-                    lineHeightVirtualPx = 8.5f,
-                    letterSpacingVirtualPx = 0.0f,
-                    scaleX = 1.0f,
-                    modifier = Modifier.offset(x = (64 * scale).dp, y = (2 * scale).dp)
-                )
-
-                // Line 2: CEILING (38, 73)
-                GbaText(
-                    text = "CEILING: $ceiling KCAL",
-                    scale = scale,
-                    color = Color(0xFFF8D840),
-                    fontSizeVirtualPx = 9.5f,
-                    lineHeightVirtualPx = 10.0f,
-                    letterSpacingVirtualPx = 0.1f,
-                    scaleX = 1.0f,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.offset(x = (6 * scale).dp, y = (11 * scale).dp)
-                )
-
-                // Line 3: DEFICIT (38, 83)
-                GbaText(
-                    text = "DEFICIT: $deficitTierName (-$currentDeficit)",
-                    scale = scale,
-                    color = Color(0xFF78F0C8),
                     fontSizeVirtualPx = 8.0f,
                     lineHeightVirtualPx = 8.5f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
-                    modifier = Modifier.offset(x = (6 * scale).dp, y = (21 * scale).dp)
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.offset(x = (78 * scale).dp, y = (17.5f * scale).dp)
                 )
             }
 
@@ -348,7 +375,7 @@ fun GbaWatchBagSettingsScreen(
                     text = "MANUAL DEFICIT ADJUST:",
                     scale = scale,
                     color = Color(0xFF283030),
-                    fontSizeVirtualPx = 8.2f,
+                    fontSizeVirtualPx = 8.0f,
                     lineHeightVirtualPx = 8.5f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
@@ -390,8 +417,8 @@ fun GbaWatchBagSettingsScreen(
                     text = "-50",
                     scale = scale,
                     color = Color.White,
-                    fontSizeVirtualPx = 10.5f,
-                    lineHeightVirtualPx = 11.0f,
+                    fontSizeVirtualPx = 10.0f,
+                    lineHeightVirtualPx = 10.5f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
@@ -424,8 +451,8 @@ fun GbaWatchBagSettingsScreen(
                     text = "-$currentDeficit KCAL",
                     scale = scale,
                     color = Color(0xFFF8D840),
-                    fontSizeVirtualPx = 10.5f,
-                    lineHeightVirtualPx = 11.0f,
+                    fontSizeVirtualPx = 10.0f,
+                    lineHeightVirtualPx = 10.5f,
                     letterSpacingVirtualPx = 0.1f,
                     scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
@@ -465,8 +492,8 @@ fun GbaWatchBagSettingsScreen(
                     text = "+50",
                     scale = scale,
                     color = Color.White,
-                    fontSizeVirtualPx = 10.5f,
-                    lineHeightVirtualPx = 11.0f,
+                    fontSizeVirtualPx = 10.0f,
+                    lineHeightVirtualPx = 10.5f,
                     letterSpacingVirtualPx = 0.0f,
                     scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
@@ -492,7 +519,7 @@ fun GbaWatchBagSettingsScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Water Icon (x = 39 - 32 = 7, y = 72 - 65 = 7, w = 12, h = 12)
+                // Water Icon
                 GbaPixelImage(
                     resId = R.drawable.gba_bag_icon_water,
                     contentDescription = "Water Icon",
@@ -501,7 +528,7 @@ fun GbaWatchBagSettingsScreen(
                         .size((12 * scale).dp)
                 )
 
-                // Title (x = 55 - 32 = 23, y = 68 - 65 = 3)
+                // Title
                 GbaText(
                     text = "WATER (08-21)",
                     scale = scale,
@@ -513,7 +540,7 @@ fun GbaWatchBagSettingsScreen(
                     modifier = Modifier.offset(x = (23 * scale).dp, y = (3.5f * scale).dp)
                 )
 
-                // Subtitle (x = 55 - 32 = 23, y = 78 - 65 = 13)
+                // Subtitle
                 GbaText(
                     text = "REMINDER NUDGE",
                     scale = scale,
@@ -569,7 +596,7 @@ fun GbaWatchBagSettingsScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Pokéball Icon (x = 39 - 32 = 7, y = 103 - 96 = 7, w = 12, h = 12)
+                // Pokéball Icon
                 GbaPixelImage(
                     resId = R.drawable.gba_bag_icon_pokeball,
                     contentDescription = "Pokeball Icon",
@@ -578,7 +605,7 @@ fun GbaWatchBagSettingsScreen(
                         .size((12 * scale).dp)
                 )
 
-                // Title (x = 55 - 32 = 23, y = 99 - 96 = 3)
+                // Title
                 GbaText(
                     text = "1-MI RUN (17:00)",
                     scale = scale,
@@ -591,7 +618,7 @@ fun GbaWatchBagSettingsScreen(
                     modifier = Modifier.offset(x = (23 * scale).dp, y = (3.5f * scale).dp)
                 )
 
-                // Subtitle (x = 55 - 32 = 23, y = 109 - 96 = 13)
+                // Subtitle
                 GbaText(
                     text = "DAILY CHALLENGE",
                     scale = scale,
@@ -645,7 +672,7 @@ fun GbaWatchBagSettingsScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Cable Icon (x = 40 - 32 = 8, y = 74 - 65 = 9, w = 12, h = 12)
+                // Cable Icon
                 GbaPixelImage(
                     resId = R.drawable.gba_bag_icon_link_cable,
                     contentDescription = "Link Icon",
@@ -654,7 +681,7 @@ fun GbaWatchBagSettingsScreen(
                         .size((12 * scale).dp)
                 )
 
-                // Line 1: STATUS: ONLINE (x = 54 - 32 = 22, y = 69 - 65 = 4)
+                // Line 1: STATUS: ONLINE
                 GbaText(
                     text = "STATUS: ONLINE",
                     scale = scale,
@@ -666,7 +693,7 @@ fun GbaWatchBagSettingsScreen(
                     modifier = Modifier.offset(x = (22 * scale).dp, y = (4.5f * scale).dp)
                 )
 
-                // Line 2: WEAR DATA LAYER (x = 54 - 32 = 22, y = 80 - 65 = 15)
+                // Line 2: WEAR DATA LAYER
                 GbaText(
                     text = "WEAR DATA LAYER",
                     scale = scale,

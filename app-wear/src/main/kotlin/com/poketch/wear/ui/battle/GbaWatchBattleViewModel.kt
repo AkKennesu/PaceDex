@@ -380,6 +380,31 @@ class GbaWatchBattleViewModel @Inject constructor(
         setActiveBuddy(pokedexNumber)
     }
 
+    fun triggerDemoUnlock(pokemonId: Int = 54) {
+        viewModelScope.launch {
+            val poke = uiState.value.allPokemon.find { it.pokedexNumber == pokemonId }
+                ?: com.poketch.core.domain.model.Pokemon(
+                    pokedexNumber = pokemonId,
+                    name = "Psyduck",
+                    primaryType = "Water",
+                    unlockRule = com.poketch.core.domain.model.UnlockRule(
+                        ruleCode = "HYDRATION_3",
+                        category = com.poketch.core.domain.model.PokemonCategory.WATER_HYDRATION,
+                        description = "Log water 3 times in a day",
+                        targetThreshold = 3
+                    ),
+                    isUnlocked = true,
+                    currentProgress = 3,
+                    spriteAssetPath = "sprites/pokemon_054.png"
+                )
+            newlyUnlockedPokemonFlow.value = com.poketch.core.domain.engine.UnlockEvent.NewPokemonUnlocked(
+                pokemon = poke,
+                triggerReason = "Hydration Goal Reached! 3/3 Logs Complete!",
+                timestampMillis = System.currentTimeMillis()
+            )
+        }
+    }
+
     private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
     private data class Penta<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
 }

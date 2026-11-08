@@ -328,9 +328,7 @@ fun GbaWatchBattleHomeScreen(
             modifier = Modifier
                 .gbaVirtualBounds(29, 34, 86, 34, scale)
                 .clickable {
-                    val targetName = (target?.name ?: "TARGET").uppercase()
-                    val desc = target?.unlockRule?.description ?: "READY!"
-                    viewModel.showTemporaryDialog("WILD $targetName: $desc", durationMillis = 3500L)
+                    viewModel.triggerDemoUnlock(targetPokedexNum)
                 }
         )
 
@@ -343,7 +341,7 @@ fun GbaWatchBattleHomeScreen(
                 delay(1000.milliseconds)
             }
         }
-        val weatherBadge = state.currentWeather.badgeText
+        val weatherTemp = "${state.currentWeather.tempCelsius}°C"
         Row(
             modifier = Modifier.gbaVirtualBounds(37, 36, 74, 14, scale),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -362,7 +360,7 @@ fun GbaWatchBattleHomeScreen(
                 includeFontPadding = false,
             )
             GbaText(
-                text = weatherBadge,
+                text = weatherTemp,
                 scale = scale,
                 color = Color(0xFF202820),
                 fontSizeVirtualPx = 12.8f,
@@ -850,13 +848,14 @@ fun GbaWatchBattleHomeScreen(
                     }
             )
 
-            // GBA Dialogue / Specimen Card at (x = 18, y = 18, w = 156, h = 156)
+            // GBA Dialogue / Specimen Card at (x = 24, y = 22, w = 144, h = 148)
+            // Inscribed perfectly inside circular smartwatch screen boundaries
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(18, 18, 156, 156, scale)
-                    .background(Color(0xFFF8F8F0), shape = RoundedCornerShape((12 * scale).dp))
-                    .border((2 * scale).dp, Color(0xFF204840), shape = RoundedCornerShape((12 * scale).dp))
-                    .padding(((6 * scale).dp).coerceAtLeast(4.dp)),
+                    .gbaVirtualBounds(24, 22, 144, 148, scale)
+                    .background(Color(0xFFF8F8F0), shape = RoundedCornerShape((18 * scale).dp))
+                    .border((2 * scale).dp, Color(0xFF204840), shape = RoundedCornerShape((18 * scale).dp))
+                    .padding(horizontal = (10 * scale).dp, vertical = (7 * scale).dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -872,14 +871,16 @@ fun GbaWatchBattleHomeScreen(
                         fontSizeVirtualPx = 9.5f,
                         lineHeightVirtualPx = 10f,
                         fontWeight = FontWeight.Black,
-                        scaleX = 1.05f,
-                        textAlign = TextAlign.Center
+                        scaleX = 1.0f,
+                        letterSpacingVirtualPx = 0.0f,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     // Specimen Monitor Box
                     Box(
                         modifier = Modifier
-                            .size((52 * scale).dp)
+                            .size((46 * scale).dp)
                             .background(Color(0xFFE8F0E8), shape = RoundedCornerShape((8 * scale).dp))
                             .border((1.5f * scale).dp, Color(0xFF507870), shape = RoundedCornerShape((8 * scale).dp)),
                         contentAlignment = Alignment.Center
@@ -894,7 +895,7 @@ fun GbaWatchBattleHomeScreen(
                             contentDescription = unlockedPoke.name,
                             filterQuality = FilterQuality.None,
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier.size((44 * scale).dp)
+                            modifier = Modifier.size((40 * scale).dp)
                         )
                     }
 
@@ -906,8 +907,10 @@ fun GbaWatchBattleHomeScreen(
                         fontSizeVirtualPx = 11f,
                         lineHeightVirtualPx = 12f,
                         fontWeight = FontWeight.Bold,
-                        scaleX = 1.08f,
-                        textAlign = TextAlign.Center
+                        scaleX = 1.0f,
+                        letterSpacingVirtualPx = 0.0f,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     // Trigger Reason / Mission Description
@@ -918,15 +921,21 @@ fun GbaWatchBattleHomeScreen(
                         color = Color(0xFF405848),
                         fontSizeVirtualPx = 7.5f,
                         lineHeightVirtualPx = 8.5f,
-                        scaleX = 1.02f,
+                        scaleX = 1.0f,
+                        letterSpacingVirtualPx = 0.0f,
                         maxLines = 2,
                         softWrap = true,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = (4 * scale).dp)
                     )
 
                     // Action Buttons (Row: SET BUDDY | GOTCHA!)
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = (4 * scale).dp),
                         horizontalArrangement = Arrangement.spacedBy((6 * scale).dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -934,9 +943,9 @@ fun GbaWatchBattleHomeScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .height((22 * scale).dp)
-                                .background(Color(0xFFC83838), shape = RoundedCornerShape((4 * scale).dp))
-                                .border((1 * scale).dp, Color(0xFF701818), shape = RoundedCornerShape((4 * scale).dp))
+                                .height((20 * scale).dp)
+                                .background(Color(0xFFC83838), shape = RoundedCornerShape((5 * scale).dp))
+                                .border((1 * scale).dp, Color(0xFF701818), shape = RoundedCornerShape((5 * scale).dp))
                                 .clickable {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.setUnlockedAsActiveBuddy(unlockedPoke.pokedexNumber)
@@ -949,18 +958,22 @@ fun GbaWatchBattleHomeScreen(
                                 color = Color.White,
                                 fontSizeVirtualPx = 8f,
                                 fontWeight = FontWeight.Bold,
-                                scaleX = 1.05f,
-                                textAlign = TextAlign.Center
+                                scaleX = 1.0f,
+                                letterSpacingVirtualPx = 0.0f,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .offset(y = (-1f * scale).dp)
                             )
                         }
 
-                        // GOTCHA! Button
+                        // GOTCHA! Button (Yellow)
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .height((22 * scale).dp)
-                                .background(Color(0xFF287060), shape = RoundedCornerShape((4 * scale).dp))
-                                .border((1 * scale).dp, Color(0xFF104038), shape = RoundedCornerShape((4 * scale).dp))
+                                .height((20 * scale).dp)
+                                .background(Color(0xFFFFC820), shape = RoundedCornerShape((5 * scale).dp))
+                                .border((1 * scale).dp, Color(0xFF885800), shape = RoundedCornerShape((5 * scale).dp))
                                 .clickable {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     viewModel.dismissUnlockCelebration()
@@ -970,11 +983,15 @@ fun GbaWatchBattleHomeScreen(
                             GbaText(
                                 text = "GOTCHA!",
                                 scale = scale,
-                                color = Color.White,
+                                color = Color(0xFF281C04),
                                 fontSizeVirtualPx = 8f,
                                 fontWeight = FontWeight.Bold,
-                                scaleX = 1.05f,
-                                textAlign = TextAlign.Center
+                                scaleX = 1.0f,
+                                letterSpacingVirtualPx = 0.0f,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .offset(y = (-1f * scale).dp)
                             )
                         }
                     }
