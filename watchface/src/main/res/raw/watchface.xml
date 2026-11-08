@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WatchFace width="450" height="450">
+    <Metadata key="CLOCK_TYPE" value="DIGITAL" />
+    <Metadata key="PREVIEW_TIME" value="10:08:32" />
+
+    <Scene backgroundColor="#000000">
+        <!-- ================================================================= -->
+        <!-- 1. INTERACTIVE MODE SCENE                                         -->
+        <!-- ================================================================= -->
+        <Group name="interactive_scene" x="0" y="0" width="450" height="450">
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+
+            <!-- Circular Studded Bezel + Dial Canvas & Grass Platform -->
+            <PartImage x="0" y="0" width="450" height="450">
+                <Image resource="wf_bg_round_bezel" />
+            </PartImage>
+
+            <!-- Top Clock Box: Date & Day (Bold, High-Contrast White) -->
+            <PartText x="105" y="58" width="160" height="26">
+                <Text align="START">
+                    <Font family="SYNC_TO_DEVICE" size="20" color="#FFFFFF" weight="BOLD">
+                        <Template><![CDATA[%s, %s %s]]><Parameter expression="[DAY_OF_WEEK_S]" /><Parameter expression="[MONTH_S]" /><Parameter expression="[DAY]" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- Top Clock Box: Battery Bar (Dynamic green fill next to BAT label) -->
+            <PartDraw x="284" y="66" width="46" height="8">
+                <Rectangle x="0" y="0" width="46" height="8">
+                    <Fill color="#58D878" />
+                    <Transform target="width" value="clamp([BATTERY_PERCENT] * 0.46, 3, 46)" />
+                </Rectangle>
+            </PartDraw>
+
+            <!-- Top Clock Box: Digital Clock (Large, Bold, Crisp White) -->
+            <DigitalClock x="108" y="86" width="170" height="54">
+                <TimeText x="0" y="0" width="170" height="54" format="hh:mm" align="CENTER">
+                    <Font family="SYNC_TO_DEVICE" size="54" color="#FFFFFF" weight="BOLD" />
+                </TimeText>
+            </DigitalClock>
+
+            <!-- Top Clock Box: AM/PM Indicator (Cyan Accent) -->
+            <PartText x="280" y="98" width="50" height="32">
+                <Text align="START">
+                    <Font family="SYNC_TO_DEVICE" size="19" color="#A0D0F8" weight="BOLD">
+                        <Template><![CDATA[%s]]><Parameter expression="[IS_24_HOUR_MODE] ? &quot;&quot; : ([HOUR_0_23] >= 12 ? &quot;PM&quot; : &quot;AM&quot;)" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- Middle Left: Pikachu Partner Sprite on Grass Battle Platform -->
+            <PartImage x="63" y="169" width="98" height="98">
+                <Image resource="wf_icon_pikachu" />
+            </PartImage>
+
+            <!-- Middle Right: Calorie Bar (Green) -->
+            <PartDraw x="265" y="183" width="108" height="8">
+                <Rectangle x="0" y="0" width="108" height="8">
+                    <Fill color="#58D878" />
+                    <Transform target="width" value="clamp(([STEP_COUNT] / 10000.0) * 108, 10, 108)" />
+                </Rectangle>
+            </PartDraw>
+
+            <!-- Middle Right: Step Bar (Yellow) -->
+            <PartDraw x="265" y="206" width="108" height="8">
+                <Rectangle x="0" y="0" width="108" height="8">
+                    <Fill color="#F8D030" />
+                    <Transform target="width" value="clamp(([STEP_COUNT] / 10000.0) * 108, 10, 108)" />
+                </Rectangle>
+            </PartDraw>
+
+            <!-- Middle Right: Numeric Steps Text (Prominent, High-Contrast, Bold) -->
+            <PartText x="196" y="220" width="198" height="36">
+                <Text align="CENTER">
+                    <Font family="SYNC_TO_DEVICE" size="24" color="#1A281A" weight="BOLD">
+                        <Template><![CDATA[%d STEPS]]><Parameter expression="[STEP_COUNT]" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- Middle Right: Water Bar (Blue) -->
+            <PartDraw x="258" y="260" width="118" height="8">
+                <Rectangle x="0" y="0" width="118" height="8">
+                    <Fill color="#3898F8" />
+                </Rectangle>
+            </PartDraw>
+
+            <!-- Bottom Box: 4 Pokéballs (3 active, 1 empty) -->
+            <PartImage x="112" y="322" width="18" height="18">
+                <Image resource="wf_icon_ball_active" />
+            </PartImage>
+            <PartImage x="134" y="322" width="18" height="18">
+                <Image resource="wf_icon_ball_active" />
+            </PartImage>
+            <PartImage x="155" y="322" width="18" height="18">
+                <Image resource="wf_icon_ball_active" />
+            </PartImage>
+            <PartImage x="176" y="322" width="18" height="18">
+                <Image resource="wf_icon_ball_empty" />
+            </PartImage>
+
+            <!-- Bottom Box: Heart Icon + Heart Rate (BPM) -->
+            <PartImage x="208" y="321" width="22" height="20">
+                <Image resource="wf_icon_heart" />
+            </PartImage>
+            <PartText x="234" y="316" width="105" height="28">
+                <Text align="START">
+                    <Font family="SYNC_TO_DEVICE" size="21" color="#1A281A" weight="BOLD">
+                        <Template><![CDATA[%d BPM]]><Parameter expression="[HEART_RATE] > 0 ? [HEART_RATE] : 72" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- Bottom Box: Cursor + OPEN POKETCH Action Prompt -->
+            <PartImage x="120" y="347" width="16" height="24">
+                <Image resource="wf_icon_cursor" />
+            </PartImage>
+            <PartText x="142" y="346" width="185" height="28">
+                <Text align="START">
+                    <Font family="SYNC_TO_DEVICE" size="22" color="#1A281A" weight="BOLD">
+                        <![CDATA[OPEN POKéTCH]]>
+                    </Font>
+                </Text>
+            </PartText>
+        </Group>
+
+        <!-- ================================================================= -->
+        <!-- 2. AMBIENT (ALWAYS-ON DISPLAY) SCENE                              -->
+        <!-- ================================================================= -->
+        <Group name="ambient_scene" x="0" y="0" width="450" height="450" alpha="0">
+            <Variant mode="AMBIENT" target="alpha" value="255" />
+
+            <!-- Ambient Black & Emerald Green Wireframe Background -->
+            <PartImage x="0" y="0" width="450" height="450">
+                <Image resource="wf_bg_ambient_wireframe" />
+            </PartImage>
+
+            <!-- Ambient Top Box: Date & Day (Green) -->
+            <PartText x="105" y="58" width="140" height="26">
+                <Text align="START">
+                    <Font family="SYNC_TO_DEVICE" size="20" color="#489060" weight="BOLD">
+                        <Template><![CDATA[%s, %s %s]]><Parameter expression="[DAY_OF_WEEK_S]" /><Parameter expression="[MONTH_S]" /><Parameter expression="[DAY]" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- Ambient Top Box: Battery Percent (Green) -->
+            <PartText x="248" y="58" width="85" height="26">
+                <Text align="END">
+                    <Font family="SYNC_TO_DEVICE" size="19" color="#489060" weight="BOLD">
+                        <Template><![CDATA[%d%%]]><Parameter expression="[BATTERY_PERCENT]" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- Ambient Top Box: Digital Clock (Large Glowing Emerald Green) -->
+            <DigitalClock x="105" y="86" width="175" height="54">
+                <TimeText x="0" y="0" width="175" height="54" format="hh:mm" align="CENTER">
+                    <Font family="SYNC_TO_DEVICE" size="54" color="#58D878" weight="BOLD" />
+                </TimeText>
+            </DigitalClock>
+
+            <!-- Ambient Top Box: AM/PM Indicator (Glowing Green) -->
+            <PartText x="280" y="98" width="50" height="32">
+                <Text align="START">
+                    <Font family="SYNC_TO_DEVICE" size="19" color="#58D878" weight="BOLD">
+                        <Template><![CDATA[%s]]><Parameter expression="[IS_24_HOUR_MODE] ? &quot;&quot; : ([HOUR_0_23] >= 12 ? &quot;PM&quot; : &quot;AM&quot;)" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- Ambient Middle Right: Steps Display (Inside Wireframe Box) -->
+            <PartText x="196" y="195" width="198" height="36">
+                <Text align="CENTER">
+                    <Font family="SYNC_TO_DEVICE" size="24" color="#58D878" weight="BOLD">
+                        <Template><![CDATA[%d STEPS]]><Parameter expression="[STEP_COUNT]" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- Ambient Bottom Box: Pokétch AOD Label -->
+            <PartText x="105" y="335" width="240" height="32">
+                <Text align="CENTER">
+                    <Font family="SYNC_TO_DEVICE" size="20" color="#489060" weight="BOLD">
+                        <![CDATA[★ POKéTCH AOD ★]]>
+                    </Font>
+                </Text>
+            </PartText>
+        </Group>
+
+        <!-- Tap-friendly Complication Slot over Bottom Dialog Box -->
+        <ComplicationSlot slotId="1" supportedTypes="EMPTY SHORT_TEXT"
+            x="94" y="310" width="262" height="75">
+            <BoundingBox x="0" y="0" width="262" height="75" />
+            <DefaultProviderPolicy
+                defaultSystemProvider="STEP_COUNT"
+                defaultSystemProviderType="SHORT_TEXT" />
+            <Complication type="EMPTY" />
+            <Complication type="SHORT_TEXT" />
+        </ComplicationSlot>
+    </Scene>
+</WatchFace>
