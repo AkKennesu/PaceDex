@@ -27,13 +27,21 @@ import com.poketch.wear.ui.diagnostics.SyncDiagnosticsScreen
 import com.poketch.wear.ui.diagnostics.SyncDiagnosticsViewModel
 import com.poketch.wear.ui.habits.QuickHabitActionsScreen
 import com.poketch.wear.ui.habits.QuickHabitActionsViewModel
+import androidx.lifecycle.lifecycleScope
+import com.poketch.core.domain.repository.UserRepository
+import com.poketch.wear.complication.PoketchBuddyPokemonComplicationService
 import com.poketch.wear.ui.run.RunTrackerScreen
 import com.poketch.wear.ui.run.RunTrackerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class WearMainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var userRepository: UserRepository
 
     private val battleViewModel: GbaWatchBattleViewModel by viewModels()
     private val dashboardViewModel: WatchDashboardViewModel by viewModels()
@@ -48,6 +56,14 @@ class WearMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val initialRoute = intent?.getStringExtra("destination_route") ?: "watch_dashboard"
+
+        lifecycleScope.launch {
+            userRepository.observeUserProfile().collect { profile ->
+                if (profile != null) {
+                    PoketchBuddyPokemonComplicationService.requestUpdate(this@WearMainActivity)
+                }
+            }
+        }
 
         setContent {
             MaterialTheme {

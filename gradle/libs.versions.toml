@@ -49,6 +49,7 @@ health-connect-client = { group = "androidx.health.connect", name = "connect-cli
 wear-tiles = { group = "androidx.wear.tiles", name = "tiles", version.ref = "wearTiles" }
 wear-protolayout = { group = "androidx.wear.protolayout", name = "protolayout", version.ref = "wearProtolayout" }
 wear-protolayout-material = { group = "androidx.wear.protolayout", name = "protolayout-material", version.ref = "wearProtolayout" }
+wear-watchface = { group = "androidx.wear.watchface", name = "watchface", version.ref = "wearWatchface" }
 wear-watchface-complications = { group = "androidx.wear.watchface", name = "watchface-complications-data-source-ktx", version.ref = "wearWatchface" }
 
 # Watch <-> Phone Sync

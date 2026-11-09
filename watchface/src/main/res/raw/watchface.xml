@@ -24,11 +24,11 @@
                 </Text>
             </PartText>
 
-            <!-- Top Clock Box: Battery Bar (Dynamic green fill next to BAT label) -->
-            <PartDraw x="284" y="66" width="46" height="8">
-                <Rectangle x="0" y="0" width="46" height="8">
+            <!-- Top Clock Box: Battery Bar (Dynamic green fill inside BAT slot) -->
+            <PartDraw x="291" y="68" width="54" height="7">
+                <Rectangle x="0" y="0" width="54" height="7">
                     <Fill color="#58D878" />
-                    <Transform target="width" value="clamp([BATTERY_PERCENT] * 0.46, 3, 46)" />
+                    <Transform target="width" value="clamp([BATTERY_PERCENT] * 0.54, 3, 54)" />
                 </Rectangle>
             </PartDraw>
 
@@ -48,42 +48,22 @@
                 </Text>
             </PartText>
 
-            <!-- Middle Left: Pikachu Partner Sprite on Grass Battle Platform -->
-            <PartImage x="63" y="169" width="98" height="98">
-                <Image resource="wf_icon_pikachu" />
-            </PartImage>
-
-            <!-- Middle Right: Calorie Bar (Green) -->
-            <PartDraw x="265" y="183" width="108" height="8">
-                <Rectangle x="0" y="0" width="108" height="8">
-                    <Fill color="#58D878" />
-                    <Transform target="width" value="clamp(([STEP_COUNT] / 10000.0) * 108, 10, 108)" />
-                </Rectangle>
-            </PartDraw>
-
-            <!-- Middle Right: Step Bar (Yellow) -->
-            <PartDraw x="265" y="206" width="108" height="8">
-                <Rectangle x="0" y="0" width="108" height="8">
+            <!-- Middle Right: Step Bar (Yellow, perfectly aligned inside STP slot) -->
+            <PartDraw x="244" y="206" width="138" height="7">
+                <Rectangle x="0" y="0" width="138" height="7">
                     <Fill color="#F8D030" />
-                    <Transform target="width" value="clamp(([STEP_COUNT] / 10000.0) * 108, 10, 108)" />
+                    <Transform target="width" value="clamp(([STEP_COUNT] / 10000.0) * 138, 8, 138)" />
                 </Rectangle>
             </PartDraw>
 
-            <!-- Middle Right: Numeric Steps Text (Prominent, High-Contrast, Bold) -->
-            <PartText x="196" y="220" width="198" height="36">
+            <!-- Middle Right: Numeric Steps Text (Centered cleanly inside stats box) -->
+            <PartText x="244" y="222" width="138" height="30">
                 <Text align="CENTER">
-                    <Font family="SYNC_TO_DEVICE" size="24" color="#1A281A" weight="BOLD">
+                    <Font family="SYNC_TO_DEVICE" size="20" color="#1A281A" weight="BOLD">
                         <Template><![CDATA[%d STEPS]]><Parameter expression="[STEP_COUNT]" /></Template>
                     </Font>
                 </Text>
             </PartText>
-
-            <!-- Middle Right: Water Bar (Blue) -->
-            <PartDraw x="258" y="260" width="118" height="8">
-                <Rectangle x="0" y="0" width="118" height="8">
-                    <Fill color="#3898F8" />
-                </Rectangle>
-            </PartDraw>
 
             <!-- Bottom Box: 4 Pokéballs (3 active, 1 empty) -->
             <PartImage x="112" y="322" width="18" height="18">
@@ -170,9 +150,9 @@
             </PartText>
 
             <!-- Ambient Middle Right: Steps Display (Inside Wireframe Box) -->
-            <PartText x="196" y="195" width="198" height="36">
+            <PartText x="244" y="195" width="138" height="36">
                 <Text align="CENTER">
-                    <Font family="SYNC_TO_DEVICE" size="24" color="#58D878" weight="BOLD">
+                    <Font family="SYNC_TO_DEVICE" size="22" color="#58D878" weight="BOLD">
                         <Template><![CDATA[%d STEPS]]><Parameter expression="[STEP_COUNT]" /></Template>
                     </Font>
                 </Text>
@@ -189,7 +169,7 @@
         </Group>
 
         <!-- Tap-friendly Complication Slot over Bottom Dialog Box -->
-        <ComplicationSlot slotId="1" supportedTypes="EMPTY SHORT_TEXT"
+        <ComplicationSlot slotId="1" supportedTypes="SHORT_TEXT"
             x="94" y="310" width="262" height="75">
             <BoundingBox x="0" y="0" width="262" height="75" />
             <DefaultProviderPolicy
@@ -197,6 +177,87 @@
                 defaultSystemProviderType="SHORT_TEXT" />
             <Complication type="EMPTY" />
             <Complication type="SHORT_TEXT" />
+        </ComplicationSlot>
+
+        <!-- Dynamic Active Buddy Pokémon Sprite Complication Slot (Slot 2) -->
+        <ComplicationSlot slotId="2" supportedTypes="SMALL_IMAGE EMPTY"
+            x="63" y="169" width="98" height="98">
+            <BoundingBox x="0" y="0" width="98" height="98" />
+            <DefaultProviderPolicy
+                primaryProvider="com.poketch.app/com.poketch.wear.complication.PoketchBuddyPokemonComplicationService"
+                primaryProviderType="SMALL_IMAGE"
+                defaultSystemProvider="EMPTY"
+                defaultSystemProviderType="EMPTY" />
+            <Complication type="SMALL_IMAGE">
+                <PartImage x="0" y="0" width="98" height="98" alpha="255">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Image resource="[COMPLICATION.SMALL_IMAGE]" />
+                </PartImage>
+            </Complication>
+            <Complication type="EMPTY">
+                <PartImage x="0" y="0" width="98" height="98" alpha="255">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Image resource="wf_icon_pikachu" />
+                </PartImage>
+            </Complication>
+        </ComplicationSlot>
+
+        <!-- Dynamic Calorie Bar Complication Slot (Slot 3) -->
+        <ComplicationSlot slotId="3" supportedTypes="RANGED_VALUE EMPTY"
+            x="244" y="174" width="138" height="24">
+            <BoundingBox x="0" y="0" width="138" height="24" />
+            <DefaultProviderPolicy
+                primaryProvider="com.poketch.app/com.poketch.wear.complication.PoketchCalorieComplicationService"
+                primaryProviderType="RANGED_VALUE"
+                defaultSystemProvider="EMPTY"
+                defaultSystemProviderType="EMPTY" />
+            <Complication type="RANGED_VALUE">
+                <PartDraw x="0" y="9" width="138" height="7" alpha="255">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Rectangle x="0" y="0" width="138" height="7">
+                        <Fill color="#58D878" />
+                        <Transform target="width" value="[COMPLICATION.RANGED_VALUE_VALUE] &gt; 0 ? clamp(([COMPLICATION.RANGED_VALUE_VALUE] / [COMPLICATION.RANGED_VALUE_MAX]) * 138, 4, 138) : 0" />
+                    </Rectangle>
+                </PartDraw>
+            </Complication>
+            <Complication type="EMPTY">
+                <PartDraw x="0" y="9" width="138" height="7" alpha="255">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Rectangle x="0" y="0" width="138" height="7">
+                        <Fill color="#58D878" />
+                        <Transform target="width" value="clamp(([STEP_COUNT] &gt; 0 ? ([STEP_COUNT] / 8000.0) * 138 : 35), 8, 138)" />
+                    </Rectangle>
+                </PartDraw>
+            </Complication>
+        </ComplicationSlot>
+
+        <!-- Dynamic Water Bar Complication Slot (Slot 4) -->
+        <ComplicationSlot slotId="4" supportedTypes="RANGED_VALUE EMPTY"
+            x="253" y="250" width="129" height="24">
+            <BoundingBox x="0" y="0" width="129" height="24" />
+            <DefaultProviderPolicy
+                primaryProvider="com.poketch.app/com.poketch.wear.complication.PoketchWaterComplicationService"
+                primaryProviderType="RANGED_VALUE"
+                defaultSystemProvider="EMPTY"
+                defaultSystemProviderType="EMPTY" />
+            <Complication type="RANGED_VALUE">
+                <PartDraw x="0" y="10" width="129" height="5" alpha="255">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Rectangle x="0" y="0" width="129" height="5">
+                        <Fill color="#3898F8" />
+                        <Transform target="width" value="[COMPLICATION.RANGED_VALUE_VALUE] &gt; 0 ? clamp(([COMPLICATION.RANGED_VALUE_VALUE] / [COMPLICATION.RANGED_VALUE_MAX]) * 129, 4, 129) : 0" />
+                    </Rectangle>
+                </PartDraw>
+            </Complication>
+            <Complication type="EMPTY">
+                <PartDraw x="0" y="10" width="129" height="5" alpha="255">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Rectangle x="0" y="0" width="129" height="5">
+                        <Fill color="#3898F8" />
+                        <Transform target="width" value="clamp(96, 10, 129)" />
+                    </Rectangle>
+                </PartDraw>
+            </Complication>
         </ComplicationSlot>
     </Scene>
 </WatchFace>

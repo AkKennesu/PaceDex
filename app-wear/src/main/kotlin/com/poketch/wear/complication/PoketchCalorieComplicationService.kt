@@ -1,12 +1,15 @@
 package com.poketch.wear.complication
 
 import android.app.PendingIntent
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.RangedValueComplicationData
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
+import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import com.poketch.core.domain.repository.CalorieRepository
@@ -133,6 +136,19 @@ class PoketchCalorieComplicationService : SuspendingComplicationDataSourceServic
                     .build()
             }
             else -> null
+        }
+    }
+
+    companion object {
+        fun requestUpdate(context: Context) {
+            try {
+                val requester = ComplicationDataSourceUpdateRequester.create(
+                    context,
+                    ComponentName(context, PoketchCalorieComplicationService::class.java)
+                )
+                requester.requestUpdateAll()
+            } catch (_: Exception) {
+            }
         }
     }
 }

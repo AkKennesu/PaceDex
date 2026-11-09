@@ -282,6 +282,7 @@ class GbaWatchBattleViewModel @Inject constructor(
             selectedBuddyIdFlow.value = pokedexNumber
             userRepository.updateActiveBuddy(pokedexNumber)
             poketchSyncManager.syncUserProfile()
+            com.poketch.wear.complication.PoketchBuddyPokemonComplicationService.requestUpdate(context)
             val poke = pokemonRepository.observePokemonById(pokedexNumber).firstOrNull()
             val name = (poke?.name ?: "POKéMON").uppercase()
             showTemporaryDialog("$name is now your Buddy! ★", durationMillis = 3000L)

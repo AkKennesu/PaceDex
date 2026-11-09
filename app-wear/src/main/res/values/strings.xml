@@ -5,4 +5,9 @@
     <string name="tile_description">Quick view of today\'s deficit progress, hydration, and buddy Pokémon</string>
     <string name="complication_name">Pokétch Calorie Deficit</string>
     <string name="complication_description">Displays remaining daily calories or over-target warning</string>
+    <string name="complication_buddy_name">Pokétch Active Buddy</string>
+    <string name="complication_buddy_description">Displays your current partner Pokémon sprite on the watch face</string>
+    <string name="complication_water_name">Pokétch Hydration</string>
+    <string name="complication_water_description">Displays daily water intake progress toward your goal</string>
+    <string name="watch_face_name">Pokétch Live Watch Face</string>
 </resources>

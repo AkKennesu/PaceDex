@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.wear.protolayout)
     implementation(libs.wear.protolayout.material)
     implementation(libs.wear.watchface.complications)
+    implementation(libs.wear.watchface)
 
     implementation(libs.health.services.client)
     implementation(libs.play.services.wearable)
