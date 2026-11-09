@@ -107,8 +107,8 @@ class PoketchBuddyPokemonComplicationService : SuspendingComplicationDataSourceS
                 originalBitmap
             }
 
-            val targetSlotSize = 120
-            val maxDrawSize = 112f
+            val targetSlotSize = 90
+            val maxDrawSize = 82f
             val scale = minOf(maxDrawSize / cropped.width, maxDrawSize / cropped.height)
             val scaledW = (cropped.width * scale).toInt().coerceAtLeast(1)
             val scaledH = (cropped.height * scale).toInt().coerceAtLeast(1)
