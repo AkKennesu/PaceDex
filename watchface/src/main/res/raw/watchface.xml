@@ -181,7 +181,7 @@
 
         <!-- Dynamic Active Buddy Pokémon Sprite Complication Slot (Slot 2) -->
         <ComplicationSlot slotId="2" supportedTypes="SMALL_IMAGE EMPTY"
-            x="96" y="170" width="90" height="90">
+            x="69" y="174" width="90" height="90">
             <BoundingBox x="0" y="0" width="90" height="90" />
             <DefaultProviderPolicy
                 primaryProvider="com.poketch.app/com.poketch.wear.complication.PoketchBuddyPokemonComplicationService"
