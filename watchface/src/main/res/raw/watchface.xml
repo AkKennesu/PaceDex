@@ -91,14 +91,14 @@
                 </Text>
             </PartText>
 
-            <!-- Bottom Box: Cursor + OPEN POKETCH Action Prompt -->
-            <PartImage x="120" y="347" width="16" height="24">
-                <Image resource="wf_icon_cursor" />
-            </PartImage>
-            <PartText x="142" y="346" width="185" height="28">
-                <Text align="START">
+            <!-- Bottom Box: Temperature Display -->
+            <PartText x="105" y="346" width="240" height="28">
+                <Text align="CENTER">
                     <Font family="SYNC_TO_DEVICE" size="22" color="#1A281A" weight="BOLD">
-                        <![CDATA[OPEN POKéTCH]]>
+                        <Template><![CDATA[%d°%s]]>
+                            <Parameter expression="[WEATHER.IS_AVAILABLE] ? [WEATHER.TEMPERATURE] : ([WEATHER.TEMPERATURE_UNIT] == 2 ? 72 : 22)" />
+                            <Parameter expression="[WEATHER.TEMPERATURE_UNIT] == 2 ? &quot;F&quot; : &quot;C&quot;" />
+                        </Template>
                     </Font>
                 </Text>
             </PartText>
@@ -169,12 +169,12 @@
         </Group>
 
         <!-- Tap-friendly Complication Slot over Bottom Dialog Box -->
-        <ComplicationSlot slotId="1" supportedTypes="SHORT_TEXT"
+        <ComplicationSlot slotId="1" supportedTypes="SHORT_TEXT EMPTY"
             x="94" y="310" width="262" height="75">
             <BoundingBox x="0" y="0" width="262" height="75" />
             <DefaultProviderPolicy
-                defaultSystemProvider="STEP_COUNT"
-                defaultSystemProviderType="SHORT_TEXT" />
+                defaultSystemProvider="EMPTY"
+                defaultSystemProviderType="EMPTY" />
             <Complication type="EMPTY" />
             <Complication type="SHORT_TEXT" />
         </ComplicationSlot>
