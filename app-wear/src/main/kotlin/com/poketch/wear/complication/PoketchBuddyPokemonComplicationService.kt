@@ -6,10 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.drawable.Icon
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
-import androidx.wear.watchface.complications.data.PhotoImageComplicationData
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.SmallImage
 import androidx.wear.watchface.complications.data.SmallImageComplicationData
@@ -57,21 +59,77 @@ class PoketchBuddyPokemonComplicationService : SuspendingComplicationDataSourceS
         }
     }
 
+    private fun findNonTransparentBounds(bitmap: Bitmap): Rect? {
+        val width = bitmap.width
+        val height = bitmap.height
+        var minX = width
+        var minY = height
+        var maxX = -1
+        var maxY = -1
+
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+        for (y in 0 until height) {
+            val rowOffset = y * width
+            for (x in 0 until width) {
+                val alpha = (pixels[rowOffset + x] ushr 24) and 0xFF
+                if (alpha > 20) {
+                    if (x < minX) minX = x
+                    if (x > maxX) maxX = x
+                    if (y < minY) minY = y
+                    if (y > maxY) maxY = y
+                }
+            }
+        }
+
+        return if (maxX >= minX && maxY >= minY) {
+            Rect(minX, minY, maxX + 1, maxY + 1)
+        } else {
+            null
+        }
+    }
+
     private fun loadBuddyIcon(pokedexNumber: Int): Icon? {
         val padded = Gen3PokemonSpriteResolver.formatPokedexId(pokedexNumber)
         val path = "sprites/pokemon_$padded.png"
-        val bitmap = runCatching {
+        val originalBitmap = runCatching {
             assets.open(path).use { stream ->
                 BitmapFactory.decodeStream(stream)
             }
         }.getOrNull()
 
-        return if (bitmap != null) {
-            // Nearest-neighbor 98x98 scaling to fill the complication slot sharply without blur
-            val scaled = Bitmap.createScaledBitmap(bitmap, 98, 98, false)
-            Icon.createWithBitmap(scaled)
+        if (originalBitmap != null) {
+            val bounds = findNonTransparentBounds(originalBitmap)
+            val cropped = if (bounds != null && bounds.width() > 0 && bounds.height() > 0) {
+                Bitmap.createBitmap(originalBitmap, bounds.left, bounds.top, bounds.width(), bounds.height())
+            } else {
+                originalBitmap
+            }
+
+            val targetSlotSize = 140
+            val maxDrawSize = 132f
+            val scale = minOf(maxDrawSize / cropped.width, maxDrawSize / cropped.height)
+            val scaledW = (cropped.width * scale).toInt().coerceAtLeast(1)
+            val scaledH = (cropped.height * scale).toInt().coerceAtLeast(1)
+
+            val scaled = Bitmap.createScaledBitmap(cropped, scaledW, scaledH, false)
+
+            val outputBitmap = Bitmap.createBitmap(targetSlotSize, targetSlotSize, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(outputBitmap)
+            val paint = Paint().apply {
+                isFilterBitmap = false
+                isAntiAlias = false
+            }
+
+            // Horizontally centered, bottom aligned resting on grass pedestal
+            val destX = (targetSlotSize - scaledW) / 2f
+            val destY = (targetSlotSize - scaledH - 2f).coerceAtLeast(0f)
+            canvas.drawBitmap(scaled, destX, destY, paint)
+
+            return Icon.createWithBitmap(outputBitmap)
         } else {
-            runCatching {
+            return runCatching {
                 Icon.createWithResource(this, R.drawable.wf_icon_pikachu)
             }.getOrNull()
         }
