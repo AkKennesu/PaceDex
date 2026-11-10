@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,7 +47,7 @@ import kotlin.math.roundToInt
  * Features:
  * - Hidden default Wear OS TimeText (hero clock in top GBA deck).
  * - Full dark power-saving base with #040806 OLED nocturnal scanlines.
- * - Bold & Prominent Gen 3 Gold Hero Clock (19.5sp) with smaller AM/PM indicator (11sp) and bold drop shadow.
+ * - Bold & Prominent Gen 3 Gold Hero Clock (19.5sp) with vertically-centered smaller AM/PM indicator (11sp) and bold drop shadow.
  * - Centered resting Buddy front sprite (36x36) at (78, 58) on the nocturnal grass pod with Zzz pixel icon at (114, 58).
  * - Centered dark status card at (28, 102, 136, 42) with bold 8.5px readable calorie and hydration text + progress bars.
  * - Centered bottom "▶ RESUME BATTLE" command button at (44, 148, 104, 20) with direct tap trigger.
@@ -108,7 +107,7 @@ fun BatterySaverScreen(
                 modifier = Modifier.gbaVirtualBounds(0, 0, 192, 192, scale)
             )
 
-            // 2. CENTERED GEN 3 CLOCK: Bold hero digits (19.5sp) with smaller AM/PM indicator (11sp)
+            // 2. CENTERED GEN 3 CLOCK: Bold hero digits (19.5sp) with vertically-centered smaller AM/PM indicator (11sp)
             // Occupying the y = 30..51 lower well of gba_saver_clock_deck.png
             Box(
                 modifier = Modifier.gbaVirtualBounds(48, 31, 96, 20, scale),
@@ -117,7 +116,7 @@ fun BatterySaverScreen(
                 // Drop shadow layer
                 Row(
                     horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.Bottom,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.offset(x = (1.2f * scale).dp, y = (1.2f * scale).dp)
                 ) {
                     Text(
@@ -149,15 +148,14 @@ fun BatterySaverScreen(
                                 offset = Offset(0.8f * scale, 0.2f * scale),
                                 blurRadius = 0f
                             )
-                        ),
-                        modifier = Modifier.padding(bottom = (1.5f * scale).dp)
+                        )
                     )
                 }
 
                 // Foreground gold layer
                 Row(
                     horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.Bottom
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = displayDigits,
@@ -188,8 +186,7 @@ fun BatterySaverScreen(
                                 offset = Offset(0.8f * scale, 0.2f * scale),
                                 blurRadius = 0f
                             )
-                        ),
-                        modifier = Modifier.padding(bottom = (1.5f * scale).dp)
+                        )
                     )
                 }
             }
