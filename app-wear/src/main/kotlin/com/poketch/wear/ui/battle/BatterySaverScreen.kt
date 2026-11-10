@@ -44,7 +44,7 @@ import kotlin.math.roundToInt
  * Features:
  * - Hidden default Wear OS TimeText (hero clock in top GBA deck).
  * - Full dark power-saving base with #040806 OLED nocturnal scanlines.
- * - Centered Gen 3 Gold Hero Clock at (cx = 96, y = 46) baseline with 1px drop shadow.
+ * - Bold & Prominent Gen 3 Gold Hero Clock (20sp virtual) with bold 1.2px drop shadow.
  * - Centered resting Buddy front sprite (36x36) at (78, 58) on the nocturnal grass pod with Zzz pixel icon at (114, 58).
  * - Centered dark status card at (28, 102, 136, 42) with bold 8.5px readable calorie and hydration text + progress bars.
  * - Centered bottom "▶ RESUME BATTLE" command button at (44, 148, 104, 20) with direct tap trigger.
@@ -98,35 +98,45 @@ fun BatterySaverScreen(
                 modifier = Modifier.gbaVirtualBounds(0, 0, 192, 192, scale)
             )
 
-            // 2. CENTERED GEN 3 CLOCK: centered at (cx = 96, y = 46) baseline inside the clock deck
-            // Occupying y = 34..48 inside the y = 30..52 lower well of gba_saver_clock_deck.png
+            // 2. CENTERED GEN 3 CLOCK: Bold & larger hero clock well centered at (cx = 96) in the clock deck
+            // Occupying the y = 30..51 lower well of gba_saver_clock_deck.png
             Box(
-                modifier = Modifier.gbaVirtualBounds(48, 33, 96, 17, scale),
+                modifier = Modifier.gbaVirtualBounds(48, 31, 96, 20, scale),
                 contentAlignment = Alignment.Center
             ) {
-                // 1px #080C12 drop shadow
+                // Drop shadow with bold thickness offset by 1.2px
                 Text(
                     text = clockDisplay,
                     color = Color(0xFF080C12),
-                    fontSize = (15f * scale).sp,
+                    fontSize = (20f * scale).sp,
                     fontFamily = PokemonDsFontFamily,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        shadow = Shadow(
+                            color = Color(0xFF080C12),
+                            offset = Offset(1.0f * scale, 0.2f * scale),
+                            blurRadius = 0f
+                        )
                     ),
-                    modifier = Modifier.offset(x = (1f * scale).dp, y = (1f * scale).dp)
+                    modifier = Modifier.offset(x = (1.2f * scale).dp, y = (1.2f * scale).dp)
                 )
-                // Foreground Gen 3 Gold clock text
+                // Foreground Gen 3 Gold clock text with simulated bold stroke expansion
                 Text(
                     text = clockDisplay,
                     color = Color(0xFFF8D848),
-                    fontSize = (15f * scale).sp,
+                    fontSize = (20f * scale).sp,
                     fontFamily = PokemonDsFontFamily,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        shadow = Shadow(
+                            color = Color(0xFFF8D848),
+                            offset = Offset(1.0f * scale, 0.2f * scale),
+                            blurRadius = 0f
+                        )
                     )
                 )
             }
