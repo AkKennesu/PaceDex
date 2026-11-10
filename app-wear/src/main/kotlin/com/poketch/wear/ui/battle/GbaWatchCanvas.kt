@@ -117,6 +117,9 @@ val PokemonDsFontFamily = FontFamily(
     Font(R.font.pokemon_ds_font, FontWeight.Bold)
 )
 
+@get:JvmName("getPokemonDsFontFamilyLower")
+val pokemonDsFontFamily = PokemonDsFontFamily
+
 /**
  * Crisp GBA/DS typography using the authentic Pokémon DS pixel font with exact scaling.
  * Supports horizontal scaleX expansion, letter spacing, and PlatformTextStyle(includeFontPadding = false).
