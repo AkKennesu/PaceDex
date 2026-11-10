@@ -70,7 +70,7 @@ class PoketchCanvasRenderer(
 
     // Bitmaps
     private val bgInteractiveBitmap: Bitmap by lazy {
-        BitmapFactory.decodeResource(context.resources, R.drawable.wf_bg_round_bezel)
+        BitmapFactory.decodeResource(context.resources, R.drawable.wf_bg_square)
     }
     private val bgAmbientBitmap: Bitmap by lazy {
         BitmapFactory.decodeResource(context.resources, R.drawable.wf_bg_ambient_wireframe)

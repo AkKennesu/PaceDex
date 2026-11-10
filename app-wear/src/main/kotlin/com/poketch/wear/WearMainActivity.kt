@@ -13,6 +13,7 @@ import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.poketch.wear.ui.alert.OverTargetRedAlertScreen
 import com.poketch.wear.ui.alert.OverTargetRedAlertViewModel
+import com.poketch.wear.ui.calorie.QuickCalorieDialScreen
 import com.poketch.wear.ui.calorie.RotaryCalorieLoggerScreen
 import com.poketch.wear.ui.calorie.RotaryCalorieLoggerViewModel
 import com.poketch.wear.ui.battle.GbaBagSettingsScreen
@@ -118,7 +119,15 @@ class WearMainActivity : ComponentActivity() {
                     }
 
                     composable("rotary_calorie_logger") {
-                        RotaryCalorieLoggerScreen(
+                        QuickCalorieDialScreen(
+                            onNavigateToAlert = { navController.navigate("over_calorie_red_alert") },
+                            onNavigateBack = { navController.popBackStack() },
+                            viewModel = calorieLoggerViewModel
+                        )
+                    }
+
+                    composable("quick_calorie_dial") {
+                        QuickCalorieDialScreen(
                             onNavigateToAlert = { navController.navigate("over_calorie_red_alert") },
                             onNavigateBack = { navController.popBackStack() },
                             viewModel = calorieLoggerViewModel

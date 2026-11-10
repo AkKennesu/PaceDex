@@ -10,9 +10,9 @@
         <Group name="interactive_scene" x="0" y="0" width="450" height="450">
             <Variant mode="AMBIENT" target="alpha" value="0" />
 
-            <!-- Circular Studded Bezel + Dial Canvas & Grass Platform -->
+            <!-- Edge-to-Edge Dial Canvas & Grass Platform -->
             <PartImage x="0" y="0" width="450" height="450">
-                <Image resource="wf_bg_round_bezel" />
+                <Image resource="wf_bg_square" />
             </PartImage>
 
             <!-- Top Clock Box: Date & Day (Bold, High-Contrast White) -->

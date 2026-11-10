@@ -77,7 +77,7 @@ class RotaryCalorieLoggerViewModel @Inject constructor(
 
     fun adjustCalories(delta: Int): Boolean {
         val current = _selectedCalories.value
-        val updated = (current + delta).coerceIn(50, 1500)
+        val updated = (current + delta).coerceIn(1, 2500)
         return if (updated != current) {
             _selectedCalories.value = updated
             true
@@ -87,7 +87,7 @@ class RotaryCalorieLoggerViewModel @Inject constructor(
     }
 
     fun setCalories(calories: Int) {
-        _selectedCalories.value = calories.coerceIn(50, 1500)
+        _selectedCalories.value = calories.coerceIn(1, 2500)
     }
 
     fun confirmCalorieLog(
