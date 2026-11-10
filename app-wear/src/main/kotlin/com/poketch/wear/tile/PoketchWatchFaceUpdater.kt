@@ -20,5 +20,8 @@ object PoketchWatchFaceUpdater {
         runCatching {
             PoketchBuddyPokemonComplicationService.requestUpdate(context)
         }
+        runCatching {
+            com.poketch.wear.complication.PoketchWeatherComplicationService.requestUpdate(context)
+        }
     }
 }

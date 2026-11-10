@@ -91,17 +91,6 @@
                 </Text>
             </PartText>
 
-            <!-- Bottom Box: Temperature Display -->
-            <PartText x="105" y="346" width="240" height="28">
-                <Text align="CENTER">
-                    <Font family="SYNC_TO_DEVICE" size="22" color="#1A281A" weight="BOLD">
-                        <Template><![CDATA[%d°%s]]>
-                            <Parameter expression="[WEATHER.IS_AVAILABLE] ? [WEATHER.TEMPERATURE] : ([WEATHER.TEMPERATURE_UNIT] == 2 ? 72 : 22)" />
-                            <Parameter expression="[WEATHER.TEMPERATURE_UNIT] == 2 ? &quot;F&quot; : &quot;C&quot;" />
-                        </Template>
-                    </Font>
-                </Text>
-            </PartText>
         </Group>
 
         <!-- ================================================================= -->
@@ -168,15 +157,35 @@
             </PartText>
         </Group>
 
-        <!-- Tap-friendly Complication Slot over Bottom Dialog Box -->
-        <ComplicationSlot slotId="1" supportedTypes="SHORT_TEXT EMPTY"
-            x="94" y="310" width="262" height="75">
-            <BoundingBox x="0" y="0" width="262" height="75" />
+        <!-- Dynamic Weather & Temperature Complication Slot (Slot 5) -->
+        <ComplicationSlot slotId="5" supportedTypes="SHORT_TEXT EMPTY"
+            x="105" y="344" width="240" height="30">
+            <BoundingBox x="0" y="0" width="240" height="30" />
             <DefaultProviderPolicy
+                primaryProvider="com.poketch.app/com.poketch.wear.complication.PoketchWeatherComplicationService"
+                primaryProviderType="SHORT_TEXT"
                 defaultSystemProvider="EMPTY"
                 defaultSystemProviderType="EMPTY" />
-            <Complication type="EMPTY" />
-            <Complication type="SHORT_TEXT" />
+            <Complication type="SHORT_TEXT">
+                <PartText x="0" y="0" width="240" height="30">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="21" color="#1A281A" weight="BOLD">
+                            <Template><![CDATA[%s]]><Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+            <Complication type="EMPTY">
+                <PartText x="0" y="0" width="240" height="30">
+                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="21" color="#1A281A" weight="BOLD">
+                            <![CDATA[28°C / SUNNY]]>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
         </ComplicationSlot>
 
         <!-- Dynamic Active Buddy Pokémon Sprite Complication Slot (Slot 2) -->

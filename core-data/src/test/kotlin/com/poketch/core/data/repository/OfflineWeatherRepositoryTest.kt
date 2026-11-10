@@ -64,6 +64,21 @@ class OfflineWeatherRepositoryTest {
 
         // 95..99 -> STRM
         assertThat(WeatherCodeMapper.mapWmoToConditionShort(95, isDaytime = true)).isEqualTo("STRM")
+
+        // mapWmoToConditionText
+        assertThat(WeatherCodeMapper.mapWmoToConditionText(0, isDaytime = true)).isEqualTo("SUNNY")
+        assertThat(WeatherCodeMapper.mapWmoToConditionText(0, isDaytime = false)).isEqualTo("CLEAR")
+        assertThat(WeatherCodeMapper.mapWmoToConditionText(2, isDaytime = true)).isEqualTo("CLOUDY")
+        assertThat(WeatherCodeMapper.mapWmoToConditionText(45, isDaytime = true)).isEqualTo("FOGGY")
+        assertThat(WeatherCodeMapper.mapWmoToConditionText(61, isDaytime = true)).isEqualTo("RAINY")
+        assertThat(WeatherCodeMapper.mapWmoToConditionText(71, isDaytime = true)).isEqualTo("SNOWY")
+        assertThat(WeatherCodeMapper.mapWmoToConditionText(95, isDaytime = true)).isEqualTo("STORMY")
+
+        // mapConditionShortToText
+        assertThat(WeatherCodeMapper.mapConditionShortToText("SUN", isDaytime = true)).isEqualTo("SUNNY")
+        assertThat(WeatherCodeMapper.mapConditionShortToText("CLR", isDaytime = false)).isEqualTo("CLEAR")
+        assertThat(WeatherCodeMapper.mapConditionShortToText("RAIN")).isEqualTo("RAINY")
+        assertThat(WeatherCodeMapper.mapConditionShortToText("CLDY")).isEqualTo("CLOUDY")
     }
 
     @Test

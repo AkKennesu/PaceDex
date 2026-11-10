@@ -5,8 +5,9 @@ import kotlinx.coroutines.flow.Flow
 data class CurrentWeather(
     val tempCelsius: Int = 28,
     val conditionShort: String = "SUN",
-    val badgeText: String = "28°C SUN",
-    val isDaytime: Boolean = true
+    val badgeText: String = "28°C / SUNNY",
+    val isDaytime: Boolean = true,
+    val conditionText: String = "SUNNY"
 )
 
 interface WeatherRepository {

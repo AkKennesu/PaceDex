@@ -66,6 +66,7 @@ class PoketchCanvasRenderer(
     private var todayWaterMl: Int = 0
     private var batteryPercent: Int = 100
     private var heartRateBpm: Int = 72
+    private var currentWeatherText: String = "28°C / SUNNY"
 
     // Bitmaps
     private val bgInteractiveBitmap: Bitmap by lazy {
@@ -82,9 +83,6 @@ class PoketchCanvasRenderer(
     }
     private val heartBitmap: Bitmap by lazy {
         BitmapFactory.decodeResource(context.resources, R.drawable.wf_icon_heart)
-    }
-    private val cursorBitmap: Bitmap by lazy {
-        BitmapFactory.decodeResource(context.resources, R.drawable.wf_icon_cursor)
     }
     private val defaultPikachuBitmap: Bitmap by lazy {
         BitmapFactory.decodeResource(context.resources, R.drawable.wf_icon_pikachu)
@@ -218,6 +216,7 @@ class PoketchCanvasRenderer(
         val userRepository = entryPoint.userRepository()
         val calorieRepository = entryPoint.calorieRepository()
         val habitRepository = entryPoint.habitRepository()
+        val weatherRepository = entryPoint.weatherRepository()
 
         // Query initial battery status
         val initialBattery = context.registerReceiver(
@@ -261,6 +260,12 @@ class PoketchCanvasRenderer(
             launch {
                 habitRepository.observeDailyWaterMl(todayIso).collectLatest { water ->
                     todayWaterMl = water.toInt()
+                    postInvalidate()
+                }
+            }
+            launch {
+                weatherRepository.observeCurrentWeather().collectLatest { weather ->
+                    currentWeatherText = "${weather.tempCelsius}°C / ${weather.conditionText}"
                     postInvalidate()
                 }
             }
@@ -385,9 +390,8 @@ class PoketchCanvasRenderer(
             val hrText = "${if (heartRateBpm > 0) heartRateBpm else 72} BPM"
             canvas.drawText(hrText, 236f, 338f, lcdDarkStartTextPaint)
 
-            // 12. Bottom Box: Cursor + OPEN POKéTCH Action Prompt
-            canvas.drawBitmap(cursorBitmap, null, Rect(120, 347, 120 + 16, 347 + 24), bitmapDrawPaint)
-            canvas.drawText("OPEN POKéTCH", 142f, 368f, lcdDarkStartTextPaint)
+            // 12. Bottom Box: Weather & Temperature Display
+            canvas.drawText(currentWeatherText, 225f, 368f, lcdDarkTextPaint)
         }
 
         canvas.restore()

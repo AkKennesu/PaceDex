@@ -100,12 +100,14 @@ class OfflineWeatherRepository @Inject constructor(
         val cachedHour = runCatching { hourlyWeatherCacheDao.getWeatherForHour(currentHourIso) }.getOrNull()
         if (cachedHour != null) {
             val condition = WeatherCodeMapper.mapWmoToConditionShort(cachedHour.wmoCode, isDaytime)
-            val badge = "${cachedHour.tempCelsius}°C $condition"
+            val conditionFull = WeatherCodeMapper.mapWmoToConditionText(cachedHour.wmoCode, isDaytime)
+            val badge = "${cachedHour.tempCelsius}°C / $conditionFull"
             return CurrentWeather(
                 tempCelsius = cachedHour.tempCelsius,
                 conditionShort = condition,
                 badgeText = badge,
-                isDaytime = isDaytime
+                isDaytime = isDaytime,
+                conditionText = conditionFull
             )
         }
 
@@ -117,13 +119,15 @@ class OfflineWeatherRepository @Inject constructor(
         // --- TIER 3: Hardware Barometer + Diurnal Curve Fallback ---
         val estimatedTemp = calculateDiurnalTemp(hourOfDay, basePeak, baseLow)
         val condition = determineBarometerCondition(isDaytime)
-        val badge = "${estimatedTemp}°C $condition"
+        val conditionFull = WeatherCodeMapper.mapConditionShortToText(condition, isDaytime)
+        val badge = "${estimatedTemp}°C / $conditionFull"
 
         return CurrentWeather(
             tempCelsius = estimatedTemp,
             conditionShort = condition,
             badgeText = badge,
-            isDaytime = isDaytime
+            isDaytime = isDaytime,
+            conditionText = conditionFull
         )
     }
 

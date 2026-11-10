@@ -15,4 +15,5 @@ interface PoketchWatchFaceEntryPoint {
     fun calorieRepository(): CalorieRepository
     fun habitRepository(): HabitRepository
     fun pokemonRepository(): PokemonRepository
+    fun weatherRepository(): com.poketch.core.domain.repository.WeatherRepository
 }

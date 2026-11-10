@@ -9,5 +9,7 @@
     <string name="complication_buddy_description">Displays your current partner Pokémon sprite on the watch face</string>
     <string name="complication_water_name">Pokétch Hydration</string>
     <string name="complication_water_description">Displays daily water intake progress toward your goal</string>
+    <string name="complication_weather_name">Pokétch Weather &amp; Temperature</string>
+    <string name="complication_weather_description">Displays the current temperature in Celsius and weather condition</string>
     <string name="watch_face_name">Pokétch Live Watch Face</string>
 </resources>
