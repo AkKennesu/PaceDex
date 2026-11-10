@@ -3,9 +3,14 @@ package com.poketch.wear.ui.battle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -43,7 +48,7 @@ import kotlin.math.roundToInt
  * Features:
  * - Hidden default Wear OS TimeText (hero clock in top GBA deck).
  * - Full dark power-saving base with #040806 OLED nocturnal scanlines.
- * - Bold & Prominent Gen 3 Gold Hero Clock with AM/PM indicator and bold 1.2px drop shadow.
+ * - Bold & Prominent Gen 3 Gold Hero Clock (19.5sp) with smaller AM/PM indicator (11sp) and bold drop shadow.
  * - Centered resting Buddy front sprite (36x36) at (78, 58) on the nocturnal grass pod with Zzz pixel icon at (114, 58).
  * - Centered dark status card at (28, 102, 136, 42) with bold 8.5px readable calorie and hydration text + progress bars.
  * - Centered bottom "▶ RESUME BATTLE" command button at (44, 148, 104, 20) with direct tap trigger.
@@ -57,15 +62,23 @@ fun BatterySaverScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Live clock formatted with 12h time and AM/PM indicator
-    val currentTime by produceState(initialValue = "") {
-        val sdf = SimpleDateFormat("h:mm a", Locale.ENGLISH)
+    // Live clock formatted with 12h time digits and smaller AM/PM indicator
+    val timeDigits by produceState(initialValue = "") {
+        val sdf = SimpleDateFormat("h:mm", Locale.ENGLISH)
+        while (true) {
+            value = sdf.format(Date())
+            delay(1000)
+        }
+    }
+    val amPmIndicator by produceState(initialValue = "") {
+        val sdf = SimpleDateFormat("a", Locale.ENGLISH)
         while (true) {
             value = sdf.format(Date()).uppercase()
             delay(1000)
         }
     }
-    val clockDisplay = currentTime.ifEmpty { "10:58 AM" }
+    val displayDigits = timeDigits.ifEmpty { "10:58" }
+    val displayAmPm = amPmIndicator.ifEmpty { "AM" }
 
     // Calorie stats calculations
     val dailyCeilingKcal = state.targetCalorieCeiling.coerceAtLeast(1)
@@ -95,47 +108,90 @@ fun BatterySaverScreen(
                 modifier = Modifier.gbaVirtualBounds(0, 0, 192, 192, scale)
             )
 
-            // 2. CENTERED GEN 3 CLOCK: Bold & larger hero clock well centered at (cx = 96) in the clock deck with AM/PM
+            // 2. CENTERED GEN 3 CLOCK: Bold hero digits (19.5sp) with smaller AM/PM indicator (11sp)
             // Occupying the y = 30..51 lower well of gba_saver_clock_deck.png
             Box(
                 modifier = Modifier.gbaVirtualBounds(48, 31, 96, 20, scale),
                 contentAlignment = Alignment.Center
             ) {
-                // Drop shadow with bold thickness offset by 1.2px
-                Text(
-                    text = clockDisplay,
-                    color = Color(0xFF080C12),
-                    fontSize = (18f * scale).sp,
-                    fontFamily = PokemonDsFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
-                        shadow = Shadow(
-                            color = Color(0xFF080C12),
-                            offset = Offset(1.0f * scale, 0.2f * scale),
-                            blurRadius = 0f
-                        )
-                    ),
+                // Drop shadow layer
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.Bottom,
                     modifier = Modifier.offset(x = (1.2f * scale).dp, y = (1.2f * scale).dp)
-                )
-                // Foreground Gen 3 Gold clock text with simulated bold stroke expansion
-                Text(
-                    text = clockDisplay,
-                    color = Color(0xFFF8D848),
-                    fontSize = (18f * scale).sp,
-                    fontFamily = PokemonDsFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
-                        shadow = Shadow(
-                            color = Color(0xFFF8D848),
-                            offset = Offset(1.0f * scale, 0.2f * scale),
-                            blurRadius = 0f
+                ) {
+                    Text(
+                        text = displayDigits,
+                        color = Color(0xFF080C12),
+                        fontSize = (19.5f * scale).sp,
+                        fontFamily = PokemonDsFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                            shadow = Shadow(
+                                color = Color(0xFF080C12),
+                                offset = Offset(1.0f * scale, 0.2f * scale),
+                                blurRadius = 0f
+                            )
                         )
                     )
-                )
+                    Spacer(modifier = Modifier.width((3f * scale).dp))
+                    Text(
+                        text = displayAmPm,
+                        color = Color(0xFF080C12),
+                        fontSize = (11f * scale).sp,
+                        fontFamily = PokemonDsFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                            shadow = Shadow(
+                                color = Color(0xFF080C12),
+                                offset = Offset(0.8f * scale, 0.2f * scale),
+                                blurRadius = 0f
+                            )
+                        ),
+                        modifier = Modifier.padding(bottom = (1.5f * scale).dp)
+                    )
+                }
+
+                // Foreground gold layer
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = displayDigits,
+                        color = Color(0xFFF8D848),
+                        fontSize = (19.5f * scale).sp,
+                        fontFamily = PokemonDsFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                            shadow = Shadow(
+                                color = Color(0xFFF8D848),
+                                offset = Offset(1.0f * scale, 0.2f * scale),
+                                blurRadius = 0f
+                            )
+                        )
+                    )
+                    Spacer(modifier = Modifier.width((3f * scale).dp))
+                    Text(
+                        text = displayAmPm,
+                        color = Color(0xFFF8D848),
+                        fontSize = (11f * scale).sp,
+                        fontFamily = PokemonDsFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                            shadow = Shadow(
+                                color = Color(0xFFF8D848),
+                                offset = Offset(0.8f * scale, 0.2f * scale),
+                                blurRadius = 0f
+                            )
+                        ),
+                        modifier = Modifier.padding(bottom = (1.5f * scale).dp)
+                    )
+                }
             }
 
             // 3. CENTERED RESTING BUDDY (36x36 at (78, 58)) on the nocturnal grass pod
