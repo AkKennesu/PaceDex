@@ -1,6 +1,5 @@
 package com.poketch.wear.ui.battle
 
-import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -44,7 +43,7 @@ import kotlin.math.roundToInt
  * Features:
  * - Hidden default Wear OS TimeText (hero clock in top GBA deck).
  * - Full dark power-saving base with #040806 OLED nocturnal scanlines.
- * - Bold & Prominent Gen 3 Gold Hero Clock (20sp virtual) with bold 1.2px drop shadow.
+ * - Bold & Prominent Gen 3 Gold Hero Clock with AM/PM indicator and bold 1.2px drop shadow.
  * - Centered resting Buddy front sprite (36x36) at (78, 58) on the nocturnal grass pod with Zzz pixel icon at (114, 58).
  * - Centered dark status card at (28, 102, 136, 42) with bold 8.5px readable calorie and hydration text + progress bars.
  * - Centered bottom "▶ RESUME BATTLE" command button at (44, 148, 104, 20) with direct tap trigger.
@@ -58,17 +57,15 @@ fun BatterySaverScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Live clock formatted according to 24h / 12h user preference
-    val is24Hour = DateFormat.is24HourFormat(context)
+    // Live clock formatted with 12h time and AM/PM indicator
     val currentTime by produceState(initialValue = "") {
-        val pattern = if (is24Hour) "HH:mm" else "h:mm"
-        val sdf = SimpleDateFormat(pattern, Locale.getDefault())
+        val sdf = SimpleDateFormat("h:mm a", Locale.ENGLISH)
         while (true) {
-            value = sdf.format(Date())
+            value = sdf.format(Date()).uppercase()
             delay(1000)
         }
     }
-    val clockDisplay = currentTime.ifEmpty { "10:58" }
+    val clockDisplay = currentTime.ifEmpty { "10:58 AM" }
 
     // Calorie stats calculations
     val dailyCeilingKcal = state.targetCalorieCeiling.coerceAtLeast(1)
@@ -98,7 +95,7 @@ fun BatterySaverScreen(
                 modifier = Modifier.gbaVirtualBounds(0, 0, 192, 192, scale)
             )
 
-            // 2. CENTERED GEN 3 CLOCK: Bold & larger hero clock well centered at (cx = 96) in the clock deck
+            // 2. CENTERED GEN 3 CLOCK: Bold & larger hero clock well centered at (cx = 96) in the clock deck with AM/PM
             // Occupying the y = 30..51 lower well of gba_saver_clock_deck.png
             Box(
                 modifier = Modifier.gbaVirtualBounds(48, 31, 96, 20, scale),
@@ -108,7 +105,7 @@ fun BatterySaverScreen(
                 Text(
                     text = clockDisplay,
                     color = Color(0xFF080C12),
-                    fontSize = (20f * scale).sp,
+                    fontSize = (18f * scale).sp,
                     fontFamily = PokemonDsFontFamily,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
@@ -126,7 +123,7 @@ fun BatterySaverScreen(
                 Text(
                     text = clockDisplay,
                     color = Color(0xFFF8D848),
-                    fontSize = (20f * scale).sp,
+                    fontSize = (18f * scale).sp,
                     fontFamily = PokemonDsFontFamily,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
