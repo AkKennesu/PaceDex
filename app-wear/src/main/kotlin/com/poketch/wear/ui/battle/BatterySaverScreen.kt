@@ -13,8 +13,10 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.PlatformTextStyle
@@ -44,7 +46,7 @@ import kotlin.math.roundToInt
  * - Full dark power-saving base with #040806 OLED nocturnal scanlines.
  * - Centered Gen 3 Gold Hero Clock at (cx = 96, y = 46) baseline with 1px drop shadow.
  * - Centered resting Buddy front sprite (36x36) at (78, 58) on the nocturnal grass pod with Zzz pixel icon at (114, 58).
- * - Centered dark status card at (28, 102, 136, 42) with remaining calories and hydration progress bars.
+ * - Centered dark status card at (28, 102, 136, 42) with bold 8.5px readable calorie and hydration text + progress bars.
  * - Centered bottom "▶ RESUME BATTLE" command button at (44, 148, 104, 20) with direct tap trigger.
  */
 @Composable
@@ -151,20 +153,25 @@ fun BatterySaverScreen(
             )
 
             // 5. CENTERED DARK STATUS CARD: (x = 28, y = 102, w = 136, h = 42)
-            // 5a. Calorie text: "$remainingKcal KCAL LEFT" centered at (cx = 96, y = 106) in #58E878 (6.sp)
+            // 5a. Calorie text: "$remainingKcal KCAL LEFT" centered above the CAL bar with bold 8.5px simulated stroke
             Box(
-                modifier = Modifier.gbaVirtualBounds(28, 105, 136, 9, scale),
+                modifier = Modifier.gbaVirtualBounds(28, 104, 136, 11, scale),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "$remainingKcal KCAL LEFT",
                     color = Color(0xFF58E878),
-                    fontSize = (6f * scale).sp,
+                    fontSize = (8.5f * scale).sp,
                     fontFamily = PokemonDsFontFamily,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        shadow = Shadow(
+                            color = Color(0xFF58E878),
+                            offset = Offset(1.0f * scale, 0.2f * scale),
+                            blurRadius = 0f
+                        )
                     )
                 )
             }
@@ -179,20 +186,25 @@ fun BatterySaverScreen(
                 )
             }
 
-            // 5c. Water text: "$waterMl / $waterGoalMl ML" centered at (cx = 96, y = 126) in #48C8F8 (6.sp)
+            // 5c. Water text: "$waterMl / $waterGoalMl ML" centered above the WTR bar with bold 8.5px simulated stroke
             Box(
-                modifier = Modifier.gbaVirtualBounds(28, 125, 136, 9, scale),
+                modifier = Modifier.gbaVirtualBounds(28, 124, 136, 11, scale),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "$waterMl / $waterGoalMl ML",
                     color = Color(0xFF48C8F8),
-                    fontSize = (6f * scale).sp,
+                    fontSize = (8.5f * scale).sp,
                     fontFamily = PokemonDsFontFamily,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        shadow = Shadow(
+                            color = Color(0xFF48C8F8),
+                            offset = Offset(1.0f * scale, 0.2f * scale),
+                            blurRadius = 0f
+                        )
                     )
                 )
             }
@@ -222,12 +234,17 @@ fun BatterySaverScreen(
                 Text(
                     text = "▶ RESUME BATTLE",
                     color = Color(0xFFF8F8F8),
-                    fontSize = (6.2f * scale).sp,
+                    fontSize = (7f * scale).sp,
                     fontFamily = PokemonDsFontFamily,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     style = TextStyle(
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        shadow = Shadow(
+                            color = Color(0xFFF8F8F8),
+                            offset = Offset(0.8f * scale, 0.2f * scale),
+                            blurRadius = 0f
+                        )
                     )
                 )
             }
