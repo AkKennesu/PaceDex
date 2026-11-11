@@ -1,6 +1,7 @@
 package com.poketch.wear.ui.battle
 
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.poketch.core.data.gamification.EvaluateAchievementsUseCase
@@ -105,6 +106,10 @@ class GbaWatchBattleViewModel @Inject constructor(
     val selectedFightOption = MutableStateFlow(GbaFightOption.LOG_CAL)
     val commandMenuState = MutableStateFlow(GbaCommandMenuState.ROOT_MENU)
 
+    val qrBitmapFlow = MutableStateFlow<Bitmap?>(null)
+    val isConnectedFlow = MutableStateFlow(false)
+    val connectedPhoneNameFlow = MutableStateFlow<String?>(null)
+
     fun setSelectedRootOption(option: GbaRootOption) {
         selectedRootOption.value = option
     }
@@ -129,6 +134,21 @@ class GbaWatchBattleViewModel @Inject constructor(
                     pinnedTargetIdFlow.value = null
                     prefs.edit().remove("pinned_target_id").apply()
                 }
+            }
+        }
+        viewModelScope.launch {
+            val local = runCatching { poketchSyncManager.getLocalNode() }.getOrNull()
+            val nodeId = local?.id ?: "poketch_wear_node"
+            val name = local?.displayName ?: "Pokétch Watch"
+            val encodedId = runCatching { java.net.URLEncoder.encode(nodeId, "UTF-8") }.getOrDefault(nodeId)
+            val encodedName = runCatching { java.net.URLEncoder.encode(name, "UTF-8") }.getOrDefault(name)
+            val payload = "poketch://pair?nodeId=$encodedId&name=$encodedName"
+            qrBitmapFlow.value = com.poketch.wear.ui.qr.QrCodeGenerator.generateQrBitmap(payload, sizePx = 240)
+        }
+        viewModelScope.launch {
+            poketchSyncManager.connectedNodesFlow.collect { nodes ->
+                isConnectedFlow.value = nodes.isNotEmpty()
+                connectedPhoneNameFlow.value = nodes.firstOrNull()?.displayName
             }
         }
     }
@@ -214,13 +234,16 @@ class GbaWatchBattleViewModel @Inject constructor(
     fun logWaterQuick250() {
         viewModelScope.launch {
             wearHapticController.playRunMilestoneQuarterHaptic()
-            habitRepository.logHabit(
+            val habit = habitRepository.logHabit(
                 dateIso = todayIso,
                 habitType = HabitType.WATER_ML,
                 numericValue = 250.0,
                 sourceDevice = DeviceSource.WEAR,
             )
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                poketchSyncManager.coalesceAndSyncHabit(habit)
+            }
             showTemporaryDialog("LOGGED +250ml WATER!", durationMillis = 1000L)
         }
     }
@@ -228,25 +251,34 @@ class GbaWatchBattleViewModel @Inject constructor(
     fun logWaterQuick500() {
         viewModelScope.launch {
             wearHapticController.playRunMilestoneQuarterHaptic()
-            habitRepository.logHabit(
+            val habit = habitRepository.logHabit(
                 dateIso = todayIso,
                 habitType = HabitType.WATER_ML,
                 numericValue = 500.0,
                 sourceDevice = DeviceSource.WEAR,
             )
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                poketchSyncManager.coalesceAndSyncHabit(habit)
+            }
             showTemporaryDialog("LOGGED +500ml WATER!", durationMillis = 1000L)
         }
     }
 
-    fun triggerSync() {
+    fun triggerSync(onDisconnected: (() -> Unit)? = null) {
         viewModelScope.launch {
             isSyncingFlow.value = true
             showTemporaryDialog("SYNCING LINK CABLE...", durationMillis = 800L)
             try {
-                poketchSyncManager.flushOfflineQueue()
-                showTemporaryDialog("LINK CABLE SYNC OK!", durationMillis = 1500L)
-                wearHapticController.playRunMilestoneQuarterHaptic()
+                val nodes = poketchSyncManager.refreshConnectedNodes()
+                if (nodes.isEmpty()) {
+                    showTemporaryDialog("DISCONNECTED! SCAN QR", durationMillis = 1500L)
+                    onDisconnected?.invoke()
+                } else {
+                    poketchSyncManager.flushOfflineQueue()
+                    showTemporaryDialog("LINK CABLE SYNC OK!", durationMillis = 1500L)
+                    wearHapticController.playRunMilestoneQuarterHaptic()
+                }
             } catch (e: Exception) {
                 showTemporaryDialog("SYNC ERROR: ${e.message?.take(16)}", durationMillis = 1500L)
             } finally {

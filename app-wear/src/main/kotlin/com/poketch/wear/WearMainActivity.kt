@@ -100,6 +100,14 @@ class WearMainActivity : ComponentActivity() {
                     composable("bag_settings") {
                         GbaWatchBagSettingsScreen(
                             onNavigateBack = { navController.popBackStack() },
+                            onNavigate = { route -> navController.navigate(route) },
+                            viewModel = battleViewModel
+                        )
+                    }
+
+                    composable("watch_pairing_qr") {
+                        com.poketch.wear.ui.battle.GbaWatchPairingQrScreen(
+                            onNavigateBack = { navController.popBackStack() },
                             viewModel = battleViewModel
                         )
                     }

@@ -30,6 +30,10 @@ class PlayServicesWearableTransport @Inject constructor(
         }
     }
 
+    override suspend fun sendMessageToNode(nodeId: String, path: String, data: ByteArray) {
+        messageClient.sendMessage(nodeId, path, data).await()
+    }
+
     override suspend fun getConnectedNodes(): List<ConnectedNodeInfo> {
         return runCatching {
             nodeClient.connectedNodes.await().map {
@@ -40,5 +44,16 @@ class PlayServicesWearableTransport @Inject constructor(
                 )
             }
         }.getOrElse { emptyList() }
+    }
+
+    override suspend fun getLocalNode(): ConnectedNodeInfo? {
+        return runCatching {
+            val node = nodeClient.localNode.await()
+            ConnectedNodeInfo(
+                id = node.id,
+                displayName = node.displayName,
+                isNearby = node.isNearby
+            )
+        }.getOrNull()
     }
 }

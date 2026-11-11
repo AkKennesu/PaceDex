@@ -225,7 +225,7 @@
                     <Variant mode="AMBIENT" target="alpha" value="0" />
                     <Rectangle x="0" y="0" width="138" height="7">
                         <Fill color="#58D878" />
-                        <Transform target="width" value="[COMPLICATION.RANGED_VALUE_VALUE] &gt; 0 ? clamp(([COMPLICATION.RANGED_VALUE_VALUE] / [COMPLICATION.RANGED_VALUE_MAX]) * 138, 4, 138) : 0" />
+                        <Transform target="width" value="([COMPLICATION.RANGED_VALUE_MAX] &gt; 0 &amp;&amp; [COMPLICATION.RANGED_VALUE_VALUE] &gt; 0) ? clamp(([COMPLICATION.RANGED_VALUE_VALUE] / [COMPLICATION.RANGED_VALUE_MAX]) * 138, 4, 138) : 0" />
                     </Rectangle>
                 </PartDraw>
             </Complication>
@@ -234,7 +234,7 @@
                     <Variant mode="AMBIENT" target="alpha" value="0" />
                     <Rectangle x="0" y="0" width="138" height="7">
                         <Fill color="#58D878" />
-                        <Transform target="width" value="clamp(([STEP_COUNT] &gt; 0 ? ([STEP_COUNT] / 8000.0) * 138 : 35), 8, 138)" />
+                        <Transform target="width" value="0" />
                     </Rectangle>
                 </PartDraw>
             </Complication>
@@ -254,7 +254,7 @@
                     <Variant mode="AMBIENT" target="alpha" value="0" />
                     <Rectangle x="0" y="0" width="129" height="5">
                         <Fill color="#3898F8" />
-                        <Transform target="width" value="[COMPLICATION.RANGED_VALUE_VALUE] &gt; 0 ? clamp(([COMPLICATION.RANGED_VALUE_VALUE] / [COMPLICATION.RANGED_VALUE_MAX]) * 129, 4, 129) : 0" />
+                        <Transform target="width" value="([COMPLICATION.RANGED_VALUE_MAX] &gt; 0 &amp;&amp; [COMPLICATION.RANGED_VALUE_VALUE] &gt; 0) ? clamp(([COMPLICATION.RANGED_VALUE_VALUE] / [COMPLICATION.RANGED_VALUE_MAX]) * 129, 4, 129) : 0" />
                     </Rectangle>
                 </PartDraw>
             </Complication>
@@ -263,7 +263,7 @@
                     <Variant mode="AMBIENT" target="alpha" value="0" />
                     <Rectangle x="0" y="0" width="129" height="5">
                         <Fill color="#3898F8" />
-                        <Transform target="width" value="clamp(96, 10, 129)" />
+                        <Transform target="width" value="0" />
                     </Rectangle>
                 </PartDraw>
             </Complication>

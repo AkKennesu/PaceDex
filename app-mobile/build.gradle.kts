@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
+    implementation(libs.play.services.code.scanner)
 
     implementation(libs.health.connect.client)
     implementation(libs.play.services.wearable)

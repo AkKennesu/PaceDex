@@ -162,19 +162,22 @@ class CommandCenterViewModel @Inject constructor(
 
     fun quickAddWater(amountMl: Double = 250.0) {
         viewModelScope.launch {
-            habitRepository.logHabit(
+            val habit = habitRepository.logHabit(
                 dateIso = todayIso,
                 habitType = HabitType.WATER_ML,
                 numericValue = amountMl,
                 sourceDevice = DeviceSource.MOBILE
             )
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncHabit(habit)
+            }
         }
     }
 
     fun quickLogRun(miles: Double = 1.0) {
         viewModelScope.launch {
-            habitRepository.logHabit(
+            val habit = habitRepository.logHabit(
                 dateIso = todayIso,
                 habitType = HabitType.RUN_MILES,
                 numericValue = miles,
@@ -182,6 +185,9 @@ class CommandCenterViewModel @Inject constructor(
                 sourceDevice = DeviceSource.MOBILE
             )
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncHabit(habit)
+            }
         }
     }
 

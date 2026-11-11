@@ -498,6 +498,10 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
                 val surplus = String(data, Charsets.UTF_8).toIntOrNull() ?: 0
                 syncManager.emitOverCalorieAlert(surplus)
             }
+            PoketchSyncConstants.PATH_HANDSHAKE -> {
+                syncManager.refreshConnectedNodes()
+                syncManager.flushOfflineQueue()
+            }
             PoketchSyncConstants.PATH_EVENT_NEW_POKEMON -> {
                 val payload = String(data, Charsets.UTF_8)
                 val parts = payload.split("|")
@@ -518,6 +522,22 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onPeerConnected(peer: com.google.android.gms.wearable.Node) {
+        super.onPeerConnected(peer)
+        serviceScope.launch {
+            ensureDependenciesInjected()
+            syncManager.onPeerStatusChanged(peer.id, isConnected = true)
+        }
+    }
+
+    override fun onPeerDisconnected(peer: com.google.android.gms.wearable.Node) {
+        super.onPeerDisconnected(peer)
+        serviceScope.launch {
+            ensureDependenciesInjected()
+            syncManager.onPeerStatusChanged(peer.id, isConnected = false)
         }
     }
 }

@@ -17,8 +17,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -49,6 +52,46 @@ class PoketchSyncManager @Inject constructor(
             syncScope = CoroutineScope(SupervisorJob() + value)
         }
     private var syncScope = CoroutineScope(SupervisorJob() + syncDispatcher)
+
+    private val _connectedNodesFlow = MutableStateFlow<List<ConnectedNodeInfo>>(emptyList())
+    val connectedNodesFlow: StateFlow<List<ConnectedNodeInfo>> = _connectedNodesFlow.asStateFlow()
+
+    init {
+        syncScope.launch {
+            refreshConnectedNodes()
+        }
+    }
+
+    suspend fun refreshConnectedNodes(): List<ConnectedNodeInfo> {
+        val nodes = runCatching { transport.getConnectedNodes() }.getOrElse { emptyList() }
+        _connectedNodesFlow.value = nodes
+        return nodes
+    }
+
+    suspend fun getLocalNode(): ConnectedNodeInfo? = transport.getLocalNode()
+
+    suspend fun sendHandshake(nodeId: String? = null): Boolean {
+        val payload = "handshake_init".toByteArray(Charsets.UTF_8)
+        return runCatching {
+            if (!nodeId.isNullOrBlank()) {
+                transport.sendMessageToNode(nodeId, PoketchSyncConstants.PATH_HANDSHAKE, payload)
+            } else {
+                transport.sendMessage(PoketchSyncConstants.PATH_HANDSHAKE, payload)
+            }
+            flushOfflineQueue()
+            refreshConnectedNodes()
+            true
+        }.getOrDefault(false)
+    }
+
+    fun onPeerStatusChanged(peerId: String, isConnected: Boolean) {
+        syncScope.launch {
+            refreshConnectedNodes()
+            if (isConnected) {
+                flushOfflineQueue()
+            }
+        }
+    }
 
     // Debounce coalescing for rapid habit taps (e.g., +250 ml water tapped 3 times)
     private val habitCoalesceMutex = Mutex()

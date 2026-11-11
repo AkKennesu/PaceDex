@@ -1,5 +1,6 @@
 package com.poketch.wear.ui.diagnostics
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -69,12 +72,61 @@ fun SyncDiagnosticsScreen(
             // Header
             item {
                 Text(
-                    text = "Sync Diagnostics",
+                    text = "Sync & Pairing",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colors.primary,
                     textAlign = TextAlign.Center
                 )
+            }
+
+            // QR Code Pairing Card (Visible when disconnected or awaiting pairing; gone once connected and synced)
+            if (state.showQrCode && state.qrBitmap != null) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.94f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF0F172A))
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "PAIR WITH PHONE",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color(0xFFFFB74D),
+                                textAlign = TextAlign.Center
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(116.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White)
+                                    .padding(4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    bitmap = state.qrBitmap!!.asImageBitmap(),
+                                    contentDescription = "Pokétch Pairing QR Code",
+                                    filterQuality = FilterQuality.None,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            Text(
+                                text = "Scan in Phone App > Profile",
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF94A3B8),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
             }
 
             // Connection Status Card
@@ -91,7 +143,7 @@ fun SyncDiagnosticsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "CONNECTED PEER",
+                            text = "PEER CONNECTION",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF90A4AE)
@@ -117,6 +169,12 @@ fun SyncDiagnosticsScreen(
                                     color = Color.White
                                 )
                             }
+                            Text(
+                                text = "● Connected & Linked",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF81C784)
+                            )
                         } else {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -136,6 +194,11 @@ fun SyncDiagnosticsScreen(
                                     color = Color(0xFFFFCDD2)
                                 )
                             }
+                            Text(
+                                text = "QR code displayed above",
+                                fontSize = 8.5.sp,
+                                color = Color(0xFFFFCC80)
+                            )
                         }
                     }
                 }
@@ -226,7 +289,7 @@ fun SyncDiagnosticsScreen(
                             }
                         } else {
                             Text(
-                                text = "Force Full Sync Now",
+                                text = "Sync Now",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )

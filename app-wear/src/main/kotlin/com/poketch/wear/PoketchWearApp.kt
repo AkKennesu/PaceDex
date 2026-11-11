@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -84,15 +85,22 @@ class PoketchWearApp : Application(), Configuration.Provider, ImageLoaderFactory
     }
 
     private fun observeDataChangesForWatchFaceUpdates() {
-        val todayIso = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
         appScope.launch {
-            combine(
-                userRepository.observeUserProfile(),
-                calorieRepository.observeTotalCaloriesByDate(todayIso),
-                habitRepository.observeDailyWaterMl(todayIso)
-            ) { _, _, _ ->
+            userRepository.observeUserProfile().collectLatest {
                 PoketchWatchFaceUpdater.requestAllUpdates(this@PoketchWearApp)
-            }.collect()
+            }
+        }
+        appScope.launch {
+            val todayIso = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            calorieRepository.observeTotalCaloriesByDate(todayIso).collectLatest {
+                PoketchWatchFaceUpdater.requestAllUpdates(this@PoketchWearApp)
+            }
+        }
+        appScope.launch {
+            val todayIso = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            habitRepository.observeDailyWaterMl(todayIso).collectLatest {
+                PoketchWatchFaceUpdater.requestAllUpdates(this@PoketchWearApp)
+            }
         }
     }
 }

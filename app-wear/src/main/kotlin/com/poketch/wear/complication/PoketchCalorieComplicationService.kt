@@ -120,12 +120,12 @@ class PoketchCalorieComplicationService : SuspendingComplicationDataSourceServic
             ComplicationType.RANGED_VALUE -> {
                 val displayText = if (isOverTarget) "+$surplus" else "$remaining"
                 val titleText = if (isOverTarget) "OVER" else "KCAL"
-                val value = consumed.toFloat().coerceAtLeast(0f)
-                val max = ceiling.toFloat().coerceAtLeast(1f)
+                val safeMax = ceiling.toFloat().coerceAtLeast(1f)
+                val safeValue = consumed.toFloat().coerceIn(0f, safeMax)
                 RangedValueComplicationData.Builder(
-                    value = value,
+                    value = safeValue,
                     min = 0f,
-                    max = max,
+                    max = safeMax,
                     contentDescription = PlainComplicationText.Builder(
                         if (isOverTarget) "+$surplus kcal over target" else "$remaining kcal remaining"
                     ).build()

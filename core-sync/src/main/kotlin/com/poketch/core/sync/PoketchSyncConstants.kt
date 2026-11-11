@@ -11,4 +11,6 @@ object PoketchSyncConstants {
     const val PATH_EVENT_NEW_POKEMON = "/event/new_pokemon"
     const val PATH_WEATHER_HOURLY_CACHE = "/weather/hourly_cache"
     const val PATH_LOCATION_TIMEZONE = "/location/timezone"
+    const val PATH_HANDSHAKE = "/poketch/handshake"
+    const val URI_SCHEME_PAIR = "poketch://pair"
 }

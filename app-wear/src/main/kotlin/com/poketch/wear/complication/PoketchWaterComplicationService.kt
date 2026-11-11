@@ -109,12 +109,14 @@ class PoketchWaterComplicationService : SuspendingComplicationDataSourceService(
                     .build()
             }
             ComplicationType.RANGED_VALUE -> {
+                val safeGoal = goalMl.coerceAtLeast(1f)
+                val safeValue = waterMl.coerceIn(0f, safeGoal)
                 RangedValueComplicationData.Builder(
-                    value = waterMl,
+                    value = safeValue,
                     min = 0f,
-                    max = goalMl,
+                    max = safeGoal,
                     contentDescription = PlainComplicationText.Builder(
-                        "${waterMl.toInt()} of ${goalMl.toInt()} ml water logged today"
+                        "${waterMl.toInt()} of ${safeGoal.toInt()} ml water logged today"
                     ).build()
                 )
                     .setText(PlainComplicationText.Builder("${waterMl.toInt()}").build())

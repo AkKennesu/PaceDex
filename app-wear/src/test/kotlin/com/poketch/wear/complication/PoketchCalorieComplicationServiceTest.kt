@@ -138,7 +138,7 @@ class PoketchCalorieComplicationServiceTest {
 
         assertThat(rangedTextValue).isEqualTo("+300")
         assertThat(rangedTitleValue).isEqualTo("OVER")
-        assertThat(rangedData?.value).isEqualTo(2100f)
+        assertThat(rangedData?.value).isEqualTo(1800f)
         assertThat(rangedData?.max).isEqualTo(1800f)
     }
 

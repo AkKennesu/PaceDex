@@ -360,24 +360,36 @@ class PoketchCanvasRenderer(
 
             // 6. Middle Right: Calorie Bar (Green)
             val targetKcal = userProfile?.targetCalorieCeiling ?: 2000
-            val calWidth = ((todayCalories.toFloat() / targetKcal.coerceAtLeast(1)) * 108f).coerceIn(6f, 108f)
-            fillPaint.color = 0xFF58D878.toInt()
-            canvas.drawRect(RectF(265f, 183f, 265f + calWidth, 191f), fillPaint)
+            val calWidth = if (todayCalories > 0) {
+                ((todayCalories.toFloat() / targetKcal.coerceAtLeast(1)) * 108f).coerceIn(4f, 108f)
+            } else 0f
+            if (calWidth > 0f) {
+                fillPaint.color = 0xFF58D878.toInt()
+                canvas.drawRect(RectF(265f, 183f, 265f + calWidth, 191f), fillPaint)
+            }
 
             // 7. Middle Right: Step Bar (Yellow)
             val stepGoal = 10000
-            val stepWidth = ((todaySteps.toFloat() / stepGoal.coerceAtLeast(1)) * 108f).coerceIn(6f, 108f)
-            fillPaint.color = 0xFFF8D030.toInt()
-            canvas.drawRect(RectF(265f, 206f, 265f + stepWidth, 214f), fillPaint)
+            val stepWidth = if (todaySteps > 0) {
+                ((todaySteps.toFloat() / stepGoal.coerceAtLeast(1)) * 108f).coerceIn(4f, 108f)
+            } else 0f
+            if (stepWidth > 0f) {
+                fillPaint.color = 0xFFF8D030.toInt()
+                canvas.drawRect(RectF(265f, 206f, 265f + stepWidth, 214f), fillPaint)
+            }
 
             // 8. Middle Right: Numeric Steps Text
             canvas.drawText("$todaySteps STEPS", 295f, 248f, lcdDarkTextPaint)
 
             // 9. Middle Right: Water Bar (Blue)
             val hydrationGoal = userProfile?.dailyWaterGoalMl ?: 2500
-            val waterWidth = ((todayWaterMl.toFloat() / hydrationGoal.coerceAtLeast(1)) * 118f).coerceIn(8f, 118f)
-            fillPaint.color = 0xFF3898F8.toInt()
-            canvas.drawRect(RectF(258f, 260f, 258f + waterWidth, 268f), fillPaint)
+            val waterWidth = if (todayWaterMl > 0) {
+                ((todayWaterMl.toFloat() / hydrationGoal.coerceAtLeast(1)) * 118f).coerceIn(4f, 118f)
+            } else 0f
+            if (waterWidth > 0f) {
+                fillPaint.color = 0xFF3898F8.toInt()
+                canvas.drawRect(RectF(258f, 260f, 258f + waterWidth, 268f), fillPaint)
+            }
 
             // 10. Bottom Box: 4 Pokéballs
             canvas.drawBitmap(ballActiveBitmap, null, Rect(112, 322, 112 + 18, 322 + 18), bitmapDrawPaint)

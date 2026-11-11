@@ -67,6 +67,9 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.poketch.core.domain.model.AuthState
 import com.poketch.core.domain.model.AuthUser
 import kotlinx.coroutines.launch
@@ -164,7 +167,34 @@ fun AuthScreen(
                     uiState = uiState,
                     onSyncToCloud = { viewModel.syncToCloud() },
                     onRestoreFromCloud = { viewModel.restoreFromCloud() },
-                    onSignOut = { viewModel.signOut() }
+                    onSignOut = { viewModel.signOut() },
+                    onScanWatchQr = {
+                        try {
+                            val options = GmsBarcodeScannerOptions.Builder()
+                                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                                .enableAutoZoom()
+                                .build()
+                            val scanner = GmsBarcodeScanning.getClient(context, options)
+                            scanner.startScan()
+                                .addOnSuccessListener { barcode ->
+                                    val raw = barcode.rawValue
+                                    if (!raw.isNullOrBlank()) {
+                                        viewModel.pairWithScannedWatch(raw)
+                                    } else {
+                                        Toast.makeText(context, "No barcode detected", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                .addOnCanceledListener {
+                                    // User dismissed scanner
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(context, "Scanner error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Could not start scanner: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onSyncWatch = { viewModel.syncWithWatchNow() }
                 )
             }
             is AuthState.Unauthenticated -> {
@@ -187,7 +217,9 @@ private fun AuthenticatedTrainerCard(
     uiState: AuthUiState,
     onSyncToCloud: () -> Unit,
     onRestoreFromCloud: () -> Unit,
-    onSignOut: () -> Unit
+    onSignOut: () -> Unit,
+    onScanWatchQr: () -> Unit,
+    onSyncWatch: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -289,6 +321,93 @@ private fun AuthenticatedTrainerCard(
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("⬇ Restore")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Watch Link & QR Scanner Section
+            Text(
+                text = "POKÉTCH WATCH LINK & PAIRING",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(if (uiState.isWatchConnected) Color(0xFF22C55E) else Color(0xFFEF4444))
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (uiState.isWatchConnected) {
+                        "Linked: ${uiState.connectedWatchName ?: "Pokétch Watch"}"
+                    } else {
+                        "No Watch Connected (Disconnected)"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = if (uiState.isWatchConnected) {
+                    "Your watch is actively paired with Wearable Data Layer sync."
+                } else {
+                    "Open 'Sync & Diagnostics' on your watch to view its pairing QR code, then tap below to scan."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onScanWatchQr,
+                    enabled = !uiState.isPairingWatch,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    if (uiState.isPairingWatch) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Pairing...")
+                    } else {
+                        Text("📷 Scan Watch QR")
+                    }
+                }
+
+                if (uiState.isWatchConnected) {
+                    OutlinedButton(
+                        onClick = onSyncWatch,
+                        enabled = !uiState.isPairingWatch,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("🔄 Sync Watch")
+                    }
                 }
             }
 

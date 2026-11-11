@@ -11,6 +11,10 @@ data class ConnectedNodeInfo(
 interface WearableTransport {
     suspend fun putDataMap(path: String, dataMap: DataMap)
     suspend fun sendMessage(path: String, data: ByteArray)
+    suspend fun sendMessageToNode(nodeId: String, path: String, data: ByteArray) {
+        sendMessage(path, data)
+    }
     suspend fun getConnectedNodes(): List<ConnectedNodeInfo>
+    suspend fun getLocalNode(): ConnectedNodeInfo? = null
 }
 

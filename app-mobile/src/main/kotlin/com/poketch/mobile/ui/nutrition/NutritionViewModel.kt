@@ -15,6 +15,7 @@ import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.MealCategory
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.UserRepository
+import com.poketch.core.sync.PoketchSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -80,6 +81,7 @@ class NutritionViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val calorieRepository: CalorieRepository,
     private val evaluateAchievementsUseCase: EvaluateAchievementsUseCase,
+    private val syncManager: PoketchSyncManager,
 ) : ViewModel() {
 
     private val todayIso: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
@@ -393,6 +395,9 @@ class NutritionViewModel @Inject constructor(
                 activeBuddyPokemonId = state.activeBuddyPokemonId,
             )
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.syncUserProfile()
+            }
             _formState.value = _formState.value.copy(
                 biometricsSavedMessage = "Target ceiling saved & synced to Wear OS!",
                 isConfigCardExpanded = false,
@@ -459,6 +464,9 @@ class NutritionViewModel @Inject constructor(
         viewModelScope.launch {
             calorieRepository.upsertCalorieLog(log)
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncCalorie(log)
+            }
         }
     }
 
@@ -491,6 +499,9 @@ class NutritionViewModel @Inject constructor(
         viewModelScope.launch {
             calorieRepository.upsertCalorieLog(log)
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncCalorie(log)
+            }
             _formState.value = _formState.value.copy(
                 foodNameText = "",
                 caloriesText = "",
@@ -519,6 +530,9 @@ class NutritionViewModel @Inject constructor(
         viewModelScope.launch {
             calorieRepository.upsertCalorieLog(log)
             evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncCalorie(log)
+            }
         }
     }
 

@@ -755,76 +755,9 @@ fun GbaWatchBattleHomeScreen(
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         viewModel.setSelectedFightOption(GbaFightOption.SYNC)
-                        viewModel.triggerSync()
-                    }
-            )
-            // Animated Cursor for Fight Menu
-            GbaPixelImage(
-                resId = R.drawable.gba_cursor_black,
-                contentDescription = "Fight Cursor",
-                modifier = Modifier
-                    .offset(
-                        x = ((animatedCursorX + cursorIdleOffset) * scale).dp,
-                        y = (animatedCursorY * scale).dp
-                    )
-                    .size(width = (6 * scale).dp, height = (10 * scale).dp)
-            )
-
-            // Interactive Quadrants: Box 3 is (35, 124, 122, 43)
-            // 1. LOG CAL (35, 124, 61, 21)
-            Box(
-                modifier = Modifier
-                    .gbaVirtualBounds(35, 124, 61, 21, scale)
-                    .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        val prev = selectedFightOption
-                        viewModel.setSelectedFightOption(GbaFightOption.LOG_CAL)
-                        coroutineScope.launch {
-                            if (prev != GbaFightOption.LOG_CAL) {
-                                delay(150.milliseconds)
-                            }
-                            if (isOverCalorie) {
-                                onNavigate("over_calorie_red_alert")
-                            } else {
-                                onNavigate("rotary_calorie_logger")
-                            }
-                        }
-                    }
-            )
-            // 2. WATER (+250ml) (96, 124, 61, 21)
-            Box(
-                modifier = Modifier
-                    .gbaVirtualBounds(96, 124, 61, 21, scale)
-                    .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.setSelectedFightOption(GbaFightOption.WATER)
-                        viewModel.logWaterQuick250()
-                    }
-            )
-            // 3. HABITS (1-Mile Run & Daily Habits) (35, 145, 61, 22)
-            Box(
-                modifier = Modifier
-                    .gbaVirtualBounds(35, 145, 61, 22, scale)
-                    .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        val prev = selectedFightOption
-                        viewModel.setSelectedFightOption(GbaFightOption.HABITS)
-                        coroutineScope.launch {
-                            if (prev != GbaFightOption.HABITS) {
-                                delay(150.milliseconds)
-                            }
-                            onNavigate("quick_habit_actions")
-                        }
-                    }
-            )
-            // 4. SYNC (Data Layer Flush) (96, 145, 61, 22)
-            Box(
-                modifier = Modifier
-                    .gbaVirtualBounds(96, 145, 61, 22, scale)
-                    .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.setSelectedFightOption(GbaFightOption.SYNC)
-                        viewModel.triggerSync()
+                        viewModel.triggerSync(onDisconnected = {
+                            onNavigate("watch_pairing_qr")
+                        })
                     }
             )
         }

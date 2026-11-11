@@ -74,6 +74,7 @@ dependencies {
 
     implementation(libs.health.services.client)
     implementation(libs.play.services.wearable)
+    implementation(libs.zxing.core)
     implementation("com.google.guava:guava:33.3.1-android")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
 

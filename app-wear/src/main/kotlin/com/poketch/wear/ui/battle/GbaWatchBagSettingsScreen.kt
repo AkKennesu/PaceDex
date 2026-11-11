@@ -51,6 +51,7 @@ enum class BagPocket(val tabLabel: String, val bannerTitle: String) {
 @Composable
 fun GbaWatchBagSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigate: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: GbaWatchBattleViewModel = viewModel(),
 ) {
@@ -662,9 +663,12 @@ fun GbaWatchBagSettingsScreen(
 
         // POCKET VIEW C: LINK (Wearable Data Layer Sync)
         if (selectedPocket == BagPocket.LINK) {
-            // GBA Link Cable Comms Monitor (x = 32, y = 65, w = 128, h = 30)
+            val isWatchConnected by viewModel.isConnectedFlow.collectAsStateWithLifecycle()
+            val connectedPhoneName by viewModel.connectedPhoneNameFlow.collectAsStateWithLifecycle()
+
+            // GBA Link Cable Comms Monitor (x = 32, y = 54, w = 128, h = 26)
             Box(
-                modifier = Modifier.gbaVirtualBounds(32, 65, 128, 30, scale)
+                modifier = Modifier.gbaVirtualBounds(32, 54, 128, 26, scale)
             ) {
                 GbaPixelImage(
                     resId = R.drawable.gba_bag_link_monitor,
@@ -677,40 +681,44 @@ fun GbaWatchBagSettingsScreen(
                     resId = R.drawable.gba_bag_icon_link_cable,
                     contentDescription = "Link Icon",
                     modifier = Modifier
-                        .offset(x = (8 * scale).dp, y = (9 * scale).dp)
-                        .size((12 * scale).dp)
+                        .offset(x = (6 * scale).dp, y = (7 * scale).dp)
+                        .size((11 * scale).dp)
                 )
 
-                // Line 1: STATUS: ONLINE
+                // Line 1: STATUS: ONLINE / OFFLINE
                 GbaText(
-                    text = "STATUS: ONLINE",
+                    text = if (isWatchConnected) "STATUS: ONLINE" else "STATUS: OFFLINE",
                     scale = scale,
-                    color = Color(0xFF78F890),
-                    fontSizeVirtualPx = 9.5f,
-                    lineHeightVirtualPx = 10.0f,
+                    color = if (isWatchConnected) Color(0xFF78F890) else Color(0xFFFF7878),
+                    fontSizeVirtualPx = 9.0f,
+                    lineHeightVirtualPx = 9.5f,
                     letterSpacingVirtualPx = 0.1f,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.offset(x = (22 * scale).dp, y = (4.5f * scale).dp)
+                    modifier = Modifier.offset(x = (20 * scale).dp, y = (3.5f * scale).dp)
                 )
 
-                // Line 2: WEAR DATA LAYER
+                // Line 2: PHONE NAME / DISCONNECTED
                 GbaText(
-                    text = "WEAR DATA LAYER",
+                    text = if (isWatchConnected) {
+                        (connectedPhoneName?.take(14)?.uppercase() ?: "PHONE LINKED")
+                    } else {
+                        "DISCONNECTED (TAP QR)"
+                    },
                     scale = scale,
-                    color = Color(0xFFDCEBFF),
-                    fontSizeVirtualPx = 8.5f,
-                    lineHeightVirtualPx = 9.0f,
+                    color = if (isWatchConnected) Color(0xFFDCEBFF) else Color(0xFFFFAA77),
+                    fontSizeVirtualPx = 8.0f,
+                    lineHeightVirtualPx = 8.5f,
                     letterSpacingVirtualPx = 0.0f,
-                    modifier = Modifier.offset(x = (22 * scale).dp, y = (15.5f * scale).dp)
+                    modifier = Modifier.offset(x = (20 * scale).dp, y = (13.5f * scale).dp)
                 )
             }
 
-            // 3D GBA Sapphire Sync Button (x = 32, y = 100, w = 128, h = 24)
+            // 1. GBA Sapphire Sync Button (x = 32, y = 82, w = 128, h = 22)
             val syncInteractionSource = remember { MutableInteractionSource() }
             val isSyncPressed by syncInteractionSource.collectIsPressedAsState()
             Box(
                 modifier = Modifier
-                    .gbaVirtualBounds(32, 100, 128, 24, scale)
+                    .gbaVirtualBounds(32, 82, 128, 22, scale)
                     .graphicsLayer {
                         if (isSyncPressed) {
                             translationY = 1f * scale
@@ -721,7 +729,9 @@ fun GbaWatchBagSettingsScreen(
                         indication = null
                     ) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.triggerSync()
+                        viewModel.triggerSync(onDisconnected = {
+                            onNavigate("watch_pairing_qr")
+                        })
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -734,9 +744,47 @@ fun GbaWatchBagSettingsScreen(
                     text = if (state.isSyncing) "SYNCING..." else "FLUSH SYNC NOW",
                     scale = scale,
                     color = Color.White,
-                    fontSizeVirtualPx = 11.5f,
-                    lineHeightVirtualPx = 12.0f,
-                    letterSpacingVirtualPx = 0.2f,
+                    fontSizeVirtualPx = 10.5f,
+                    lineHeightVirtualPx = 11.0f,
+                    letterSpacingVirtualPx = 0.1f,
+                    scaleX = 1.0f,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // 2. GBA Sapphire QR Code Button (x = 32, y = 106, w = 128, h = 22)
+            val qrInteractionSource = remember { MutableInteractionSource() }
+            val isQrPressed by qrInteractionSource.collectIsPressedAsState()
+            Box(
+                modifier = Modifier
+                    .gbaVirtualBounds(32, 106, 128, 22, scale)
+                    .graphicsLayer {
+                        if (isQrPressed) {
+                            translationY = 1f * scale
+                        }
+                    }
+                    .clickable(
+                        interactionSource = qrInteractionSource,
+                        indication = null
+                    ) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onNavigate("watch_pairing_qr")
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                GbaPixelImage(
+                    resId = R.drawable.gba_bag_btn_sync_sapphire,
+                    contentDescription = "Pairing QR Code Button",
+                    modifier = Modifier.fillMaxSize()
+                )
+                GbaText(
+                    text = "SHOW PAIRING QR",
+                    scale = scale,
+                    color = Color(0xFFFFE082),
+                    fontSizeVirtualPx = 10.5f,
+                    lineHeightVirtualPx = 11.0f,
+                    letterSpacingVirtualPx = 0.1f,
                     scaleX = 1.0f,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center

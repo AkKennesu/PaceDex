@@ -109,6 +109,33 @@ class PoketchWaterComplicationServiceTest {
         assertThat(rangedData?.max).isEqualTo(2400f)
     }
 
+    @Test
+    fun onComplicationRequest_whenWaterExceedsGoal_doesNotCrashAndClampsValue(): Unit = runBlocking {
+        fakeUserRepository.profile = UserProfile(
+            id = 1,
+            ageYears = 25,
+            sex = BiologicalSex.MALE,
+            heightCm = 175.0,
+            weightKg = 70.0,
+            activityLevel = ActivityLevel.MODERATELY_ACTIVE,
+            deficitTier = DeficitTier.STANDARD,
+            bmrKcal = 1600,
+            tdeeKcal = 2200,
+            targetCalorieCeiling = 1700,
+            dailyWaterGoalMl = 2000,
+            activeBuddyPokemonId = 1,
+            updatedAtEpochMillis = System.currentTimeMillis()
+        )
+        fakeHabitRepository.waterMl = 3500.0
+
+        val rangedRequest = ComplicationRequest(2, ComplicationType.RANGED_VALUE, true)
+        val rangedData = service.onComplicationRequest(rangedRequest) as? RangedValueComplicationData
+
+        assertThat(rangedData).isNotNull()
+        assertThat(rangedData?.value).isEqualTo(2000f)
+        assertThat(rangedData?.max).isEqualTo(2000f)
+    }
+
     private class FakeUserRepository : UserRepository {
         var profile: UserProfile? = null
 
