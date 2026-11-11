@@ -1,5 +1,6 @@
 package com.poketch.mobile.ui.auth
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -61,12 +62,16 @@ import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.poketch.core.domain.model.AuthState
 import com.poketch.core.domain.model.AuthUser
 import kotlinx.coroutines.launch
+
+private const val FIREBASE_WEB_CLIENT_ID = "36843683760-tto98ec609fq6rqn04pq463i3ubjisp0.apps.googleusercontent.com"
 
 @Composable
 fun AuthScreen(
@@ -316,6 +321,45 @@ private fun UnauthenticatedAuthCard(
     val coroutineScope = rememberCoroutineScope()
     var passwordVisible by remember { mutableStateOf(false) }
 
+    val resId = remember { context.resources.getIdentifier("default_web_client_id", "string", context.packageName) }
+    val activeClientId = if (resId != 0) context.getString(resId) else FIREBASE_WEB_CLIENT_ID
+
+    fun launchGoogleSignIn(clientId: String) {
+        coroutineScope.launch {
+            try {
+                val credentialManager = CredentialManager.create(context)
+                val googleIdOption = GetGoogleIdOption.Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(clientId.trim())
+                    .setAutoSelectEnabled(false)
+                    .build()
+
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
+
+                val result = credentialManager.getCredential(context = context, request = request)
+                val credential = result.credential
+                if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                    onGoogleIdTokenReceived(googleIdTokenCredential.idToken)
+                }
+            } catch (e: NoCredentialException) {
+                Toast.makeText(
+                    context,
+                    "No Google accounts found. Please ensure a Google account is logged in on this device (Android Settings > Accounts).",
+                    Toast.LENGTH_LONG
+                ).show()
+            } catch (e: GetCredentialCancellationException) {
+                // User dismissed account picker
+            } catch (e: GetCredentialException) {
+                Toast.makeText(context, "Google Sign-In: ${e.message}", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Google Sign-In error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -437,34 +481,7 @@ private fun UnauthenticatedAuthCard(
             // Google Sign-In Button using modern Credential Manager
             OutlinedButton(
                 onClick = {
-                    coroutineScope.launch {
-                        try {
-                            val credentialManager = CredentialManager.create(context)
-                            val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
-                            val serverClientId = if (resId != 0) context.getString(resId) else "36843683760-preview.apps.googleusercontent.com"
-
-                            val googleIdOption = GetGoogleIdOption.Builder()
-                                .setFilterByAuthorizedAccounts(false)
-                                .setServerClientId(serverClientId)
-                                .setAutoSelectEnabled(false)
-                                .build()
-
-                            val request = GetCredentialRequest.Builder()
-                                .addCredentialOption(googleIdOption)
-                                .build()
-
-                            val result = credentialManager.getCredential(context = context, request = request)
-                            val credential = result.credential
-                            if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                                onGoogleIdTokenReceived(googleIdTokenCredential.idToken)
-                            }
-                        } catch (e: GetCredentialException) {
-                            Toast.makeText(context, "Google Sign-In cancelled or failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Google Sign-In: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                        }
-                    }
+                    launchGoogleSignIn(activeClientId)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp)

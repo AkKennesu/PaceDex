@@ -12,7 +12,20 @@
           "package_name": "com.poketch.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "36843683760-fjrp60mtuv8v6i2slruu6irmq5j2q8kq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.poketch.app",
+            "certificate_hash": "7c2f1dbea0437efd012da5376b849c7bffe8b2a4"
+          }
+        },
+        {
+          "client_id": "36843683760-tto98ec609fq6rqn04pq463i3ubjisp0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAvkH2x7i7cgofoSAJsTafCK9lkhMdTX4A"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "36843683760-tto98ec609fq6rqn04pq463i3ubjisp0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
