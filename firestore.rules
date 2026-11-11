@@ -1,0 +1,113 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users/{userId}
+// Document ID: {userId} (matches Firebase Auth UID)
+// Fields:
+//   - uid: string (required, immutable) - Firebase Auth UID
+//   - ageYears: number (required, 13-120)
+//   - sex: string (required, 'MALE' or 'FEMALE')
+//   - heightCm: number (required, 50-300)
+//   - weightKg: number (required, 20-500)
+//   - activityLevel: string (required)
+//   - deficitTier: string (required)
+//   - dailyDeficitGoalKcal: number (required)
+//   - bmrKcal: number (required)
+//   - tdeeKcal: number (required)
+//   - targetCalorieCeiling: number (required)
+//   - dailyWaterGoalMl: number (required, 500-10000)
+//   - activeBuddyPokemonId: number (required, 1-151)
+//   - updatedAt: timestamp (required)
+//
+// Subcollection: users/{userId}/calorie_logs/{logId}
+// Document ID: {logId}
+// Fields:
+//   - logId: string (required, immutable)
+//   - dateIso: string (required)
+//   - mealCategory: string (required)
+//   - foodDescription: string (required)
+//   - caloriesKcal: number (required, positive, <= 10000)
+//   - proteinG: number (required, >= 0)
+//   - carbsG: number (required, >= 0)
+//   - fatG: number (required, >= 0)
+//   - timestampMillis: number (required)
+//
+// Subcollection: users/{userId}/habit_logs/{logId}
+// Document ID: {logId}
+// Fields:
+//   - logId: string (required)
+//   - dateIso: string (required)
+//   - habitType: string (required)
+//   - numericValue: number (required, >= 0)
+//   - timestampMillis: number (required)
+//
+// Subcollection: users/{userId}/caught_pokemon/{pokemonId}
+// Document ID: {pokemonId} (stringified integer)
+// Fields:
+//   - pokemonId: number (required, 1-151)
+//   - caughtAt: timestamp (required)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User profile document
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.ageYears is number
+        && request.resource.data.heightCm is number
+        && request.resource.data.weightKg is number;
+      allow update: if isOwner(userId)
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(userId);
+
+      // Calorie Logs subcollection
+      match /calorie_logs/{logId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.caloriesKcal is number
+          && request.resource.data.caloriesKcal > 0
+          && request.resource.data.caloriesKcal <= 10000;
+        allow delete: if isOwner(userId);
+      }
+
+      // Habit Logs subcollection
+      match /habit_logs/{logId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.numericValue is number
+          && request.resource.data.numericValue >= 0;
+        allow delete: if isOwner(userId);
+      }
+
+      // Caught Pokémon subcollection
+      match /caught_pokemon/{pokemonId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.pokemonId is number
+          && request.resource.data.pokemonId >= 1;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

@@ -23,6 +23,11 @@ truth = "1.4.4"
 robolectric = "4.13"
 androidxTestCore = "1.6.1"
 androidxTestExtJunit = "1.2.1"
+googleServices = "4.4.2"
+firebaseBom = "33.8.0"
+credentialManager = "1.3.0"
+googleId = "1.1.1"
+playServicesAuth = "21.2.0"
 
 [libraries]
 # Coroutines
@@ -73,6 +78,17 @@ core-splashscreen = { group = "androidx.core", name = "core-splashscreen", versi
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 coil-gif = { group = "io.coil-kt", name = "coil-gif", version.ref = "coil" }
 
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+
+# Google Sign-In & Credentials
+credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentialManager" }
+credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialManager" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleId" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
+
 # Background Work (WorkManager)
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 
@@ -91,3 +107,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

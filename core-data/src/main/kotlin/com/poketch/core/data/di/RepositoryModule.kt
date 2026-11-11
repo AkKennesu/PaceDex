@@ -1,10 +1,12 @@
 package com.poketch.core.data.di
 
+import com.poketch.core.data.repository.FirebaseAuthRepository
 import com.poketch.core.data.repository.OfflineFirstCalorieRepository
 import com.poketch.core.data.repository.OfflineFirstHabitRepository
 import com.poketch.core.data.repository.OfflineFirstPokemonRepository
 import com.poketch.core.data.repository.OfflineFirstUserRepository
 import com.poketch.core.data.repository.OfflineWeatherRepository
+import com.poketch.core.domain.repository.AuthRepository
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.HabitRepository
 import com.poketch.core.domain.repository.PokemonRepository
@@ -19,6 +21,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthRepository(
+        repository: FirebaseAuthRepository
+    ): AuthRepository
 
     @Binds
     @Singleton

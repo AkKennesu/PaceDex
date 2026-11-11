@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "36843683760",
+    "project_id": "poketch-watch-app",
+    "storage_bucket": "poketch-watch-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:36843683760:android:095b844e32ffe17b292075",
+        "android_client_info": {
+          "package_name": "com.poketch.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvkH2x7i7cgofoSAJsTafCK9lkhMdTX4A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

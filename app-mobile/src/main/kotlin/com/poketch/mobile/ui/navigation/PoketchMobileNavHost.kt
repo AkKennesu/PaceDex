@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
@@ -23,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -32,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +54,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.poketch.core.data.gamification.UnlockEventDispatcher
 import com.poketch.core.domain.engine.UnlockEvent
+import com.poketch.core.domain.model.AuthState
+import com.poketch.mobile.ui.auth.AuthScreen
+import com.poketch.mobile.ui.auth.AuthViewModel
 import com.poketch.mobile.ui.dashboard.CommandCenterScreen
 import com.poketch.mobile.ui.dashboard.CommandCenterViewModel
 import com.poketch.mobile.ui.diagnostics.SyncDiagnosticsScreen
@@ -70,6 +76,7 @@ enum class MobileTab(
     NUTRITION("nutrition", "Nutrition", Icons.Default.Add),
     POKEDEX("pokedex", "Pokédex", Icons.Default.Star),
     DIAGNOSTICS("diagnostics", "Sync", Icons.Default.Refresh),
+    ACCOUNT("account", "Cloud", Icons.Default.AccountCircle),
 }
 
 @Composable
@@ -80,59 +87,92 @@ fun PoketchMobileNavHost(
     nutritionViewModel: NutritionViewModel = viewModel(),
     pokedexViewModel: PokedexViewModel = viewModel(),
     syncDiagnosticsViewModel: SyncDiagnosticsViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel(),
 ) {
-    var currentTab by rememberSaveable { mutableStateOf(MobileTab.DASHBOARD) }
-    var unlockedPokemonDialog by remember { mutableStateOf<UnlockEvent.NewPokemonUnlocked?>(null) }
+    val authState by authViewModel.authState.collectAsState()
 
-    LaunchedEffect(unlockEventDispatcher) {
-        unlockEventDispatcher.unlockEvents.collect { event ->
-            unlockedPokemonDialog = event
-        }
-    }
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        bottomBar = {
-            NavigationBar {
-                MobileTab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = currentTab == tab,
-                        onClick = { currentTab = tab },
-                        icon = { Icon(imageVector = tab.icon, contentDescription = tab.title) },
-                        label = { Text(text = tab.title) }
+    when (authState) {
+        is AuthState.Loading -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0F172A)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = Color(0xFFE11D48))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Authenticating Trainer...",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
         }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            when (currentTab) {
-                MobileTab.DASHBOARD -> CommandCenterScreen(viewModel = commandCenterViewModel)
-                MobileTab.NUTRITION -> NutritionScreen(viewModel = nutritionViewModel)
-                MobileTab.POKEDEX -> PokedexScreen(viewModel = pokedexViewModel)
-                MobileTab.DIAGNOSTICS -> SyncDiagnosticsScreen(viewModel = syncDiagnosticsViewModel)
-            }
+        is AuthState.Unauthenticated -> {
+            // User MUST log in or register before they can access the app
+            AuthScreen(
+                viewModel = authViewModel,
+                modifier = modifier.fillMaxSize()
+            )
         }
-    }
+        is AuthState.Authenticated -> {
+            var currentTab by rememberSaveable { mutableStateOf(MobileTab.DASHBOARD) }
+            var unlockedPokemonDialog by remember { mutableStateOf<UnlockEvent.NewPokemonUnlocked?>(null) }
 
-    unlockedPokemonDialog?.let { unlockEvent ->
-        if (unlockEvent.isEvolution && unlockEvent.preEvolution != null) {
-            EvolutionCeremonyDialog(
-                event = unlockEvent,
-                onSetAsActiveBuddy = { buddyId ->
-                    commandCenterViewModel.setActiveBuddy(buddyId)
-                },
-                onDismiss = { unlockedPokemonDialog = null }
-            )
-        } else {
-            UnlockedPokemonCelebrationDialog(
-                event = unlockEvent,
-                onDismiss = { unlockedPokemonDialog = null }
-            )
+            LaunchedEffect(unlockEventDispatcher) {
+                unlockEventDispatcher.unlockEvents.collect { event ->
+                    unlockedPokemonDialog = event
+                }
+            }
+
+            Scaffold(
+                modifier = modifier.fillMaxSize(),
+                bottomBar = {
+                    NavigationBar {
+                        MobileTab.entries.forEach { tab ->
+                            NavigationBarItem(
+                                selected = currentTab == tab,
+                                onClick = { currentTab = tab },
+                                icon = { Icon(imageVector = tab.icon, contentDescription = tab.title) },
+                                label = { Text(text = tab.title) }
+                            )
+                        }
+                    }
+                }
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    when (currentTab) {
+                        MobileTab.DASHBOARD -> CommandCenterScreen(viewModel = commandCenterViewModel)
+                        MobileTab.NUTRITION -> NutritionScreen(viewModel = nutritionViewModel)
+                        MobileTab.POKEDEX -> PokedexScreen(viewModel = pokedexViewModel)
+                        MobileTab.DIAGNOSTICS -> SyncDiagnosticsScreen(viewModel = syncDiagnosticsViewModel)
+                        MobileTab.ACCOUNT -> AuthScreen(viewModel = authViewModel)
+                    }
+                }
+            }
+
+            unlockedPokemonDialog?.let { unlockEvent ->
+                if (unlockEvent.isEvolution && unlockEvent.preEvolution != null) {
+                    EvolutionCeremonyDialog(
+                        event = unlockEvent,
+                        onSetAsActiveBuddy = { buddyId ->
+                            commandCenterViewModel.setActiveBuddy(buddyId)
+                        },
+                        onDismiss = { unlockedPokemonDialog = null }
+                    )
+                } else {
+                    UnlockedPokemonCelebrationDialog(
+                        event = unlockEvent,
+                        onDismiss = { unlockedPokemonDialog = null }
+                    )
+                }
+            }
         }
     }
 }

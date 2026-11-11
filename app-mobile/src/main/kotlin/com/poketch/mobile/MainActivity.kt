@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.material3.MaterialTheme
 import com.poketch.core.data.gamification.UnlockEventDispatcher
+import com.poketch.mobile.ui.auth.AuthViewModel
 import com.poketch.mobile.ui.dashboard.CommandCenterViewModel
 import com.poketch.mobile.ui.diagnostics.SyncDiagnosticsViewModel
 import com.poketch.mobile.ui.navigation.PoketchMobileNavHost
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
     private val nutritionViewModel: NutritionViewModel by viewModels()
     private val pokedexViewModel: PokedexViewModel by viewModels()
     private val syncDiagnosticsViewModel: SyncDiagnosticsViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +39,7 @@ class MainActivity : ComponentActivity() {
                     nutritionViewModel = nutritionViewModel,
                     pokedexViewModel = pokedexViewModel,
                     syncDiagnosticsViewModel = syncDiagnosticsViewModel,
+                    authViewModel = authViewModel,
                 )
             }
         }
