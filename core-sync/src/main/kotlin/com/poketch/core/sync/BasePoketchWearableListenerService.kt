@@ -151,10 +151,24 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
             path == PoketchSyncConstants.PATH_WEATHER_HOURLY_CACHE -> {
                 handleWeatherHourlyCacheSync(dataMap)
             }
+            path == PoketchSyncConstants.PATH_LOCATION_TIMEZONE -> {
+                handleLocationTimeZoneSync(dataMap)
+            }
+        }
+    }
+
+    private fun handleLocationTimeZoneSync(dataMap: DataMap) {
+        if (!::weatherRepository.isInitialized) return
+        val lat = if (dataMap.containsKey("latitude")) dataMap.getDouble("latitude") else null
+        val lon = if (dataMap.containsKey("longitude")) dataMap.getDouble("longitude") else null
+        val tz = dataMap.getString("timeZoneId") ?: return
+        if (tz.isNotBlank()) {
+            weatherRepository.setLocation(lat, lon, tz)
         }
     }
 
     private suspend fun handleWeatherHourlyCacheSync(dataMap: DataMap) {
+        if (!::weatherRepository.isInitialized) return
         val json = dataMap.getString("weather_json") ?: return
         weatherRepository.cacheHourlyForecastJson(json)
     }

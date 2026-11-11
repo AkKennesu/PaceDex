@@ -16,4 +16,6 @@ interface WeatherRepository {
     suspend fun refreshWeatherFromRemote(): Result<Unit>
     suspend fun cacheHourlyForecastJson(jsonString: String): Result<Unit>
     fun getLastFetchedJson(): String?
+    fun setLocation(latitude: Double?, longitude: Double?, timeZoneId: String) {}
+    fun getResolvedTimeZoneId(): String = "UTC"
 }

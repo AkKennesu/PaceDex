@@ -28,6 +28,7 @@ class OfflineWeatherRepositoryTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        context.getSharedPreferences("poketch_weather_prefs", Context.MODE_PRIVATE).edit().clear().commit()
         database = Room.inMemoryDatabaseBuilder(context, PoketchDatabase::class.java)
             .allowMainThreadQueries()
             .build()
@@ -37,6 +38,7 @@ class OfflineWeatherRepositoryTest {
 
     @After
     fun tearDown() {
+        context.getSharedPreferences("poketch_weather_prefs", Context.MODE_PRIVATE).edit().clear().commit()
         database.close()
     }
 
@@ -133,5 +135,26 @@ class OfflineWeatherRepositoryTest {
         assertThat(weather.badgeText).isNotEmpty()
         assertThat(weather.tempCelsius).isAtLeast(15)
         assertThat(weather.tempCelsius).isAtMost(40)
+    }
+
+    @Test
+    fun setLocation_updatesResolvedLocationAndTimeZone() = runTest {
+        repository.setLocation(1.3521, 103.8198, "Asia/Singapore")
+
+        assertThat(repository.getResolvedTimeZoneId()).isEqualTo("Asia/Singapore")
+        val active = repository.resolveActiveLocation()
+        assertThat(active.latitude).isEqualTo(1.3521)
+        assertThat(active.longitude).isEqualTo(103.8198)
+        assertThat(active.timeZoneId).isEqualTo("Asia/Singapore")
+    }
+
+    @Test
+    fun setLocation_withNullCoordinates_resolvesFromTimeZoneLookup() = runTest {
+        repository.setLocation(null, null, "Asia/Tokyo")
+
+        assertThat(repository.getResolvedTimeZoneId()).isEqualTo("Asia/Tokyo")
+        val active = repository.resolveActiveLocation()
+        assertThat(active.latitude).isEqualTo(35.6762)
+        assertThat(active.longitude).isEqualTo(139.6503)
     }
 }

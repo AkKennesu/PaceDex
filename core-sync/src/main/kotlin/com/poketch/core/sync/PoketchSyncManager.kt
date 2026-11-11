@@ -326,6 +326,9 @@ class PoketchSyncManager @Inject constructor(
         val pokedexResult = runCatching { syncPokedexCatalog() }
         if (pokedexResult.isFailure) hasError = true
 
+        // 4. Sync Location & TimeZone from system default
+        runCatching { syncDeviceLocationAndTimeZone() }
+
         _lastSyncTimestampMillis = System.currentTimeMillis()
         return !hasError
     }
@@ -339,6 +342,27 @@ class PoketchSyncManager @Inject constructor(
             putLong("timestamp", System.currentTimeMillis())
         }
         transport.putDataMap(PoketchSyncConstants.PATH_WEATHER_HOURLY_CACHE, dataMap)
+    }
+
+    suspend fun syncLocationAndTimeZone(latitude: Double?, longitude: Double?, timeZoneId: String) {
+        val dataMap = DataMap().apply {
+            if (latitude != null && longitude != null && !latitude.isNaN() && !longitude.isNaN()) {
+                putDouble("latitude", latitude)
+                putDouble("longitude", longitude)
+            }
+            putString("timeZoneId", timeZoneId)
+            putLong("timestamp", System.currentTimeMillis())
+        }
+        transport.putDataMap(PoketchSyncConstants.PATH_LOCATION_TIMEZONE, dataMap)
+    }
+
+    suspend fun syncDeviceLocationAndTimeZone() {
+        val tzId = try {
+            java.time.ZoneId.systemDefault().id
+        } catch (_: Exception) {
+            "Asia/Singapore"
+        }
+        syncLocationAndTimeZone(null, null, tzId)
     }
 
     suspend fun getSyncDiagnostics(): SyncDiagnosticsInfo {
