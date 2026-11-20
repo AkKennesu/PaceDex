@@ -63,6 +63,7 @@ dependencies {
 
     implementation(platform(libs.compose.bom))
     implementation(libs.material3)
+    implementation(libs.material.icons.extended)
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
@@ -84,6 +85,9 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.coil.gif)
+
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
 
     implementation(libs.work.runtime.ktx)
 

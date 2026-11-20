@@ -1,6 +1,8 @@
 package com.poketch.mobile.ui.pokedex
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +34,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +61,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.poketch.core.domain.model.Pokemon
+import com.poketch.mobile.ui.theme.PoketchBorder
+import com.poketch.mobile.ui.theme.PoketchBorderSubtle
+import com.poketch.mobile.ui.theme.PoketchCrimson
+import com.poketch.mobile.ui.theme.PoketchCyan
+import com.poketch.mobile.ui.theme.PoketchEmerald
+import com.poketch.mobile.ui.theme.PoketchSurface
+import com.poketch.mobile.ui.theme.PoketchSurfaceElevated
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -74,7 +84,8 @@ fun PokedexScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // 1. Completion Header
@@ -93,8 +104,8 @@ fun PokedexScreen(
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             contentPadding = PaddingValues(bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.fillMaxSize()
         ) {
             items(
@@ -114,7 +125,9 @@ fun PokedexScreen(
     state.selectedPokemon?.let { pokemon ->
         ModalBottomSheet(
             onDismissRequest = viewModel::onDismissBottomSheet,
-            sheetState = sheetState
+            sheetState = sheetState,
+            containerColor = PoketchSurface,
+            contentColor = Color.White
         ) {
             PokemonDetailSheetContent(
                 pokemon = pokemon,
@@ -138,48 +151,64 @@ private fun PokedexHeader(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+        border = BorderStroke(1.dp, PoketchBorder)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "151 Kanto Pokédex",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "$unlockedCount / $totalCount",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Column {
+                    Text(
+                        text = "KANTO SPECIES INDEX",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.2.sp,
+                        color = PoketchCrimson
+                    )
+                    Text(
+                        text = "151 Pokédex",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Black
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = PoketchEmerald.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, PoketchEmerald.copy(alpha = 0.4f))
+                ) {
+                    Text(
+                        text = "$unlockedCount / $totalCount Unlocked",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        color = PoketchEmerald,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
             }
 
             LinearProgressIndicator(
                 progress = { progressRatio },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(RoundedCornerShape(5.dp)),
-                color = Color(0xFF2E7D32),
-                trackColor = MaterialTheme.colorScheme.surface,
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = PoketchEmerald,
+                trackColor = Color(0xFF1E293B),
                 strokeCap = StrokeCap.Round
             )
 
             Text(
-                text = "Kanto Completion: $percent% • Unlock all 151 through fitness discipline",
+                text = "Completion: $percent% • Unlock species by hitting calorie deficits, water & daily steps!",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF94A3B8)
             )
         }
     }
@@ -202,7 +231,18 @@ private fun PokedexFilterChips(
             FilterChip(
                 selected = isSelected,
                 onClick = { onFilterSelected(filter) },
-                label = { Text(filter.label) }
+                label = { Text(filter.label, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = PoketchCrimson,
+                    selectedLabelColor = Color.White,
+                    containerColor = Color(0xFF131B2A),
+                    labelColor = Color(0xFF94A3B8)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = isSelected,
+                    borderColor = if (isSelected) PoketchCrimson else PoketchBorderSubtle
+                )
             )
         }
     }
@@ -222,23 +262,22 @@ private fun PokemonGridItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(0.78f)
+            .aspectRatio(0.76f)
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isUnlocked) {
-                MaterialTheme.colorScheme.surface
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            }
+            containerColor = if (isUnlocked) PoketchSurface else Color(0xFF0F172A)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isUnlocked) 2.dp else 0.dp)
+        border = BorderStroke(
+            1.dp,
+            if (isActiveBuddy) PoketchCrimson else if (isUnlocked) PoketchBorder else PoketchBorderSubtle
+        )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(6.dp),
+                    .padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
@@ -252,25 +291,34 @@ private fun PokemonGridItem(
                         text = "#%03d".format(pokemon.pokedexNumber),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (isUnlocked) MaterialTheme.colorScheme.onSurfaceVariant else Color.Gray
+                        color = if (isUnlocked) Color(0xFF94A3B8) else Color(0xFF475569)
                     )
 
                     if (isActiveBuddy) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Active Buddy",
-                            tint = Color(0xFFFFB300),
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = PoketchCrimson.copy(alpha = 0.2f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Active Buddy",
+                                tint = PoketchCrimson,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .padding(2.dp)
+                            )
+                        }
                     }
                 }
 
-                // Sprite
+                // Sprite on pedestal
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(62.dp)
                         .clip(CircleShape)
-                        .background(if (isUnlocked) Color(0xFFF1F8E9) else Color(0xFFE0E0E0)),
+                        .background(
+                            if (isUnlocked) Color(0xFF1E293B) else Color(0xFF0B111E)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
@@ -280,8 +328,8 @@ private fun PokemonGridItem(
                             .build(),
                         contentDescription = pokemon.name,
                         filterQuality = FilterQuality.None,
-                        colorFilter = if (isUnlocked) null else ColorFilter.tint(Color.Black.copy(alpha = 0.85f)),
-                        modifier = Modifier.size(52.dp)
+                        colorFilter = if (isUnlocked) null else ColorFilter.tint(Color.Black.copy(alpha = 0.88f)),
+                        modifier = Modifier.size(50.dp)
                     )
                 }
 
@@ -296,20 +344,20 @@ private fun PokemonGridItem(
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else Color.Gray
+                        color = if (isUnlocked) Color.White else Color(0xFF64748B)
                     )
 
                     if (isUnlocked) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = getPokemonTypeColor(pokemon.primaryType),
-                            modifier = Modifier.padding(top = 2.dp)
+                            modifier = Modifier.padding(top = 4.dp)
                         ) {
                             Text(
-                                text = pokemon.primaryType,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                text = pokemon.primaryType.uppercase(),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.Black,
                                 color = Color.White
                             )
                         }
@@ -318,7 +366,7 @@ private fun PokemonGridItem(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 2.dp),
+                                .padding(top = 4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             LinearProgressIndicator(
@@ -327,13 +375,13 @@ private fun PokemonGridItem(
                                     .fillMaxWidth()
                                     .height(4.dp)
                                     .clip(RoundedCornerShape(2.dp)),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = Color.LightGray
+                                color = PoketchCrimson,
+                                trackColor = Color(0xFF1E293B)
                             )
                             Text(
                                 text = "${pokemon.currentProgress}/${pokemon.unlockRule.targetThreshold}",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                color = Color.Gray,
+                                color = Color(0xFF64748B),
                                 modifier = Modifier.padding(top = 1.dp)
                             )
                         }
@@ -359,16 +407,17 @@ private fun PokemonDetailSheetContent(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 24.dp, vertical = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Sprite
+        // Sprite Pedestal
         Box(
             modifier = Modifier
                 .size(130.dp)
                 .clip(CircleShape)
-                .background(if (isUnlocked) Color(0xFFE8F5E9) else Color(0xFFEEEEEE)),
+                .background(Color(0xFF0F172A))
+                .border(2.dp, PoketchBorder, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
@@ -378,7 +427,7 @@ private fun PokemonDetailSheetContent(
                     .build(),
                 contentDescription = pokemon.name,
                 filterQuality = FilterQuality.None,
-                colorFilter = if (isUnlocked) null else ColorFilter.tint(Color.Black.copy(alpha = 0.85f)),
+                colorFilter = if (isUnlocked) null else ColorFilter.tint(Color.Black.copy(alpha = 0.88f)),
                 modifier = Modifier.size(100.dp)
             )
         }
@@ -387,14 +436,15 @@ private fun PokemonDetailSheetContent(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = if (isUnlocked) pokemon.name.uppercase() else "???",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Black,
-                letterSpacing = 1.sp
+                letterSpacing = 1.sp,
+                color = Color.White
             )
             Text(
-                text = "#%03d (Classic Gen-I Kanto)".format(pokemon.pokedexNumber),
+                text = "#%03d • Kanto Species".format(pokemon.pokedexNumber),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF94A3B8)
             )
         }
 
@@ -405,10 +455,10 @@ private fun PokemonDetailSheetContent(
                 color = getPokemonTypeColor(pokemon.primaryType)
             ) {
                 Text(
-                    text = pokemon.primaryType,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    text = pokemon.primaryType.uppercase(),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Black,
                     color = Color.White
                 )
             }
@@ -418,10 +468,10 @@ private fun PokemonDetailSheetContent(
                     color = getPokemonTypeColor(sec)
                 ) {
                     Text(
-                        text = sec,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        text = sec.uppercase(),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         color = Color.White
                     )
                 }
@@ -431,26 +481,27 @@ private fun PokemonDetailSheetContent(
         // Criteria & Progress Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+            border = BorderStroke(1.dp, PoketchBorder)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Unlock Criteria (${pokemon.unlockRule.category.name.replace('_', ' ')})",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    text = "UNLOCK CRITERIA (${pokemon.unlockRule.category.name.replace('_', ' ')})",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Black,
+                    color = PoketchCyan,
+                    letterSpacing = 1.sp
                 )
 
                 Text(
                     text = pokemon.unlockRule.description,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
                 )
 
                 // Progress Bar
@@ -462,12 +513,13 @@ private fun PokemonDetailSheetContent(
                         Text(
                             text = "Milestone Progress",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color(0xFF94A3B8)
                         )
                         Text(
                             text = "${pokemon.currentProgress} / ${pokemon.unlockRule.targetThreshold} (${(pokemon.progressRatio * 100).toInt()}%)",
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     }
                     LinearProgressIndicator(
@@ -476,7 +528,8 @@ private fun PokemonDetailSheetContent(
                             .fillMaxWidth()
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp)),
-                        color = if (isUnlocked) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
+                        color = if (isUnlocked) PoketchEmerald else PoketchCrimson,
+                        trackColor = Color(0xFF1E293B),
                         strokeCap = StrokeCap.Round
                     )
                 }
@@ -494,7 +547,7 @@ private fun PokemonDetailSheetContent(
                     },
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isUnlocked) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                    color = if (isUnlocked) PoketchEmerald else PoketchCrimson
                 )
             }
         }
@@ -504,8 +557,10 @@ private fun PokemonDetailSheetContent(
             onClick = onSetAsBuddy,
             enabled = isUnlocked && !isActiveBuddy,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isActiveBuddy) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary
+                containerColor = if (isActiveBuddy) PoketchEmerald else PoketchCrimson,
+                disabledContainerColor = Color(0xFF1E293B)
             ),
+            shape = RoundedCornerShape(14.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
@@ -535,7 +590,8 @@ private fun PokemonDetailSheetContent(
             } else {
                 Text(
                     text = "Unlock to Set as Buddy",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF64748B)
                 )
             }
         }
@@ -546,21 +602,21 @@ private fun getPokemonTypeColor(type: String): Color {
     return when (type.uppercase()) {
         "NORMAL" -> Color(0xFFA8A878)
         "FIRE" -> Color(0xFFF08030)
-        "WATER" -> Color(0xFF6890F0)
-        "GRASS" -> Color(0xFF78C850)
-        "ELECTRIC" -> Color(0xFFF8D030)
+        "WATER" -> Color(0xFF38BDF8)
+        "GRASS" -> Color(0xFF4ADE80)
+        "ELECTRIC" -> Color(0xFFFACC15)
         "ICE" -> Color(0xFF98D8D8)
-        "FIGHTING" -> Color(0xFFC03028)
-        "POISON" -> Color(0xFFA040A0)
+        "FIGHTING" -> Color(0xFFE11D48)
+        "POISON" -> Color(0xFFA855F7)
         "GROUND" -> Color(0xFFE0C068)
         "FLYING" -> Color(0xFFA890F0)
-        "PSYCHIC" -> Color(0xFFF85888)
+        "PSYCHIC" -> Color(0xFFF43F5E)
         "BUG" -> Color(0xFFA8B820)
         "ROCK" -> Color(0xFFB8A038)
-        "GHOST" -> Color(0xFF705898)
+        "GHOST" -> Color(0xFF818CF8)
         "DRAGON" -> Color(0xFF7038F8)
-        "STEEL" -> Color(0xFFB8B8D0)
-        "FAIRY" -> Color(0xFFEE99AC)
-        else -> Color(0xFF8A8A8A)
+        "STEEL" -> Color(0xFF94A3B8)
+        "FAIRY" -> Color(0xFFF472B6)
+        else -> Color(0xFF64748B)
     }
 }

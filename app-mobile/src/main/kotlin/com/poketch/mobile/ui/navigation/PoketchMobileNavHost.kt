@@ -15,10 +15,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,11 +72,11 @@ enum class MobileTab(
     val title: String,
     val icon: ImageVector,
 ) {
-    DASHBOARD("dashboard", "Dashboard", Icons.Default.Home),
-    NUTRITION("nutrition", "Nutrition", Icons.Default.Add),
+    DASHBOARD("dashboard", "Home", Icons.Default.Home),
+    NUTRITION("nutrition", "Meals", Icons.Default.Restaurant),
     POKEDEX("pokedex", "Pokédex", Icons.Default.Star),
-    DIAGNOSTICS("diagnostics", "Sync", Icons.Default.Refresh),
-    ACCOUNT("account", "Cloud", Icons.Default.AccountCircle),
+    DIAGNOSTICS("diagnostics", "Watch Link", Icons.Default.Watch),
+    ACCOUNT("account", "Trainer", Icons.Default.AccountCircle),
 }
 
 @Composable
@@ -129,15 +129,45 @@ fun PoketchMobileNavHost(
 
             Scaffold(
                 modifier = modifier.fillMaxSize(),
+                containerColor = MaterialTheme.colorScheme.background,
                 bottomBar = {
-                    NavigationBar {
-                        MobileTab.entries.forEach { tab ->
-                            NavigationBarItem(
-                                selected = currentTab == tab,
-                                onClick = { currentTab = tab },
-                                icon = { Icon(imageVector = tab.icon, contentDescription = tab.title) },
-                                label = { Text(text = tab.title) }
-                            )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 4.dp,
+                        shadowElevation = 8.dp
+                    ) {
+                        NavigationBar(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 0.dp
+                        ) {
+                            MobileTab.entries.forEach { tab ->
+                                val selected = currentTab == tab
+                                NavigationBarItem(
+                                    selected = selected,
+                                    onClick = { currentTab = tab },
+                                    icon = {
+                                        Icon(
+                                            imageVector = tab.icon,
+                                            contentDescription = tab.title,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            text = tab.title,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                                        )
+                                    },
+                                    colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                )
+                            }
                         }
                     }
                 }

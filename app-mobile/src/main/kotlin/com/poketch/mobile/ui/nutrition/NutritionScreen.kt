@@ -5,7 +5,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +23,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import com.poketch.mobile.ui.theme.PoketchAmber
+import com.poketch.mobile.ui.theme.PoketchBorder
+import com.poketch.mobile.ui.theme.PoketchBorderSubtle
+import com.poketch.mobile.ui.theme.PoketchCrimson
+import com.poketch.mobile.ui.theme.PoketchCyan
+import com.poketch.mobile.ui.theme.PoketchEmerald
+import com.poketch.mobile.ui.theme.PoketchSurface
+import com.poketch.mobile.ui.theme.PoketchSurfaceElevated
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -81,15 +91,36 @@ fun NutritionScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Calorie & TDEE Logger",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(PoketchEmerald)
+                )
+                Text(
+                    text = "NUTRITION & MACROS",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.2.sp,
+                    color = PoketchEmerald
+                )
+            }
+            Text(
+                text = "Meals & Fuel",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Black
+            )
+        }
 
         // 1. Mifflin-St Jeor Biometrics Card with Unit Converter Toggles
         MifflinStJeorConfigCard(
@@ -173,10 +204,9 @@ private fun MifflinStJeorConfigCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+        border = BorderStroke(1.dp, PoketchBorder)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -191,12 +221,12 @@ private fun MifflinStJeorConfigCard(
             ) {
                 Column {
                     Text(
-                        text = "⚙️ Mifflin-St Jeor TDEE Calculator",
+                        text = "⚙️ Energy Goals & Biometrics",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = if (state.isConfigCardExpanded) "Tap to collapse settings" else "Tap to adjust height, weight & deficit goals",
+                        text = if (state.isConfigCardExpanded) "Tap to collapse settings" else "Tap to adjust your body stats & daily calorie goal",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -495,10 +525,10 @@ private fun LiveCalculationBanner(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                CalculationMetric(label = "BMR", value = "${summary.bmrKcal} kcal")
-                CalculationMetric(label = "TDEE", value = "${summary.tdeeKcal} kcal")
+                CalculationMetric(label = "BMR (At Rest)", value = "${summary.bmrKcal} kcal")
+                CalculationMetric(label = "TDEE (Daily Burn)", value = "${summary.tdeeKcal} kcal")
                 CalculationMetric(
-                    label = "Target Ceiling",
+                    label = "Target Ceiling (Max)",
                     value = "${summary.targetCalorieCeiling} kcal",
                     valueColor = MaterialTheme.colorScheme.primary,
                     isEmphasized = true
@@ -587,6 +617,12 @@ private fun KantoDelicaciesSection(
             )
         }
 
+        Text(
+            text = "💡 Quick Tip: Tap 'Log Now' on any template below for instant 1-tap logging without counting macros manually!",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -612,15 +648,16 @@ private fun KantoTemplateCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.width(200.dp),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.width(210.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = PoketchSurface
+        ),
+        border = BorderStroke(1.dp, PoketchBorder)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -637,13 +674,14 @@ private fun KantoTemplateCard(
 
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
+                color = PoketchCyan.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, PoketchCyan.copy(alpha = 0.3f))
             ) {
                 Text(
                     text = "${template.category.name.lowercase().replaceFirstChar { it.uppercase() }} • ${template.caloriesKcal} kcal",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontWeight = FontWeight.SemiBold,
+                    color = PoketchCyan,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
@@ -669,16 +707,18 @@ private fun KantoTemplateCard(
                 OutlinedButton(
                     onClick = onApply,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, PoketchBorderSubtle)
                 ) {
-                    Text("Auto-Fill", style = MaterialTheme.typography.labelSmall)
+                    Text("Auto-Fill", style = MaterialTheme.typography.labelSmall, color = Color.White)
                 }
                 Button(
                     onClick = onQuickLog,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PoketchEmerald)
                 ) {
-                    Text("+ Log", style = MaterialTheme.typography.labelSmall)
+                    Text("+ Log", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
             }
         }
@@ -705,35 +745,44 @@ private fun QuickAddMealSection(
         ) {
             OutlinedButton(
                 onClick = { onQuickAdd(MealCategory.SNACK, 150, "Quick Snack (Apple / Shake)", 5) },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, PoketchBorderSubtle)
             ) {
                 Text(
                     text = "+150 kcal\nSnack",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = PoketchCyan
                 )
             }
             OutlinedButton(
                 onClick = { onQuickAdd(MealCategory.BREAKFAST, 400, "Quick Breakfast (Eggs & Toast)", 20) },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, PoketchBorderSubtle)
             ) {
                 Text(
                     text = "+400 kcal\nBreakfast",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = PoketchAmber
                 )
             }
             OutlinedButton(
                 onClick = { onQuickAdd(MealCategory.DINNER, 600, "Quick Dinner (Balanced Bowl)", 35) },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, PoketchBorderSubtle)
             ) {
                 Text(
                     text = "+600 kcal\nDinner",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = PoketchEmerald
                 )
             }
         }
@@ -755,20 +804,35 @@ private fun MealEntryFormCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = PoketchSurface
+        ),
+        border = BorderStroke(1.dp, PoketchBorder)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text(
-                text = "📝 Log Custom Meal",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(PoketchCrimson.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("📝", fontSize = 16.sp)
+                }
+                Text(
+                    text = "Log Custom Meal",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             // Meal Category Chips
             FlowRow(
@@ -794,6 +858,7 @@ private fun MealEntryFormCard(
                 onValueChange = onFoodNameChanged,
                 label = { Text("Food Description (e.g., Grilled Chicken Salad)") },
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 singleLine = true
             )
 
@@ -808,6 +873,7 @@ private fun MealEntryFormCard(
                     label = { Text("Calories* (kcal)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1.2f),
+                    shape = RoundedCornerShape(12.dp),
                     singleLine = true
                 )
                 OutlinedTextField(
@@ -816,6 +882,7 @@ private fun MealEntryFormCard(
                     label = { Text("Protein (g)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
                     singleLine = true
                 )
             }
@@ -830,6 +897,7 @@ private fun MealEntryFormCard(
                     label = { Text("Carbs (g)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
                     singleLine = true
                 )
                 OutlinedTextField(
@@ -838,6 +906,7 @@ private fun MealEntryFormCard(
                     label = { Text("Fat (g)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
                     singleLine = true
                 )
             }
@@ -845,11 +914,13 @@ private fun MealEntryFormCard(
             Button(
                 onClick = onSubmit,
                 enabled = state.caloriesText.toIntOrNull()?.let { it > 0 } == true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PoketchCrimson)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null)
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Meal Entry")
+                Text("Add Meal Entry", fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }
@@ -880,16 +951,31 @@ private fun LoggedMealsSection(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Text(
-                text = "Total: $totalCalories kcal",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
+            Surface(
+                shape = CircleShape,
                 color = when (budgetState) {
-                    is CalorieBudgetState.OverTargetWarning -> Color(0xFFB71C1C)
-                    is CalorieBudgetState.ApproachingCeiling -> Color(0xFFF57F17)
-                    is CalorieBudgetState.OnTrack -> Color(0xFF2E7D32)
-                }
-            )
+                    is CalorieBudgetState.OverTargetWarning -> PoketchCrimson.copy(alpha = 0.15f)
+                    is CalorieBudgetState.ApproachingCeiling -> PoketchAmber.copy(alpha = 0.15f)
+                    is CalorieBudgetState.OnTrack -> PoketchEmerald.copy(alpha = 0.15f)
+                },
+                border = BorderStroke(1.dp, when (budgetState) {
+                    is CalorieBudgetState.OverTargetWarning -> PoketchCrimson.copy(alpha = 0.4f)
+                    is CalorieBudgetState.ApproachingCeiling -> PoketchAmber.copy(alpha = 0.4f)
+                    is CalorieBudgetState.OnTrack -> PoketchEmerald.copy(alpha = 0.4f)
+                })
+            ) {
+                Text(
+                    text = "Total: $totalCalories kcal",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = when (budgetState) {
+                        is CalorieBudgetState.OverTargetWarning -> PoketchCrimson
+                        is CalorieBudgetState.ApproachingCeiling -> PoketchAmber
+                        is CalorieBudgetState.OnTrack -> PoketchEmerald
+                    },
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
         }
 
         // Filter chips: All, Breakfast, Lunch, Dinner, Snack
@@ -919,7 +1005,9 @@ private fun LoggedMealsSection(
         if (logs.isEmpty()) {
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.outlinedCardColors(containerColor = PoketchSurface),
+                border = BorderStroke(1.dp, PoketchBorderSubtle)
             ) {
                 Box(
                     modifier = Modifier
@@ -958,15 +1046,16 @@ private fun MealLogItemCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = PoketchSurface
+        ),
+        border = BorderStroke(1.dp, PoketchBorderSubtle)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1003,7 +1092,7 @@ private fun MealLogItemCard(
                     Text(
                         text = "P: ${log.proteinG}g  •  C: ${log.carbsG}g  •  F: ${log.fatG}g",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = PoketchCyan
                     )
                 }
             }
@@ -1016,7 +1105,7 @@ private fun MealLogItemCard(
                     text = "${log.caloriesKcal} kcal",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = PoketchCrimson
                 )
                 IconButton(onClick = onDelete) {
                     Icon(
@@ -1038,28 +1127,30 @@ private fun SyncStatusBadge(
 ) {
     if (isSynced) {
         Surface(
-            color = Color(0xFFE8F5E9),
+            color = PoketchEmerald.copy(alpha = 0.15f),
             shape = CircleShape,
+            border = BorderStroke(1.dp, PoketchEmerald.copy(alpha = 0.3f)),
             modifier = modifier
         ) {
             Text(
                 text = "✓ Synced to Watch",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF2E7D32),
+                color = PoketchEmerald,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
             )
         }
     } else {
         Surface(
-            color = Color(0xFFFFF3E0),
+            color = PoketchAmber.copy(alpha = 0.15f),
             shape = CircleShape,
+            border = BorderStroke(1.dp, PoketchAmber.copy(alpha = 0.3f)),
             modifier = modifier
         ) {
             Text(
                 text = "📱 Local",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFFE65100),
+                color = PoketchAmber,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
             )

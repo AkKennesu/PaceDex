@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="poketch_widget_min_width">180dp</dimen>
+    <dimen name="poketch_widget_min_height">110dp</dimen>
+    <dimen name="poketch_widget_min_resize_width">140dp</dimen>
+    <dimen name="poketch_widget_min_resize_height">90dp</dimen>
+    <dimen name="poketch_widget_max_resize_width">500dp</dimen>
+    <dimen name="poketch_widget_max_resize_height">500dp</dimen>
+    <integer name="poketch_widget_target_cell_width">4</integer>
+    <integer name="poketch_widget_target_cell_height">2</integer>
+</resources>

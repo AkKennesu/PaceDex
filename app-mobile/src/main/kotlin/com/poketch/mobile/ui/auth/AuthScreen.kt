@@ -2,7 +2,9 @@ package com.poketch.mobile.ui.auth
 
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import com.poketch.mobile.ui.theme.PoketchBorder
+import com.poketch.mobile.ui.theme.PoketchBorderSubtle
+import com.poketch.mobile.ui.theme.PoketchCrimson
+import com.poketch.mobile.ui.theme.PoketchCyan
+import com.poketch.mobile.ui.theme.PoketchEmerald
+import com.poketch.mobile.ui.theme.PoketchSurface
+import com.poketch.mobile.ui.theme.PoketchSurfaceElevated
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -111,8 +120,9 @@ fun AuthScreen(
         Spacer(modifier = Modifier.height(8.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-            shape = RoundedCornerShape(16.dp)
+            colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+            shape = RoundedCornerShape(20.dp),
+            border = BorderStroke(1.dp, PoketchBorder)
         ) {
             Column(
                 modifier = Modifier
@@ -124,7 +134,8 @@ fun AuthScreen(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFE11D48)),
+                        .background(PoketchCrimson.copy(alpha = 0.15f))
+                        .border(1.dp, PoketchCrimson, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -134,14 +145,14 @@ fun AuthScreen(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "POKÉTCH TRAINER CLOUD",
+                    text = "POKÉTCH TRAINER PROFILE",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Black,
                     color = Color.White,
                     letterSpacing = 1.2.sp
                 )
                 Text(
-                    text = "Firebase Auth & Cloud Firestore Sync",
+                    text = "Account, Cloud Backup & Watch Link",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF94A3B8)
                 )
@@ -204,7 +215,8 @@ fun AuthScreen(
                     onPasswordChanged = viewModel::onPasswordChanged,
                     onToggleMode = viewModel::toggleMode,
                     onSubmitEmailAuth = viewModel::submitEmailAuth,
-                    onGoogleIdTokenReceived = viewModel::signInWithGoogleIdToken
+                    onGoogleIdTokenReceived = viewModel::signInWithGoogleIdToken,
+                    onBypassLogin = viewModel::loginAsDummyTrainer
                 )
             }
         }
@@ -223,9 +235,9 @@ private fun AuthenticatedTrainerCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, PoketchBorder)
     ) {
         Column(
             modifier = Modifier
@@ -237,13 +249,22 @@ private fun AuthenticatedTrainerCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Trainer Avatar",
-                    tint = Color(0xFF22C55E),
-                    modifier = Modifier.size(48.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(PoketchEmerald.copy(alpha = 0.15f))
+                        .border(1.dp, PoketchEmerald, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Trainer Avatar",
+                        tint = PoketchEmerald,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = user.displayName ?: "Pokémon Trainer",
@@ -265,15 +286,16 @@ private fun AuthenticatedTrainerCard(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            HorizontalDivider()
+            HorizontalDivider(color = PoketchBorderSubtle)
             Spacer(modifier = Modifier.height(16.dp))
 
             // Cloud Sync Section
             Text(
                 text = "CLOUD FIRESTORE BACKUP",
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp,
+                color = PoketchCyan,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -298,19 +320,19 @@ private fun AuthenticatedTrainerCard(
                     onClick = onSyncToCloud,
                     enabled = !uiState.isSyncing,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
-                    shape = RoundedCornerShape(10.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = PoketchCyan),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     if (uiState.isSyncing) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = Color.Black,
                             modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Backup")
+                        Text("Backup", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -318,22 +340,24 @@ private fun AuthenticatedTrainerCard(
                     onClick = onRestoreFromCloud,
                     enabled = !uiState.isSyncing,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, PoketchBorder)
                 ) {
-                    Text("⬇ Restore")
+                    Text("⬇ Restore", color = Color.White)
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            HorizontalDivider()
+            HorizontalDivider(color = PoketchBorderSubtle)
             Spacer(modifier = Modifier.height(16.dp))
 
             // Watch Link & QR Scanner Section
             Text(
                 text = "POKÉTCH WATCH LINK & PAIRING",
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp,
+                color = PoketchEmerald,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -346,7 +370,7 @@ private fun AuthenticatedTrainerCard(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(if (uiState.isWatchConnected) Color(0xFF22C55E) else Color(0xFFEF4444))
+                        .background(if (uiState.isWatchConnected) PoketchEmerald else PoketchCrimson)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -383,19 +407,19 @@ private fun AuthenticatedTrainerCard(
                     onClick = onScanWatchQr,
                     enabled = !uiState.isPairingWatch,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                    shape = RoundedCornerShape(10.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = PoketchEmerald),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     if (uiState.isPairingWatch) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = Color.Black,
                             modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Pairing...")
+                        Text("Pairing...", color = Color.Black, fontWeight = FontWeight.Bold)
                     } else {
-                        Text("📷 Scan Watch QR")
+                        Text("📷 Scan Watch QR", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -404,24 +428,26 @@ private fun AuthenticatedTrainerCard(
                         onClick = onSyncWatch,
                         enabled = !uiState.isPairingWatch,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, PoketchBorder)
                     ) {
-                        Text("🔄 Sync Watch")
+                        Text("🔄 Sync Watch", color = Color.White)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            HorizontalDivider()
+            HorizontalDivider(color = PoketchBorderSubtle)
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedButton(
                 onClick = onSignOut,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
-                shape = RoundedCornerShape(10.dp)
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = PoketchCrimson),
+                border = BorderStroke(1.dp, PoketchCrimson.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Sign Out")
+                Text("Sign Out", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -434,7 +460,8 @@ private fun UnauthenticatedAuthCard(
     onPasswordChanged: (String) -> Unit,
     onToggleMode: () -> Unit,
     onSubmitEmailAuth: () -> Unit,
-    onGoogleIdTokenReceived: (String) -> Unit
+    onGoogleIdTokenReceived: (String) -> Unit,
+    onBypassLogin: () -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -481,9 +508,9 @@ private fun UnauthenticatedAuthCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, PoketchBorder)
     ) {
         Column(
             modifier = Modifier
@@ -511,10 +538,10 @@ private fun UnauthenticatedAuthCard(
                 onValueChange = onEmailChanged,
                 label = { Text("Email Address") },
                 singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = PoketchCyan) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -525,18 +552,19 @@ private fun UnauthenticatedAuthCard(
                 label = { Text("Password (min 6 chars)") },
                 singleLine = true,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = PoketchCyan) },
                 trailingIcon = {
                     TextButton(onClick = { passwordVisible = !passwordVisible }) {
                         Text(
                             text = if (passwordVisible) "HIDE" else "SHOW",
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelSmall,
+                            color = PoketchCyan
                         )
                     }
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             if (uiState.errorMessage != null) {
@@ -556,8 +584,8 @@ private fun UnauthenticatedAuthCard(
                 onClick = onSubmitEmailAuth,
                 enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48)),
-                shape = RoundedCornerShape(10.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = PoketchCrimson),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
@@ -568,7 +596,8 @@ private fun UnauthenticatedAuthCard(
                 } else {
                     Text(
                         text = if (uiState.isSignUp) "Register with Email" else "Sign In with Email",
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             }
@@ -578,7 +607,8 @@ private fun UnauthenticatedAuthCard(
             TextButton(onClick = onToggleMode) {
                 Text(
                     text = if (uiState.isSignUp) "Already have an account? Sign In" else "New Trainer? Register here",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PoketchCyan
                 )
             }
 
@@ -587,13 +617,13 @@ private fun UnauthenticatedAuthCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                HorizontalDivider(modifier = Modifier.weight(1f))
+                HorizontalDivider(modifier = Modifier.weight(1f), color = PoketchBorderSubtle)
                 Text(
                     text = "  OR  ",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
-                HorizontalDivider(modifier = Modifier.weight(1f))
+                HorizontalDivider(modifier = Modifier.weight(1f), color = PoketchBorderSubtle)
             }
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -603,12 +633,41 @@ private fun UnauthenticatedAuthCard(
                     launchGoogleSignIn(activeClientId)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, PoketchBorder)
             ) {
                 Text(
                     text = "G  Sign In with Google",
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = PoketchBorderSubtle)
+                Text(
+                    text = "  TESTING / EMULATOR  ",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f), color = PoketchBorderSubtle)
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Button(
+                onClick = onBypassLogin,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = PoketchEmerald),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "⚡ Continue as Guest (Bypass Login)",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
             }
         }

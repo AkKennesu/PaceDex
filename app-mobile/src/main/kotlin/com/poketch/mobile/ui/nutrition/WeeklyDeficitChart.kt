@@ -34,8 +34,11 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.unit.dp
 import com.poketch.core.domain.model.DailyNutritionSummary
+import com.poketch.mobile.ui.theme.PoketchBorder
+import com.poketch.mobile.ui.theme.PoketchSurface
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -51,17 +54,16 @@ fun WeeklyDeficitChart(
     // Generate normalized 7 days (6 days ago -> today)
     val past7Days = rememberPast7Days(dailySummaries)
 
-    val onTrackColor = Color(0xFF4CAF50)
-    val approachingColor = Color(0xFFFFB300)
-    val overTargetColor = Color(0xFFE53935)
-    val ceilingLineColor = Color(0xFF757575)
+    val onTrackColor = Color(0xFF10B981)
+    val approachingColor = Color(0xFFF59E0B)
+    val overTargetColor = Color(0xFFEF4444)
+    val ceilingLineColor = Color(0xFF64748B)
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+        border = BorderStroke(1.dp, PoketchBorder)
     ) {
         Column(
             modifier = Modifier

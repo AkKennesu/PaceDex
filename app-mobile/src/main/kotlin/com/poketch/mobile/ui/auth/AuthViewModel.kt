@@ -4,7 +4,11 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.poketch.core.data.repository.FirestoreSyncRepository
+import com.poketch.core.domain.model.ActivityLevel
 import com.poketch.core.domain.model.AuthState
+import com.poketch.core.domain.model.AuthUser
+import com.poketch.core.domain.model.BiologicalSex
+import com.poketch.core.domain.model.DeficitTier
 import com.poketch.core.domain.repository.AuthRepository
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.UserRepository
@@ -14,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -45,8 +50,18 @@ class AuthViewModel @Inject constructor(
     private val syncManager: PoketchSyncManager
 ) : ViewModel() {
 
-    val authState: StateFlow<AuthState> = authRepository.authState
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AuthState.Loading)
+    private val _dummyUser = MutableStateFlow<AuthUser?>(null)
+
+    val authState: StateFlow<AuthState> = combine(
+        authRepository.authState,
+        _dummyUser
+    ) { repoState, dummy ->
+        if (dummy != null) {
+            AuthState.Authenticated(dummy)
+        } else {
+            repoState
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AuthState.Loading)
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
@@ -168,15 +183,45 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun loginAsDummyTrainer() {
+        val dummy = AuthUser(
+            uid = "dummy_trainer_ash_001",
+            email = "ash.ketchum@poketch.local",
+            displayName = "Ash Ketchum (Guest Trainer)",
+            photoUrl = null
+        )
+        _dummyUser.value = dummy
+        viewModelScope.launch {
+            if (userRepository.getUserProfile() == null) {
+                userRepository.saveUserProfile(
+                    ageYears = 16,
+                    sex = BiologicalSex.MALE,
+                    heightCm = 175.0,
+                    weightKg = 70.0,
+                    activityLevel = ActivityLevel.MODERATELY_ACTIVE,
+                    deficitTier = DeficitTier.STANDARD,
+                    dailyWaterGoalMl = 2500,
+                    activeBuddyPokemonId = 25
+                )
+            }
+        }
+        _uiState.update {
+            it.copy(
+                infoMessage = "Welcome, Ash! Bypass test account active."
+            )
+        }
+    }
+
     fun signOut() {
         viewModelScope.launch {
+            _dummyUser.value = null
             authRepository.signOut()
             _uiState.update { it.copy(infoMessage = "Signed out successfully", errorMessage = null) }
         }
     }
 
     fun syncToCloud() {
-        val user = authRepository.currentUser ?: return
+        val user = _dummyUser.value ?: authRepository.currentUser ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true, errorMessage = null) }
             try {
@@ -205,7 +250,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun restoreFromCloud() {
-        val user = authRepository.currentUser ?: return
+        val user = _dummyUser.value ?: authRepository.currentUser ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true, errorMessage = null) }
             firestoreSyncRepository.downloadUserProfile(user.uid).fold(

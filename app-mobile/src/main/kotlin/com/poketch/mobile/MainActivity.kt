@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.material3.MaterialTheme
 import com.poketch.core.data.gamification.UnlockEventDispatcher
 import com.poketch.mobile.ui.auth.AuthViewModel
 import com.poketch.mobile.ui.dashboard.CommandCenterViewModel
@@ -13,6 +12,7 @@ import com.poketch.mobile.ui.diagnostics.SyncDiagnosticsViewModel
 import com.poketch.mobile.ui.navigation.PoketchMobileNavHost
 import com.poketch.mobile.ui.nutrition.NutritionViewModel
 import com.poketch.mobile.ui.pokedex.PokedexViewModel
+import com.poketch.mobile.ui.theme.PoketchTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            PoketchTheme {
                 PoketchMobileNavHost(
                     unlockEventDispatcher = unlockEventDispatcher,
                     commandCenterViewModel = commandCenterViewModel,

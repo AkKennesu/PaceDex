@@ -21,7 +21,8 @@
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -31,6 +32,18 @@
         <activity
             android:name="androidx.activity.ComponentActivity"
             android:exported="true" />
+
+        <!-- Pokétch Home Screen Companion Widget (Jetpack Glance Canonical Layout) -->
+        <receiver
+            android:name=".widget.PoketchCompanionWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/poketch_widget_info" />
+        </receiver>
 
         <!-- Health Connect permissions rationale -->
         <activity-alias

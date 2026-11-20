@@ -17,16 +17,21 @@ import com.poketch.core.domain.repository.UserRepository
 import com.poketch.core.sync.PoketchSyncManager
 import com.poketch.mobile.health.HealthConnectManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.poketch.core.domain.model.CalorieLog
+import com.poketch.core.domain.model.MealCategory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 
 data class SnorlaxRecoveryState(
@@ -49,6 +54,12 @@ data class CommandCenterUiState(
     val dailyWaterGoalMl: Int = 2500,
     val todaySteps: Int = 0,
     val latestRunMiles: Double = 0.0,
+    val isWatchConnected: Boolean = false,
+    val connectedWatchName: String? = null,
+    val currentDeficitTier: DeficitTier = DeficitTier.STANDARD,
+    val unlockedBuddies: List<Pokemon> = emptyList(),
+    val isSyncingWatch: Boolean = false,
+    val syncMessage: String? = null,
     val isLoading: Boolean = false
 )
 
@@ -79,6 +90,13 @@ class CommandCenterViewModel @Inject constructor(
         val buddyId = profile?.activeBuddyPokemonId ?: 1
         pokemonRepository.observePokemonById(buddyId)
     }
+
+    private val unlockedBuddiesFlow = pokemonRepository.observeAllPokemon().map { list ->
+        list.filter { it.isUnlocked }
+    }
+
+    private val isSyncingWatchFlow = MutableStateFlow(false)
+    private val syncMessageFlow = MutableStateFlow<String?>(null)
 
     private val calorieAndProfileFlow = combine(
         userProfileFlow,
@@ -116,11 +134,28 @@ class CommandCenterViewModel @Inject constructor(
         Triple(water, steps, run)
     }
 
+    private val buddyAndUnlockedFlow = combine(
+        activeBuddyFlow,
+        unlockedBuddiesFlow
+    ) { active, unlocked ->
+        Pair(active, unlocked)
+    }
+
+    private val watchSyncFlow = combine(
+        syncManager.connectedNodesFlow,
+        isSyncingWatchFlow,
+        syncMessageFlow
+    ) { nodes, syncing, msg ->
+        Triple(nodes, syncing, msg)
+    }
+
     val uiState: StateFlow<CommandCenterUiState> = combine(
         calorieAndProfileFlow,
         habitFlow,
-        activeBuddyFlow
-    ) { (profile, consumed, budgetState, snorlaxRecovery), (waterMl, steps, runMiles), buddy ->
+        buddyAndUnlockedFlow,
+        watchSyncFlow
+    ) { (profile, consumed, budgetState, snorlaxRecovery), (waterMl, steps, runMiles), (buddy, unlockedBuddies), (nodes, isSyncing, syncMsg) ->
+        val watch = nodes.firstOrNull()
         CommandCenterUiState(
             todayIso = todayIso,
             tdeeKcal = profile?.tdeeKcal ?: 2200,
@@ -133,6 +168,12 @@ class CommandCenterViewModel @Inject constructor(
             dailyWaterGoalMl = profile?.dailyWaterGoalMl ?: 2500,
             todaySteps = steps.toInt(),
             latestRunMiles = runMiles,
+            isWatchConnected = nodes.isNotEmpty(),
+            connectedWatchName = watch?.displayName?.ifBlank { "Pokétch Watch" },
+            currentDeficitTier = profile?.deficitTier ?: DeficitTier.STANDARD,
+            unlockedBuddies = unlockedBuddies,
+            isSyncingWatch = isSyncing,
+            syncMessage = syncMsg,
             isLoading = false
         )
     }.stateIn(
@@ -205,6 +246,66 @@ class CommandCenterViewModel @Inject constructor(
     fun syncHealthConnect() {
         viewModelScope.launch {
             healthConnectManager.syncPastDays(7)
+        }
+    }
+
+    fun quickAddCalorie(amountKcal: Int, label: String = "Quick Snack") {
+        viewModelScope.launch {
+            val log = CalorieLog(
+                logId = UUID.randomUUID().toString(),
+                dateIso = todayIso,
+                mealCategory = MealCategory.SNACK,
+                foodDescription = label,
+                caloriesKcal = amountKcal,
+                sourceDevice = DeviceSource.MOBILE,
+                timestampMillis = System.currentTimeMillis()
+            )
+            calorieRepository.upsertCalorieLog(log)
+            evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncCalorie(log)
+            }
+        }
+    }
+
+    fun updateDeficitTier(tier: DeficitTier) {
+        viewModelScope.launch {
+            val currentProfile = userRepository.getUserProfile() ?: return@launch
+            userRepository.saveUserProfile(
+                ageYears = currentProfile.ageYears,
+                sex = currentProfile.sex,
+                heightCm = currentProfile.heightCm,
+                weightKg = currentProfile.weightKg,
+                activityLevel = currentProfile.activityLevel,
+                deficitTier = tier,
+                dailyDeficitKcal = tier.dailyDeficitKcal,
+                dailyWaterGoalMl = currentProfile.dailyWaterGoalMl,
+                activeBuddyPokemonId = currentProfile.activeBuddyPokemonId
+            )
+            evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.syncUserProfile()
+            }
+        }
+    }
+
+    fun syncWithWatchNow() {
+        viewModelScope.launch {
+            isSyncingWatchFlow.value = true
+            try {
+                syncManager.flushOfflineQueue()
+                val nodes = syncManager.refreshConnectedNodes()
+                syncManager.syncUserProfile()
+                syncMessageFlow.value = if (nodes.isNotEmpty()) {
+                    "Synced with ${nodes.firstOrNull()?.displayName ?: "Watch"}!"
+                } else {
+                    "Sync signal sent to watch!"
+                }
+            } catch (e: Exception) {
+                syncMessageFlow.value = "Sync error: ${e.localizedMessage}"
+            } finally {
+                isSyncingWatchFlow.value = false
+            }
         }
     }
 }

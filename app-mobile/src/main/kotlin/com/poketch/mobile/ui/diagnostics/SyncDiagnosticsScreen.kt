@@ -1,6 +1,8 @@
 package com.poketch.mobile.ui.diagnostics
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +46,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.poketch.mobile.ui.theme.PoketchBorder
+import com.poketch.mobile.ui.theme.PoketchBorderSubtle
+import com.poketch.mobile.ui.theme.PoketchCrimson
+import com.poketch.mobile.ui.theme.PoketchCyan
+import com.poketch.mobile.ui.theme.PoketchEmerald
+import com.poketch.mobile.ui.theme.PoketchSurface
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -68,7 +76,7 @@ fun SyncDiagnosticsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Header
@@ -78,44 +86,97 @@ fun SyncDiagnosticsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(PoketchCyan)
+                        )
+                        Text(
+                            text = "WEAR OS TELEMETRY",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.2.sp,
+                            color = PoketchCyan
+                        )
+                    }
                     Text(
-                        text = "Wear OS Diagnostics",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "Cross-device sync & peer connectivity",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Watch Link & Sync",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Black
                     )
                 }
 
-                Button(
-                    onClick = { viewModel.refreshDiagnostics() },
-                    contentPadding = ButtonDefaults.TextButtonContentPadding,
-                    colors = ButtonDefaults.outlinedButtonColors()
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF1E293B),
+                    border = BorderStroke(1.dp, PoketchBorder)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Refresh",
-                        modifier = Modifier.size(18.dp)
+                    Button(
+                        onClick = { viewModel.refreshDiagnostics() },
+                        contentPadding = ButtonDefaults.TextButtonContentPadding,
+                        colors = ButtonDefaults.textButtonColors()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            // Connection Guide Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, PoketchBorder)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(PoketchCyan.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("⌚", fontSize = 16.sp)
+                        }
+                        Text(
+                            text = "How Watch Link Works",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                    Text(
+                        text = "• Physical Watch: Automatically connects via Google Play Services Wearable when Bluetooth is active.\n• Emulators: Scan the QR code from the watch's Bag menu or use the Trainer tab to link directly.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF94A3B8)
                     )
                 }
             }
 
-            // Card 1: Connected Wear Watch
+            // Card 1: Connected Wear Watch Nodes
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(16.dp)
+                colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, PoketchBorder)
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "CONNECTED WEAR OS NODES",
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Black,
+                        color = PoketchCyan,
                         letterSpacing = 1.sp
                     )
 
@@ -124,62 +185,71 @@ fun SyncDiagnosticsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .padding(12.dp),
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(Color(0xFF0F172A))
+                                    .border(1.dp, PoketchBorderSubtle, RoundedCornerShape(14.dp))
+                                    .padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
-                                            .size(12.dp)
+                                            .size(10.dp)
                                             .clip(CircleShape)
-                                            .background(if (node.isNearby) Color(0xFF4CAF50) else Color(0xFFFFB300))
+                                            .background(if (node.isNearby) PoketchEmerald else Color(0xFFFFB300))
                                     )
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
                                     Column {
                                         Text(
                                             text = node.displayName.ifBlank { "Wear OS Device" },
                                             style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
                                         )
                                         Text(
                                             text = "Node ID: ${node.id.take(12)}...",
                                             style = MaterialTheme.typography.bodySmall,
                                             fontFamily = FontFamily.Monospace,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = Color(0xFF94A3B8)
                                         )
                                     }
                                 }
 
-                                Text(
-                                    text = if (node.isNearby) "Nearby (BT/WiFi)" else "Cloud Relay",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (node.isNearby) Color(0xFF2E7D32) else Color(0xFFE65100)
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (node.isNearby) PoketchEmerald.copy(alpha = 0.15f) else Color(0xFFFFB300).copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = if (node.isNearby) "Nearby (BT/WiFi)" else "Cloud Relay",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (node.isNearby) PoketchEmerald else Color(0xFFFFB300),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
                             }
                         }
                     } else {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
-                                .padding(12.dp),
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF1E293B).copy(alpha = 0.5f))
+                                .border(1.dp, PoketchBorderSubtle, RoundedCornerShape(12.dp))
+                                .padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
+                                tint = PoketchCrimson
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "No Wear OS watch currently connected via Google Play Services.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = Color(0xFFCBD5E1)
                             )
                         }
                     }
@@ -189,37 +259,41 @@ fun SyncDiagnosticsScreen(
             // Card 2: Offline Outbox Queue & Sync State
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(16.dp)
+                colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, PoketchBorder)
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "OFFLINE OUTBOX QUEUE",
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Black,
+                        color = PoketchCyan,
                         letterSpacing = 1.sp
                     )
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         QueueMetricItem(
                             label = "Pending Calories",
-                            count = state.diagnostics.pendingCaloriesCount
+                            count = state.diagnostics.pendingCaloriesCount,
+                            modifier = Modifier.weight(1f)
                         )
                         QueueMetricItem(
                             label = "Pending Habits",
-                            count = state.diagnostics.pendingHabitsCount
+                            count = state.diagnostics.pendingHabitsCount,
+                            modifier = Modifier.weight(1f)
                         )
                         QueueMetricItem(
                             label = "Total Unsynced",
-                            count = state.diagnostics.totalPendingCount
+                            count = state.diagnostics.totalPendingCount,
+                            modifier = Modifier.weight(1f)
                         )
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    HorizontalDivider(color = PoketchBorderSubtle, modifier = Modifier.padding(vertical = 4.dp))
 
                     val timeFormatted = if (state.diagnostics.lastSyncTimestampMillis > 0L) {
                         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
@@ -232,39 +306,41 @@ fun SyncDiagnosticsScreen(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = Color(0xFF4CAF50),
+                            tint = PoketchEmerald,
                             modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Last Sync: $timeFormatted",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color(0xFF94A3B8)
                         )
                     }
                 }
             }
 
-            // Card 3: Synchronization Engine Info
+            // Card 3: Synchronization Protocol Info
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(16.dp)
+                colors = CardDefaults.cardColors(containerColor = PoketchSurface),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, PoketchBorder)
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = PoketchCyan,
                             modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "SYNC PROTOCOL & DATA PATHS",
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            fontWeight = FontWeight.Black,
+                            color = PoketchCyan,
+                            letterSpacing = 1.sp
                         )
                     }
 
@@ -277,7 +353,7 @@ fun SyncDiagnosticsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         fontFamily = FontFamily.Monospace,
                         lineHeight = 18.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF94A3B8)
                     )
                 }
             }
@@ -288,7 +364,7 @@ fun SyncDiagnosticsScreen(
                     text = state.feedbackMessage ?: "",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = PoketchCyan,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
@@ -301,7 +377,7 @@ fun SyncDiagnosticsScreen(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E))
             ) {
                 if (state.isSyncing) {
                     CircularProgressIndicator(
@@ -334,25 +410,31 @@ fun SyncDiagnosticsScreen(
 @Composable
 private fun QueueMetricItem(
     label: String,
-    count: Int
+    count: Int,
+    modifier: Modifier = Modifier
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+    Surface(
+        modifier = modifier,
+        color = Color(0xFF0F172A),
+        border = BorderStroke(1.dp, PoketchBorderSubtle),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Text(
-            text = "$count",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Black,
-            color = if (count == 0) Color(0xFF4CAF50) else Color(0xFFFF9800)
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp)
+        ) {
+            Text(
+                text = "$count",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Black,
+                color = if (count == 0) PoketchEmerald else Color(0xFFFF9800)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF94A3B8),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
     }
 }
