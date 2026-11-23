@@ -876,7 +876,13 @@ private fun StitchMealLogCard(
                     fontWeight = FontWeight.Bold,
                     color = StitchDarkSlate
                 )
-                IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .bouncyPress(onClick = onDelete),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",

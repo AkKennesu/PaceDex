@@ -107,6 +107,7 @@ import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.model.DeficitTier
 import com.poketch.core.domain.model.Pokemon
 import com.poketch.mobile.ui.theme.AnimatedStatNumber
+import com.poketch.mobile.ui.theme.rememberAnimatedCounter
 import com.poketch.mobile.ui.theme.StitchAlertCoral
 import com.poketch.mobile.ui.theme.StitchAlertTint
 import com.poketch.mobile.ui.theme.StitchBorderSubtle
@@ -686,7 +687,6 @@ private fun StitchActivePartnerCard(
             }
             heartY.animateTo(-42f, tween(750, easing = FastOutSlowInEasing))
         }
-        onSelectBuddyClick()
     }
 
     Surface(
@@ -715,22 +715,43 @@ private fun StitchActivePartnerCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Eco,
-                        contentDescription = "Partner",
-                        tint = StitchPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "ACTIVE PARTNER",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = StitchPrimary,
-                        letterSpacing = 1.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Eco,
+                            contentDescription = "Partner",
+                            tint = StitchPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "ACTIVE PARTNER",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchPrimary,
+                            letterSpacing = 1.sp
+                        )
+                    }
+
+                    // Tactile pill to switch buddy
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = StitchPrimaryTint,
+                        modifier = Modifier.bouncyPress { onSelectBuddyClick() }
+                    ) {
+                        Text(
+                            text = "Switch",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchPrimary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
                 }
 
                 Text(
@@ -851,7 +872,8 @@ private fun StitchTwoColumnHabitCards(
         // Water Hydration Bento Card
         val waterRatio = (todayWaterMl.toFloat() / dailyWaterGoalMl.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
         val animatedWaterProgress by rememberAnimatedProgress(waterRatio)
-        val waterLiters = String.format(Locale.US, "%.1f", todayWaterMl / 1000.0)
+        val animatedWaterMl by rememberAnimatedCounter(todayWaterMl)
+        val waterLiters = String.format(Locale.US, "%.1f", animatedWaterMl / 1000.0)
         val waterGoalLiters = String.format(Locale.US, "%.1f", dailyWaterGoalMl / 1000.0)
 
         Surface(

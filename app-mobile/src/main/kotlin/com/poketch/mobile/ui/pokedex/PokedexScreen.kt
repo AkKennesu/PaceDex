@@ -641,20 +641,24 @@ private fun StitchPokemonDetailSheet(
         }
 
         if (pokemon.isUnlocked) {
-            Button(
-                onClick = onSetAsPartner,
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isPartner) StitchDarkSlate else StitchPrimary
-                ),
-                shape = RoundedCornerShape(25.dp)
+                    .height(50.dp)
+                    .bouncyPress(onClick = onSetAsPartner),
+                shape = RoundedCornerShape(25.dp),
+                color = if (isPartner) StitchDarkSlate else StitchPrimary
             ) {
-                Text(
-                    text = if (isPartner) "Current Watch Companion" else "Set as Active Watch Buddy",
-                    fontWeight = FontWeight.Bold
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (isPartner) "Current Watch Companion" else "Set as Active Watch Buddy",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(16.dp))

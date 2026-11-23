@@ -113,7 +113,7 @@ fun rememberAnimatedProgress(targetFraction: Float): State<Float> {
     return animateFloatAsState(
         targetValue = targetFraction.coerceIn(0f, 1f),
         animationSpec = spring(
-            dampingRatio = 0.82f,
+            dampingRatio = 0.8f,
             stiffness = Spring.StiffnessLow
         ),
         label = "animatedProgress"
@@ -127,15 +127,20 @@ fun AnimatedProgressValue(targetFraction: Float): Float {
 
 /**
  * Gentle idle breathing float + tap-to-hop physics for the Active Buddy sprite.
+ * Uses exact dp conversions via LocalDensity for consistent 60/120fps motion.
  */
 @Composable
 fun rememberBuddyMotion(): Pair<Float, () -> Unit> {
+    val density = androidx.compose.ui.platform.LocalDensity.current.density
+    val idleMaxOffsetPx = -4f * density
+    val hopHeightPx = -18f * density
+
     val infinite = rememberInfiniteTransition(label = "buddyIdle")
     val idleBob by infinite.animateFloat(
         initialValue = 0f,
-        targetValue = -10f,
+        targetValue = idleMaxOffsetPx,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 1600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "buddyIdleBob"
@@ -146,7 +151,7 @@ fun rememberBuddyMotion(): Pair<Float, () -> Unit> {
 
     val triggerHop: () -> Unit = {
         scope.launch {
-            jumpOffset.animateTo(-36f, tween(130, easing = FastOutSlowInEasing))
+            jumpOffset.animateTo(hopHeightPx, tween(140, easing = FastOutSlowInEasing))
             jumpOffset.animateTo(
                 0f,
                 spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)
