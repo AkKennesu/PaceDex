@@ -221,22 +221,25 @@ private fun StitchPokedexFilterChips(
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
         filters.forEach { (filter, label) ->
             val isSelected = selectedFilter == filter
+            val activeBg = if (isDark) StitchPrimary else StitchDarkSlate
+            val activeText = if (isDark) Color(0xFF022C22) else Color.White
             Surface(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
                     .clickable { onFilterSelected(filter) },
                 shape = RoundedCornerShape(20.dp),
-                color = if (isSelected) StitchDarkSlate else StitchSurfaceCard,
-                border = BorderStroke(1.dp, if (isSelected) StitchDarkSlate else StitchBorderSubtle),
-                shadowElevation = if (isSelected) 2.dp else 1.dp
+                color = if (isSelected) activeBg else StitchSurfaceCard,
+                border = BorderStroke(1.dp, if (isSelected) activeBg else StitchBorderSubtle),
+                shadowElevation = if (isSelected && !isDark) 2.dp else 0.dp
             ) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                    color = if (isSelected) Color.White else StitchTextSecondary,
+                    color = if (isSelected) activeText else StitchTextSecondary,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                 )
             }
@@ -347,14 +350,14 @@ private fun StitchPokemonCollectorCard(
             }
 
             // Creature Pedestal
+            val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
+            val pedestalBg = if (isDark) Color(0xFF090F0D) else (if (pokemon.isUnlocked) Color(0xFFF7FAF8) else Color(0xFFF1F4F2))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        if (pokemon.isUnlocked) Color(0xFFF7FAF8) else Color(0xFFF1F4F2)
-                    ),
+                    .background(pedestalBg),
                 contentAlignment = Alignment.Center
             ) {
                 if (pokemon.isUnlocked) {
@@ -424,11 +427,13 @@ private fun StitchActiveMissionCard(
         label = "btn_scale"
     )
 
+    val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 8.dp,
+                elevation = if (isDark) 0.dp else 8.dp,
                 shape = RoundedCornerShape(24.dp),
                 ambientColor = StitchDarkSlate.copy(alpha = 0.05f),
                 spotColor = StitchDarkSlate.copy(alpha = 0.08f)
@@ -510,7 +515,7 @@ private fun StitchActiveMissionCard(
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp)),
                     color = StitchStepsAmber,
-                    trackColor = Color(0xFFF1F5F2),
+                    trackColor = if (isDark) Color(0xFF1F2E26) else Color(0xFFF1F5F2),
                     strokeCap = StrokeCap.Round
                 )
                 Row(

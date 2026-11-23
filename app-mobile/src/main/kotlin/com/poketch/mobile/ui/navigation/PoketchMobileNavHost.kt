@@ -207,6 +207,8 @@ private fun StitchFloatingBottomNav(
         MobileTab.DIAGNOSTICS
     )
 
+    val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -218,14 +220,14 @@ private fun StitchFloatingBottomNav(
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(
-                    elevation = 14.dp,
+                    elevation = if (isDark) 0.dp else 14.dp,
                     shape = RoundedCornerShape(32.dp),
                     ambientColor = StitchDarkSlate.copy(alpha = 0.08f),
                     spotColor = StitchDarkSlate.copy(alpha = 0.16f)
                 ),
             shape = RoundedCornerShape(32.dp),
-            color = StitchSurfaceCard,
-            border = BorderStroke(1.dp, StitchBorderSubtle)
+            color = if (isDark) Color(0xE6090F0D) else StitchSurfaceCard,
+            border = BorderStroke(1.dp, if (isDark) Color(0xFF1F2E26) else StitchBorderSubtle)
         ) {
             Row(
                 modifier = Modifier
@@ -245,12 +247,16 @@ private fun StitchFloatingBottomNav(
                     )
 
                     val pillBgColor by animateColorAsState(
-                        targetValue = if (isSelected) StitchDarkSlate else Color.Transparent,
+                        targetValue = if (isSelected) {
+                            if (isDark) Color(0xFF34D399) else StitchDarkSlate
+                        } else Color.Transparent,
                         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                         label = "tab_bg"
                     )
                     val contentColor by animateColorAsState(
-                        targetValue = if (isSelected) Color.White else StitchTextSecondary,
+                        targetValue = if (isSelected) {
+                            if (isDark) Color(0xFF022C22) else Color.White
+                        } else StitchTextSecondary,
                         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                         label = "tab_content_color"
                     )

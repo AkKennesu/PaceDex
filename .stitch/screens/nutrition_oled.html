@@ -1,0 +1,335 @@
+<!DOCTYPE html><html class="h-full dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><title>Pokétch</title><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;min-height:100%;margin:0;padding:0;background-color:#000000;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-variant": "#303633",
+          "surface-container-high": "#252b28",
+          "surface-card-elevated": "#141C18",
+          "alert-coral": "#F87171",
+          "surface-container-low": "#171d1a",
+          "canvas-oled": "#000000",
+          "inverse-surface": "#dee4de",
+          "on-background": "#dee4de",
+          "on-primary-container": "#003111",
+          "inverse-on-surface": "#2c322e",
+          "tertiary-fixed": "#ffdf9f",
+          "surface-card": "#0D1310",
+          "on-secondary-container": "#00374d",
+          "outline-variant": "#3e4a3d",
+          "text-primary": "#F8FAFC",
+          "primary": "#62df7d",
+          "hydration-cyan": "#38BDF8",
+          "outline": "#879485",
+          "steps-amber": "#FBBF24",
+          "on-error": "#690005",
+          "primary-fixed": "#7ffc97",
+          "on-surface": "#dee4de",
+          "surface-bright": "#343b37",
+          "text-muted": "#64748B",
+          "emerald-tint": "#052E16",
+          "surface-tint": "#62df7d",
+          "on-secondary-fixed": "#001e2c",
+          "secondary-container": "#00a6e0",
+          "primary-container": "#1ca64d",
+          "surface-dim": "#0f1512",
+          "tertiary": "#f9bd22",
+          "emerald-glow": "#22C55E",
+          "surface": "#0f1512",
+          "tertiary-fixed-dim": "#f9bd22",
+          "secondary-fixed-dim": "#7bd0ff",
+          "primary-fixed-dim": "#62df7d",
+          "on-secondary-fixed-variant": "#004c69",
+          "on-tertiary-fixed": "#261a00",
+          "on-tertiary-container": "#372700",
+          "surface-container-highest": "#303633",
+          "secondary-fixed": "#c4e7ff",
+          "surface-container-lowest": "#090f0d",
+          "on-secondary": "#00354a",
+          "on-error-container": "#ffdad6",
+          "on-surface-variant": "#bdcaba",
+          "on-primary-fixed": "#002109",
+          "inverse-primary": "#006e2d",
+          "text-secondary": "#94A3B8",
+          "error": "#ffb4ab",
+          "border-subtle": "#1F2E26",
+          "secondary": "#7bd0ff",
+          "on-tertiary-fixed-variant": "#5c4300",
+          "tertiary-container": "#b88900",
+          "on-primary-fixed-variant": "#005320",
+          "surface-container": "#1b211e",
+          "error-container": "#93000a",
+          "on-primary": "#003914",
+          "on-tertiary": "#402d00",
+          "background": "#0f1512"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "gutter": "1rem",
+          "space-lg": "1.25rem",
+          "space-xl": "1.5rem",
+          "space-xs": "0.25rem",
+          "margin": "1rem"
+        },
+        "fontFamily": {
+          "display-hero-mobile": ["Plus Jakarta Sans"],
+          "display-hero": ["Plus Jakarta Sans"],
+          "headline-section": ["Plus Jakarta Sans"],
+          "body-sm": ["Plus Jakarta Sans"],
+          "headline-title": ["Plus Jakarta Sans"],
+          "label-pill": ["Plus Jakarta Sans"],
+          "metric-counter": ["Plus Jakarta Sans"],
+          "body-md": ["Plus Jakarta Sans"]
+        },
+        "fontSize": {
+          "display-hero-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+          "display-hero": ["34px", { "lineHeight": "40px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+          "headline-section": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+          "headline-title": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+          "label-pill": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+          "metric-counter": ["20px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+        }
+      }
+    }
+  };
+</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-canvas-oled text-text-primary font-body-md text-body-md min-h-screen relative flex flex-col antialiased selection:bg-emerald-tint selection:text-primary"><div class="fixed top-0 inset-x-0 h-40 bg-gradient-to-b from-primary/10 via-emerald-tint/20 to-transparent pointer-events-none z-40"></div><header class="fixed top-0 w-full z-50 pt-safe bg-canvas-oled/80 backdrop-blur-xl border-b border-border-subtle/50"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Pokétch App Icon" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCvq1uyQ9lkWpibIqFAYarYr3F7Qh4jX1HSUmcQqacuOFpxb4_bElv0uhMPPk5IwTHNobUU0ypR72SchjjsvXqfcU8IKzYU6ss8d_tSuB82t7EglxNYrZ5Vgp3QoU7GbQS7UAOkW_vh__Lpu9aHBRNUjoX-_dBfrZi-LsEutejtw5M9ElvGcNWpE1vDZMYFKJCATOKQIPaa6uQ-1Fe10UEMQzf4-xfJ9ljMnsRdVcGQsQ"><div class="flex flex-col"><span class="font-headline-section text-headline-section text-text-primary leading-tight tracking-tight">Pokétch</span><span class="font-label-pill text-label-pill text-text-muted capitalize">Log</span></div></div><div class="flex items-center gap-space-sm"><button aria-label="Notifications" class="w-11 h-11 flex items-center justify-center rounded-full text-text-secondary hover:text-text-primary hover:bg-surface-container-low transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-28 bg-canvas-oled"><div class="flex flex-col w-full px-margin pb-6 gap-space-xl">
+<!-- Top Action Row -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-display-hero-mobile text-display-hero-mobile text-text-primary tracking-tight">Nutrition</span>
+<span class="font-body-sm text-body-sm text-text-secondary">Day 14 • Consistent Caloric Balance</span>
+</div>
+<button class="h-9 px-4 rounded-full bg-surface-card border border-border-subtle shadow-sm flex items-center gap-1.5 active:scale-95 transition-transform duration-150" type="button">
+<span class="material-symbols-outlined text-[17px] text-primary">tune</span>
+<span class="font-label-pill text-label-pill text-text-primary">Edit TDEE</span>
+</button>
+</div>
+<!-- Hero Card: Dark Bento Target (Mifflin-St Jeor) -->
+<div class="relative overflow-hidden rounded-[26px] bg-surface-card-elevated border border-border-subtle text-text-primary p-space-lg shadow-[0_12px_32px_rgba(0,0,0,0.45)]">
+<!-- Ambient organic gradient glow -->
+<div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-primary/15 blur-3xl pointer-events-none"></div>
+<div class="absolute -left-12 -bottom-12 w-36 h-36 rounded-full bg-hydration-cyan/10 blur-2xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">bolt</span>
+<span class="font-headline-section text-headline-section text-text-primary tracking-tight">Daily Deficit Target (Mifflin-St Jeor)</span>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-semibold" style="background-color: rgba(52, 211, 153, 0.15); border-color: rgba(52, 211, 153, 0.4); color: rgb(52, 211, 153);">-500 / day</span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<div class="flex items-baseline gap-2">
+<span class="font-display-hero text-display-hero text-text-primary font-bold tracking-tight">2,095</span>
+<span class="font-headline-section text-headline-section text-text-secondary font-medium">kcal</span>
+</div>
+<div class="text-right flex flex-col">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-semibold" style="background-color: rgba(52, 211, 153, 0.15); border-color: rgba(52, 211, 153, 0.4); color: rgb(52, 211, 153);">-500 / day</span>
+<span class="font-headline-section text-headline-section text-primary font-semibold">455 kcal</span>
+</div>
+</div>
+<!-- Linear visual progress indicator -->
+<div class="w-full bg-surface-container-highest/50 rounded-full h-2 overflow-hidden flex">
+<div class="h-full bg-gradient-to-r from-primary-container to-primary rounded-full transition-all duration-700 ease-out" style="width: 78.3%; background: linear-gradient(90deg, rgb(16, 185, 129), rgb(52, 211, 153));"></div>
+</div>
+<!-- Clean footer row formula anchors -->
+<div class="pt-2 flex items-center justify-between text-text-secondary font-body-sm text-body-sm">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          BMR 1,674
+        </span>
+<span class="text-text-muted">•</span>
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-hydration-cyan"></span>
+          TDEE 2,595
+        </span>
+<span class="text-text-muted">•</span>
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-alert-coral"></span>
+          Floor 1,500
+        </span>
+</div>
+</div>
+</div>
+<!-- Three Bento Macro Cards -->
+<div class="grid grid-cols-3 gap-3">
+<!-- Protein Card -->
+<div class="bg-surface-card border border-border-subtle rounded-[22px] p-3 flex flex-col items-center justify-between shadow-[0_6px_20px_rgba(0,0,0,0.35)] min-w-0 transition-transform active:scale-[0.98]">
+<span class="font-headline-section text-headline-section text-text-primary">Protein</span>
+<!-- Circular Progress Ring (Emerald) -->
+<div class="relative w-16 h-16 my-2 flex items-center justify-center"><svg class="w-full h-full -rotate-90" viewBox="0 0 48 48"><circle cx="24" cy="24" fill="none" r="19" stroke="#1F2E26" stroke-width="4.2"></circle><circle cx="24" cy="24" fill="none" r="19" stroke="#34D399" stroke-dasharray="119.38" stroke-dashoffset="23.87" stroke-linecap="round" stroke-width="4.2"></circle></svg><div class="absolute inset-0 flex items-center justify-center"><span class="font-headline-section text-headline-section font-bold" style="color: #34D399;">80%</span></div></div>
+<div class="flex flex-col items-center text-center">
+<span class="font-metric-counter text-metric-counter text-text-primary leading-none">112<span class="font-body-sm text-body-sm text-text-muted font-normal">g</span></span>
+<span class="font-label-pill text-label-pill text-text-muted mt-1">of 140g</span>
+</div>
+</div>
+<!-- Carbs Card -->
+<div class="bg-surface-card border border-border-subtle rounded-[22px] p-3 flex flex-col items-center justify-between shadow-[0_6px_20px_rgba(0,0,0,0.35)] min-w-0 transition-transform active:scale-[0.98]">
+<span class="font-headline-section text-headline-section text-text-primary">Carbs</span>
+<!-- Circular Progress Ring (Warm Amber) -->
+<div class="relative w-16 h-16 my-2 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
+<circle cx="24" cy="24" fill="none" r="19" stroke="#1F2E26" stroke-width="4.2"></circle>
+<circle cx="24" cy="24" fill="none" r="19" stroke="#FBBF24" stroke-dasharray="119.38" stroke-dashoffset="29.84" stroke-linecap="round" stroke-width="4.2"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-headline-section text-headline-section text-steps-amber font-bold">75%</span>
+</div>
+</div>
+<div class="flex flex-col items-center text-center">
+<span class="font-metric-counter text-metric-counter text-text-primary leading-none">165<span class="font-body-sm text-body-sm text-text-muted font-normal">g</span></span>
+<span class="font-label-pill text-label-pill text-text-muted mt-1">of 220g</span>
+</div>
+</div>
+<!-- Fat Card -->
+<div class="bg-surface-card border border-border-subtle rounded-[22px] p-3 flex flex-col items-center justify-between shadow-[0_6px_20px_rgba(0,0,0,0.35)] min-w-0 transition-transform active:scale-[0.98]">
+<span class="font-headline-section text-headline-section text-text-primary">Fat</span>
+<!-- Circular Progress Ring (Sky Cyan) -->
+<div class="relative w-16 h-16 my-2 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewBox="0 0 48 48">
+<circle cx="24" cy="24" fill="none" r="19" stroke="#1F2E26" stroke-width="4.2"></circle>
+<circle cx="24" cy="24" fill="none" r="19" stroke="#38BDF8" stroke-dasharray="119.38" stroke-dashoffset="38.20" stroke-linecap="round" stroke-width="4.2"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-headline-section text-headline-section text-hydration-cyan font-bold">68%</span>
+</div>
+</div>
+<div class="flex flex-col items-center text-center">
+<span class="font-metric-counter text-metric-counter text-text-primary leading-none">48<span class="font-body-sm text-body-sm text-text-muted font-normal">g</span></span>
+<span class="font-label-pill text-label-pill text-text-muted mt-1">of 70g</span>
+</div>
+</div>
+</div>
+<!-- Today's Log Section -->
+<div class="flex flex-col gap-3">
+<div class="flex items-baseline justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-title text-headline-title text-text-primary">Today's Log</span>
+<span class="h-2 w-2 rounded-full bg-primary"></span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-section text-headline-section text-text-primary">1,640</span>
+<span class="font-body-sm text-body-sm text-text-muted">/ 2,095 kcal</span>
+</div>
+</div>
+<!-- Meal Card 1: Breakfast -->
+<div class="bg-surface-card border border-border-subtle rounded-[22px] p-space-md shadow-[0_6px_20px_rgba(0,0,0,0.35)] flex items-center justify-between gap-3 group active:scale-[0.99] transition-transform">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-11 h-11 rounded-2xl bg-surface-container-low border border-border-subtle/60 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[22px]" style="font-variation-settings: 'FILL' 1;">bakery_dining</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-section text-headline-section text-text-primary">Breakfast</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-tint text-primary font-label-pill text-label-pill">
+<span class="material-symbols-outlined text-[12px]">smartphone</span> Phone
+            </span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary truncate">Oatmeal, Eggs &amp; Coffee</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1 shrink-0 text-right">
+<span class="font-metric-counter text-metric-counter text-text-primary">420</span>
+<span class="font-label-pill text-label-pill text-text-muted">kcal</span>
+</div>
+</div>
+<!-- Meal Card 2: Lunch -->
+<div class="bg-surface-card border border-border-subtle rounded-[22px] p-space-md shadow-[0_6px_20px_rgba(0,0,0,0.35)] flex items-center justify-between gap-3 group active:scale-[0.99] transition-transform">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-11 h-11 rounded-2xl bg-surface-container-low border border-border-subtle/60 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[22px]" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-section text-headline-section text-text-primary">Lunch</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-tint text-primary font-label-pill text-label-pill">
+<span class="material-symbols-outlined text-[12px]">smartphone</span> Phone
+            </span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary truncate">Grilled Chicken Bowl</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1 shrink-0 text-right">
+<span class="font-metric-counter text-metric-counter text-text-primary">680</span>
+<span class="font-label-pill text-label-pill text-text-muted">kcal</span>
+</div>
+</div>
+<!-- Meal Card 3: Snack (Watch Quick-Add) -->
+<div class="bg-surface-card border border-border-subtle rounded-[22px] p-space-md shadow-[0_6px_20px_rgba(0,0,0,0.35)] flex items-center justify-between gap-3 group active:scale-[0.99] transition-transform">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-11 h-11 rounded-2xl bg-hydration-cyan/10 border border-hydration-cyan/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-hydration-cyan text-[22px]" style="font-variation-settings: 'FILL' 1;">watch</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-section text-headline-section text-text-primary">Snack</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-hydration-cyan/15 text-hydration-cyan font-label-pill text-label-pill">
+<span class="material-symbols-outlined text-[12px]">watch</span> Watch
+            </span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary truncate">Watch Quick-Add</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1 shrink-0 text-right">
+<span class="font-metric-counter text-metric-counter text-text-primary">199</span>
+<span class="font-label-pill text-label-pill text-text-muted">kcal</span>
+</div>
+</div>
+<!-- Meal Card 4: Dinner -->
+<div class="bg-surface-card border border-border-subtle rounded-[22px] p-space-md shadow-[0_6px_20px_rgba(0,0,0,0.35)] flex items-center justify-between gap-3 group active:scale-[0.99] transition-transform">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-11 h-11 rounded-2xl bg-surface-container-low border border-border-subtle/60 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[22px]" style="font-variation-settings: 'FILL' 1;">set_meal</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-section text-headline-section text-text-primary">Dinner</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-tint text-primary font-label-pill text-label-pill">
+<span class="material-symbols-outlined text-[12px]">smartphone</span> Phone
+            </span>
+</div>
+<span class="font-body-sm text-body-sm text-text-secondary truncate">Salmon &amp; Greens</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1 shrink-0 text-right">
+<span class="font-metric-counter text-metric-counter text-text-primary">341</span>
+<span class="font-label-pill text-label-pill text-text-muted">kcal</span>
+</div>
+</div>
+</div>
+<!-- Floating Quick-Log Assist Pill -->
+<div class="flex items-center justify-center pt-2">
+<button class="px-6 py-3 rounded-full font-headline-section text-headline-section flex items-center gap-2 active:scale-95 transition-all" style="background-color: rgb(52, 211, 153); color: rgb(2, 44, 34); box-shadow: rgba(52, 211, 153, 0.3) 0px 8px 24px; font-weight: 700;" type="button"><span class="material-symbols-outlined text-[20px]">add</span><span>Log Food or Barcode</span></button>
+</div>
+</div>
+<!-- Script to dynamically sync bottom navigation active state to 'Log' -->
+<script>
+  (function() {
+    const navLinks = document.querySelectorAll('nav a[data-path]');
+    navLinks.forEach(link => {
+      const isLog = link.getAttribute('data-path') === 'log';
+      if (isLog) {
+        link.className = 'flex-1 min-h-[44px] py-1.5 px-3 rounded-full flex items-center justify-center gap-1.5 bg-primary text-on-primary font-headline-section shadow-sm transition-all duration-200';
+      } else {
+        link.className = 'flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 text-text-secondary hover:text-text-primary transition-all duration-200';
+      }
+    });
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe pointer-events-none" data-active-classes="bg-primary text-on-primary font-headline-section shadow-sm"><div class="p-margin flex justify-center"><div class="pointer-events-auto w-full max-w-md bg-surface-card/95 backdrop-blur-xl border border-border-subtle rounded-[30px] p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.6)] flex items-center justify-between gap-1"><a class="flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 text-text-secondary hover:text-text-primary transition-all duration-200" data-path="home" href="#"><span class="material-symbols-outlined text-[20px]">home</span><span class="font-label-pill text-label-pill">Home</span></a><a aria-current="page" class="flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 transition-all duration-200 bg-primary text-on-primary font-headline-section shadow-sm" data-path="log" href="#" style="background-color: rgb(52, 211, 153); color: rgb(2, 44, 34); font-weight: 700;"><span class="material-symbols-outlined text-[20px]">edit_note</span><span class="font-label-pill text-label-pill">Log</span></a><a class="flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 text-text-secondary hover:text-text-primary transition-all duration-200" data-path="pokedex" href="#"><span class="material-symbols-outlined text-[20px]">20mp</span><span class="font-label-pill text-label-pill">Pokédex</span></a><a class="flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 text-text-secondary hover:text-text-primary transition-all duration-200" data-path="sync" href="#"><span class="material-symbols-outlined text-[20px]">sync</span><span class="font-label-pill text-label-pill">Sync</span></a></div></div></nav>
+
+</body></html>

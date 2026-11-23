@@ -380,13 +380,16 @@ private fun StitchUnauthenticatedAuthSection(
         )
     }
 
+    val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
+
     // 2. Segmented Pill Tab Switcher: Log In vs Sign Up
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp),
         shape = RoundedCornerShape(30.dp),
-        color = Color(0xFFEBF0ED)
+        color = if (isDark) Color(0xFF090F0D) else Color(0xFFEBF0ED),
+        border = if (isDark) BorderStroke(1.dp, StitchBorderSubtle) else null
     ) {
         Row(
             modifier = Modifier.padding(4.dp),
@@ -394,14 +397,17 @@ private fun StitchUnauthenticatedAuthSection(
         ) {
             // Log In Tab
             val isLoginSelected = !uiState.isSignUp
+            val activeTabBg = if (isDark) Color(0xFF34D399) else StitchDarkSlate
+            val activeTabText = if (isDark) Color(0xFF022C22) else Color.White
+
             Surface(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(26.dp))
                     .clickable { if (uiState.isSignUp) onToggleMode() },
                 shape = RoundedCornerShape(26.dp),
-                color = if (isLoginSelected) StitchDarkSlate else Color.Transparent,
-                shadowElevation = if (isLoginSelected) 2.dp else 0.dp
+                color = if (isLoginSelected) activeTabBg else Color.Transparent,
+                shadowElevation = if (isLoginSelected && !isDark) 2.dp else 0.dp
             ) {
                 Box(
                     modifier = Modifier.padding(vertical = 9.dp),
@@ -411,7 +417,7 @@ private fun StitchUnauthenticatedAuthSection(
                         text = "Log In",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = if (isLoginSelected) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isLoginSelected) Color.White else StitchTextSecondary
+                        color = if (isLoginSelected) activeTabText else StitchTextSecondary
                     )
                 }
             }
@@ -424,8 +430,8 @@ private fun StitchUnauthenticatedAuthSection(
                     .clip(RoundedCornerShape(26.dp))
                     .clickable { if (!uiState.isSignUp) onToggleMode() },
                 shape = RoundedCornerShape(26.dp),
-                color = if (isSignUpSelected) StitchDarkSlate else Color.Transparent,
-                shadowElevation = if (isSignUpSelected) 2.dp else 0.dp
+                color = if (isSignUpSelected) activeTabBg else Color.Transparent,
+                shadowElevation = if (isSignUpSelected && !isDark) 2.dp else 0.dp
             ) {
                 Box(
                     modifier = Modifier.padding(vertical = 9.dp),
@@ -435,7 +441,7 @@ private fun StitchUnauthenticatedAuthSection(
                         text = "Sign Up",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = if (isSignUpSelected) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isSignUpSelected) Color.White else StitchTextSecondary
+                        color = if (isSignUpSelected) activeTabText else StitchTextSecondary
                     )
                 }
             }
@@ -498,9 +504,9 @@ private fun StitchUnauthenticatedAuthSection(
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = StitchSurfaceCard,
-                        unfocusedContainerColor = Color(0xFFF1F4F2),
+                        unfocusedContainerColor = if (isDark) Color(0xFF131E19) else Color(0xFFF1F4F2),
                         focusedBorderColor = StitchPrimary,
-                        unfocusedBorderColor = Color.Transparent
+                        unfocusedBorderColor = if (isDark) Color(0xFF1E3328) else Color.Transparent
                     )
                 )
             }
@@ -554,9 +560,9 @@ private fun StitchUnauthenticatedAuthSection(
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = StitchSurfaceCard,
-                        unfocusedContainerColor = Color(0xFFF1F4F2),
+                        unfocusedContainerColor = if (isDark) Color(0xFF131E19) else Color(0xFFF1F4F2),
                         focusedBorderColor = StitchPrimary,
-                        unfocusedBorderColor = Color.Transparent
+                        unfocusedBorderColor = if (isDark) Color(0xFF1E3328) else Color.Transparent
                     )
                 )
             }
@@ -591,7 +597,7 @@ private fun StitchUnauthenticatedAuthSection(
                     .height(50.dp)
                     .scale(scale)
                     .shadow(
-                        elevation = 6.dp,
+                        elevation = if (isDark) 0.dp else 6.dp,
                         shape = RoundedCornerShape(25.dp),
                         ambientColor = StitchPrimary.copy(alpha = 0.2f),
                         spotColor = StitchPrimary.copy(alpha = 0.35f)
@@ -612,7 +618,7 @@ private fun StitchUnauthenticatedAuthSection(
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = if (isDark) Color(0xFF022C22) else Color.White,
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp
                         )
@@ -621,13 +627,13 @@ private fun StitchUnauthenticatedAuthSection(
                             text = if (uiState.isSignUp) "Create Account" else "Sign In",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = if (isDark) Color(0xFF022C22) else Color.White
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
                             imageVector = Icons.Default.ArrowForward,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = if (isDark) Color(0xFF022C22) else Color.White,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -654,7 +660,7 @@ private fun StitchUnauthenticatedAuthSection(
                     Text(
                         text = "Password or 6-Digit OTP supported for future sign-ins",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF005320),
+                        color = if (isDark) Color(0xFF34D399) else Color(0xFF005320),
                         fontSize = 10.sp
                     )
                 }
@@ -691,7 +697,7 @@ private fun StitchUnauthenticatedAuthSection(
                 .fillMaxWidth()
                 .height(48.dp)
                 .shadow(
-                    elevation = 4.dp,
+                    elevation = if (isDark) 0.dp else 4.dp,
                     shape = RoundedCornerShape(24.dp),
                     ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
                     spotColor = StitchDarkSlate.copy(alpha = 0.06f)
@@ -736,7 +742,7 @@ private fun StitchUnauthenticatedAuthSection(
                 .fillMaxWidth()
                 .height(48.dp)
                 .shadow(
-                    elevation = 4.dp,
+                    elevation = if (isDark) 0.dp else 4.dp,
                     shape = RoundedCornerShape(24.dp),
                     ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
                     spotColor = StitchDarkSlate.copy(alpha = 0.06f)
@@ -744,7 +750,7 @@ private fun StitchUnauthenticatedAuthSection(
                 .clip(RoundedCornerShape(24.dp))
                 .clickable { onBypassLogin() },
             shape = RoundedCornerShape(24.dp),
-            color = Color(0xFFF1F5F2),
+            color = if (isDark) Color(0xFF131E19) else Color(0xFFF1F5F2),
             border = BorderStroke(1.dp, StitchBorderSubtle)
         ) {
             Row(
@@ -762,18 +768,19 @@ private fun StitchUnauthenticatedAuthSection(
         }
     }
 
-    // 6. Trainer Perk Banner (Botanical Mint Card #DCFCE7)
+    // 6. Trainer Perk Banner (Botanical Mint Card #DCFCE7 / Dark Tactical #0A1711)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 4.dp,
+                elevation = if (isDark) 0.dp else 4.dp,
                 shape = RoundedCornerShape(20.dp),
                 ambientColor = StitchPrimary.copy(alpha = 0.05f),
                 spotColor = StitchPrimary.copy(alpha = 0.08f)
             ),
         shape = RoundedCornerShape(20.dp),
-        color = StitchPrimaryTint
+        color = StitchPrimaryTint,
+        border = BorderStroke(1.dp, if (isDark) Color(0xFF163826) else Color.Transparent)
     ) {
         Row(
             modifier = Modifier
@@ -786,7 +793,7 @@ private fun StitchUnauthenticatedAuthSection(
                 modifier = Modifier.size(44.dp),
                 shape = CircleShape,
                 color = StitchSurfaceCard,
-                shadowElevation = 2.dp
+                shadowElevation = if (isDark) 0.dp else 2.dp
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(text = "🌱", fontSize = 22.sp)
@@ -814,7 +821,7 @@ private fun StitchUnauthenticatedAuthSection(
                 Text(
                     text = "New to Pokétch? Create an account to claim your starter companion and auto-sync with Wear OS.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF1E3A2F),
+                    color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF1E3A2F),
                     lineHeight = 16.sp
                 )
             }
@@ -1243,6 +1250,7 @@ private fun StitchPasswordStrengthIndicator(password: String) {
         }
 
         // 4 Strength Bars
+        val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -1254,7 +1262,7 @@ private fun StitchPasswordStrengthIndicator(password: String) {
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp))
                         .background(
-                            if (i <= filledBars) color else Color(0xFFE2E8F0)
+                            if (i <= filledBars) color else (if (isDark) Color(0xFF1F2E26) else Color(0xFFE2E8F0))
                         )
                 )
             }
@@ -1274,9 +1282,12 @@ private fun StitchPasswordStrengthIndicator(password: String) {
 
 @Composable
 private fun PasswordRuleChip(label: String, isMet: Boolean) {
+    val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
+    val unmetBg = if (isDark) Color(0xFF131E19) else Color(0xFFF1F4F2)
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (isMet) StitchPrimaryTint else Color(0xFFF1F4F2)
+        color = if (isMet) StitchPrimaryTint else unmetBg,
+        border = BorderStroke(1.dp, if (isMet) StitchPrimary.copy(alpha = 0.4f) else (if (isDark) Color(0xFF1F2E26) else Color.Transparent))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),

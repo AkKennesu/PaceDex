@@ -1,0 +1,482 @@
+<!DOCTYPE html><html class="dark h-full bg-canvas-oled" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_stack" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-variant": "#303633",
+          "surface-container-high": "#252b28",
+          "surface-card-elevated": "#141C18",
+          "alert-coral": "#F87171",
+          "surface-container-low": "#171d1a",
+          "canvas-oled": "#000000",
+          "inverse-surface": "#dee4de",
+          "on-background": "#dee4de",
+          "on-primary-container": "#003111",
+          "inverse-on-surface": "#2c322e",
+          "tertiary-fixed": "#ffdf9f",
+          "surface-card": "#0D1310",
+          "on-secondary-container": "#00374d",
+          "outline-variant": "#3e4a3d",
+          "text-primary": "#F8FAFC",
+          "primary": "#62df7d",
+          "hydration-cyan": "#38BDF8",
+          "outline": "#879485",
+          "steps-amber": "#FBBF24",
+          "on-error": "#690005",
+          "primary-fixed": "#7ffc97",
+          "on-surface": "#dee4de",
+          "surface-bright": "#343b37",
+          "text-muted": "#64748B",
+          "emerald-tint": "#052E16",
+          "surface-tint": "#62df7d",
+          "on-secondary-fixed": "#001e2c",
+          "secondary-container": "#00a6e0",
+          "primary-container": "#1ca64d",
+          "surface-dim": "#0f1512",
+          "tertiary": "#f9bd22",
+          "emerald-glow": "#22C55E",
+          "surface": "#0f1512",
+          "tertiary-fixed-dim": "#f9bd22",
+          "secondary-fixed-dim": "#7bd0ff",
+          "primary-fixed-dim": "#62df7d",
+          "on-secondary-fixed-variant": "#004c69",
+          "on-tertiary-fixed": "#261a00",
+          "on-tertiary-container": "#372700",
+          "surface-container-highest": "#303633",
+          "secondary-fixed": "#c4e7ff",
+          "surface-container-lowest": "#090f0d",
+          "on-secondary": "#00354a",
+          "on-error-container": "#ffdad6",
+          "on-surface-variant": "#bdcaba",
+          "on-primary-fixed": "#002109",
+          "inverse-primary": "#006e2d",
+          "text-secondary": "#94A3B8",
+          "error": "#ffb4ab",
+          "border-subtle": "#1F2E26",
+          "secondary": "#7bd0ff",
+          "on-tertiary-fixed-variant": "#5c4300",
+          "tertiary-container": "#b88900",
+          "on-primary-fixed-variant": "#005320",
+          "surface-container": "#1b211e",
+          "error-container": "#93000a",
+          "on-primary": "#003914",
+          "on-tertiary": "#402d00",
+          "background": "#0f1512"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-sm": "0.5rem",
+          "space-md": "1rem",
+          "gutter": "1rem",
+          "space-lg": "1.25rem",
+          "space-xl": "1.5rem",
+          "space-xs": "0.25rem",
+          "margin": "1rem"
+        },
+        "fontFamily": {
+          "display-hero-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "display-hero": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-section": [
+            "Plus Jakarta Sans"
+          ],
+          "body-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-title": [
+            "Plus Jakarta Sans"
+          ],
+          "label-pill": [
+            "Plus Jakarta Sans"
+          ],
+          "metric-counter": [
+            "Plus Jakarta Sans"
+          ],
+          "body-md": [
+            "Plus Jakarta Sans"
+          ]
+        },
+        "fontSize": {
+          "display-hero-mobile": [
+            "28px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "display-hero": [
+            "34px",
+            {
+              "lineHeight": "40px",
+              "letterSpacing": "-0.03em",
+              "fontWeight": "700"
+            }
+          ],
+          "headline-section": [
+            "16px",
+            {
+              "lineHeight": "22px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-sm": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-title": [
+            "24px",
+            {
+              "lineHeight": "30px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-pill": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "metric-counter": [
+            "20px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "700"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "400"
+            }
+          ]
+        }
+      },
+    },
+  }
+</script><style>@layer base{html,body{width:100%;margin:0;padding:0;min-height:100%;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-canvas-oled text-on-surface font-body-md text-body-md antialiased min-h-screen flex flex-col"><header class="fixed top-0 inset-x-0 z-50 bg-canvas-oled/85 backdrop-blur-xl border-b border-border-subtle pt-safe"><div class="h-16 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Go back" class="w-11 h-11 rounded-full flex items-center justify-center text-text-primary hover:bg-surface-container-low transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[22px]">arrow_back</span></button><h1 class="font-headline-section text-headline-section text-text-primary tracking-tight">Trainer Sign In</h1></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm" style="background-color: rgb(52, 211, 153); color: rgb(2, 44, 34); box-shadow: rgba(52, 211, 153, 0.25) 0px 0px 12px;"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-safe bg-canvas-oled"><div class="flex flex-col w-full px-space-md pb-space-xl gap-space-lg">
+<!-- Brand Header & Emblem -->
+<div class="flex flex-col items-center text-center pt-space-sm gap-space-xs">
+<!-- Poké Ball Emblem with Soft Glow -->
+<div class="relative flex items-center justify-center mb-space-xs">
+<div class="absolute -inset-1.5 rounded-full bg-primary/25 opacity-75 blur-md"></div>
+<div class="relative w-16 h-16 rounded-full bg-surface-card border border-border-subtle shadow-md flex items-center justify-center overflow-hidden">
+<!-- Botanical Pokétch Device Emblem SVG -->
+<svg class="w-12 h-12" fill="none" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+<circle cx="32" cy="32" fill="#0F172A" r="30"></circle>
+<path d="M4 32C4 16.536 16.536 4 32 4C47.464 4 60 16.536 60 32H4Z" fill="#EF4444"></path>
+<path d="M4 32C4 47.464 16.536 60 32 60C47.464 60 60 47.464 60 32H4Z" fill="#FFFFFF"></path>
+<rect fill="#0F172A" height="5" width="64" y="29.5"></rect>
+<circle cx="32" cy="32" fill="#0F172A" r="10"></circle>
+<circle cx="32" cy="32" fill="#FFFFFF" r="6.5"></circle>
+<circle cx="32" cy="32" fill="#62df7d" r="3.5"></circle>
+</svg>
+</div>
+</div>
+<!-- App Title & Welcome Subtitle -->
+<span class="font-headline-section text-headline-section text-primary tracking-wider uppercase text-[12px]" style="color: rgb(52, 211, 153); letter-spacing: 0.1em;">Pokétch Vitality</span>
+<h2 class="font-headline-title text-headline-title text-text-primary">Welcome, Trainer</h2>
+<p class="font-body-sm text-body-sm text-text-secondary max-w-xs px-space-xs">
+      Sync your Wear OS workouts, calorie balance, and collectible companion team.
+    </p>
+</div>
+<!-- Segmented Pill Tab Switcher -->
+<div class="w-full max-w-sm mx-auto p-1 bg-surface-container-low border border-border-subtle rounded-full shadow-sm flex items-center relative">
+<button class="flex-1 py-2 rounded-full font-headline-section text-body-sm text-text-secondary hover:text-text-primary transition-all duration-200 flex items-center justify-center gap-1.5" id="tab-login" onclick="switchAuthTab('login')" type="button">
+<span class="material-symbols-outlined text-[16px]">login</span>
+<span>Log In</span>
+</button>
+<button class="flex-1 py-2 rounded-full font-headline-section text-body-sm text-on-primary bg-primary transition-all duration-200 shadow-sm flex items-center justify-center gap-1.5" id="tab-signup" onclick="switchAuthTab('signup')" type="button" style="background-color: rgb(52, 211, 153); color: rgb(2, 44, 34); box-shadow: rgba(52, 211, 153, 0.25) 0px 0px 16px; font-weight: 700;">
+<span class="material-symbols-outlined text-[16px]">arrow_back_ios_new</span>
+<span>Sign Up</span>
+</button>
+</div>
+<!-- Bento Primary Card: Email & Magic OTP -->
+<div class="w-full max-w-sm mx-auto bg-surface-card border border-border-subtle rounded-[24px] shadow-sm p-space-lg flex flex-col gap-space-md" style="background-color: rgb(12, 20, 16); border-color: rgba(52, 211, 153, 0.16); box-shadow: rgba(0, 0, 0, 0.6) 0px 8px 32px;">
+<div class="flex flex-col gap-1.5">
+<label class="flex items-center gap-1.5 font-headline-section text-body-sm text-text-primary" for="trainer-email">
+<span class="material-symbols-outlined text-primary text-[18px]">badge</span>
+<span id="email-field-label">Choose Trainer Email</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-text-muted text-[20px] pointer-events-none">mail</span>
+<input class="w-full h-12 pl-11 pr-4 rounded-full bg-surface-container-low border border-border-subtle text-text-primary placeholder:text-text-muted font-body-md text-body-md focus:outline-none focus:bg-surface-card-elevated focus:border-primary focus:shadow-[0_0_0_2px_rgba(98,223,125,0.25)] transition-all" id="trainer-email" placeholder="trainer@poketch.app" type="email" style="background-color: rgb(19, 30, 25); border-color: rgb(30, 51, 40); color: rgb(241, 245, 249);">
+</div>
+</div>
+<!-- Primary Emerald Action Button -->
+<div class="flex flex-col gap-1.5" id="password-field-group">
+<div class="flex items-center justify-between">
+<label class="flex items-center gap-1.5 font-headline-section text-body-sm text-text-primary" for="trainer-password">
+<span class="material-symbols-outlined text-primary text-[18px]">lock</span>
+<span>Password</span>
+</label>
+<a class="hidden text-[12px] font-semibold text-primary hover:text-primary-fixed transition-colors cursor-pointer" href="#" id="forgot-password-link">Forgot Password?</a>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-text-muted text-[20px] pointer-events-none">lock</span>
+<input class="w-full h-12 pl-11 pr-11 rounded-full bg-surface-container-low border border-border-subtle text-text-primary placeholder:text-text-muted font-body-md text-body-md focus:outline-none focus:bg-surface-card-elevated focus:border-primary focus:shadow-[0_0_0_2px_rgba(98,223,125,0.25)] transition-all" id="trainer-password" placeholder="Create a password" type="password" style="background-color: rgb(19, 30, 25); border-color: rgb(30, 51, 40); color: rgb(241, 245, 249);">
+<button aria-label="Toggle password visibility" class="absolute right-3.5 text-text-muted hover:text-text-primary transition-colors flex items-center justify-center" id="toggle-password-btn" onclick="togglePasswordVisibility()" type="button">
+<span class="material-symbols-outlined text-[20px]" id="password-eye-icon">visibility</span>
+</button>
+</div>
+</div><div class="flex flex-col gap-2 -mt-1 mb-1" id="password-strength-container"><div class="flex items-center justify-between"><span class="font-label-pill text-label-pill text-text-secondary">Password Strength</span><span class="flex items-center gap-1 font-label-pill text-label-pill text-text-muted font-bold" id="strength-status-text"><span class="w-1.5 h-1.5 rounded-full bg-surface-container-highest transition-colors duration-200" id="strength-status-dot"></span><span id="strength-status-label">Enter password</span></span></div><div class="grid grid-cols-4 gap-1.5 w-full"><div class="h-1.5 rounded-full bg-surface-container-high transition-colors duration-300" id="strength-bar-1"></div><div class="h-1.5 rounded-full bg-surface-container-high transition-colors duration-300" id="strength-bar-2"></div><div class="h-1.5 rounded-full bg-surface-container-high transition-colors duration-300" id="strength-bar-3"></div><div class="h-1.5 rounded-full bg-surface-container-high transition-colors duration-300" id="strength-bar-4"></div></div><div class="flex flex-wrap items-center gap-1.5 pt-0.5"><div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-low border border-border-subtle text-text-muted font-label-pill text-[10px] transition-all duration-200" id="pill-rule-length"><span class="material-symbols-outlined text-[12px] text-text-muted/60" id="icon-rule-length">circle</span><span>8+ chars</span></div><div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-low border border-border-subtle text-text-muted font-label-pill text-[10px] transition-all duration-200" id="pill-rule-number"><span class="material-symbols-outlined text-[12px] text-text-muted/60" id="icon-rule-number">circle</span><span>1 number</span></div><div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-low border border-border-subtle text-text-muted font-label-pill text-[10px] transition-all duration-200" id="pill-rule-mix"><span class="material-symbols-outlined text-[12px] text-text-muted/60" id="icon-rule-mix">circle</span><span>Mix uppercase</span></div></div></div><button class="w-full py-3.5 px-6 rounded-full bg-primary hover:bg-emerald-glow active:scale-[0.98] text-on-primary font-headline-section text-body-md shadow-sm flex items-center justify-center gap-2 transition-transform duration-150" id="submit-auth-btn" type="button" style="background-color: rgb(52, 211, 153); color: rgb(2, 44, 34); font-weight: 700; box-shadow: rgba(52, 211, 153, 0.28) 0px 4px 20px;">
+<span id="submit-btn-text">Create Account</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<!-- Passwordless Security Reassurance Chip -->
+<div class="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full bg-emerald-tint border border-primary/25 self-center" style="background-color: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.25);">
+<span class="material-symbols-outlined text-primary text-[15px]" style="color: rgb(52, 211, 153);">verified_user</span>
+<span class="font-label-pill text-label-pill text-primary" style="color: rgb(52, 211, 153);">Password or 6-Digit OTP supported for future sign-ins</span>
+</div>
+</div>
+<!-- Subtle Divider -->
+<div class="w-full max-w-sm mx-auto flex items-center gap-3">
+<div class="flex-1 h-[1px] bg-border-subtle"></div>
+<span class="font-label-pill text-label-pill text-text-muted uppercase tracking-wider px-1" style="color: rgb(52, 211, 153); letter-spacing: 0.1em;">or continue with</span>
+<div class="flex-1 h-[1px] bg-border-subtle"></div>
+</div>
+<!-- Social & Single Sign-On (SSO) Stack -->
+<div class="w-full max-w-sm mx-auto flex flex-col gap-2.5">
+<!-- Google Auth Button -->
+<button class="w-full h-12 px-5 rounded-full bg-surface-card border border-border-subtle hover:bg-surface-card-elevated active:scale-[0.98] shadow-sm flex items-center justify-between text-text-primary transition-all duration-150" type="button">
+<div class="flex items-center gap-3">
+<!-- Authentic Google G Multi-Color Glyph -->
+<svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+<path d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" fill="#4285F4"></path>
+<path d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.36 7.34 24 12 24z" fill="#34A853"></path>
+<path d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.97 0 12s.46 3.84 1.26 5.42l4.02-3.15z" fill="#FBBC05"></path>
+<path d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z" fill="#EA4335"></path>
+</svg>
+<span class="font-headline-section text-body-md">Continue with Google</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[18px]">chevron_right</span>
+</button>
+<!-- Facebook Auth Button -->
+<button class="w-full h-12 px-5 rounded-full bg-surface-card border border-border-subtle hover:bg-surface-card-elevated active:scale-[0.98] shadow-sm flex items-center justify-between text-text-primary transition-all duration-150" type="button">
+<div class="flex items-center gap-3">
+<!-- Facebook Icon -->
+<div class="w-5 h-5 rounded-full bg-[#1877F2] flex items-center justify-center flex-shrink-0">
+<svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+<path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
+</svg>
+</div>
+<span class="font-headline-section text-body-md">Continue with Facebook</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[18px]">chevron_right</span>
+</button>
+</div>
+<!-- Trainer Perks / Value Banner (Botanical Mint Card) -->
+<div class="w-full max-w-sm mx-auto bg-emerald-tint border border-primary/25 rounded-[20px] p-space-md shadow-sm flex items-center gap-3.5" id="trainer-perk-card" style="background-color: rgb(11, 23, 18); border-color: rgba(52, 211, 153, 0.22); box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 16px;">
+<!-- Companion Miniature Badge -->
+<div class="w-12 h-12 rounded-full bg-surface-card border border-border-subtle flex-shrink-0 shadow-sm flex items-center justify-center overflow-hidden relative">
+<img class="w-10 h-10 object-contain" data-alt="A cheerful, cute miniature digital botanical starter companion creature resembling a vibrant green seed seedling smiling warmly, clean soft 3D vector illustration style on bright white background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuATE5CyQBPiu7_Z6Jj8mXz-9kXLhLFXOzEiPQ-HOHFU0HS27eb496kPUxjLMSKxqU3VAKesQn83KR5UqqlpxZ6aYryLGE2nCYXy6iPO48k7Qy5-CczpRAPHi31OhTTp9QPPQ92ufYMPqoGolUOgTcylcODrqSnFxedaFiuBwROiEs-gTdiR9ouQq_FxOh80YhG4TPD6WptWVwehVqNH5M38zyvC3V0HXuECuL8GUwM5">
+</div>
+<div class="flex flex-col gap-0.5 min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]" style="color: rgb(52, 211, 153);">celebration</span>
+<span class="font-headline-section text-body-sm text-text-primary font-bold">Trainer Perk</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+        New to Pokétch? Create an account to claim your starter companion and auto-sync with Wear OS.
+      </p>
+</div>
+</div>
+<!-- Legal & Terms Footer -->
+<div class="w-full max-w-xs mx-auto text-center mt-space-xs">
+<p class="font-body-sm text-body-sm text-text-muted text-[12px] leading-relaxed">
+      By continuing, you agree to Pokétch
+      <a class="text-text-secondary underline hover:text-primary transition-colors" href="#">Terms of Service</a>
+      and
+      <a class="text-text-secondary underline hover:text-primary transition-colors" href="#">Privacy Policy</a>.
+    </p>
+</div>
+</div>
+<script>
+  function switchAuthTab(mode) {
+    const loginTab = document.getElementById('tab-login');
+    const signupTab = document.getElementById('tab-signup');
+    const submitBtnText = document.getElementById('submit-btn-text');
+    const emailLabel = document.getElementById('email-field-label');
+    const passwordInput = document.getElementById('trainer-password');
+    const strengthContainer = document.getElementById('password-strength-container');
+    const trainerPerkCard = document.getElementById('trainer-perk-card');
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+
+    if (mode === 'signup') {
+      signupTab.className = 'flex-1 py-2 rounded-full font-headline-section text-body-sm text-on-primary bg-primary transition-all duration-200 shadow-sm flex items-center justify-center gap-1.5';
+      loginTab.className = 'flex-1 py-2 rounded-full font-headline-section text-body-sm text-text-secondary hover:text-text-primary transition-all duration-200 flex items-center justify-center gap-1.5';
+      submitBtnText.textContent = 'Create Account';
+      emailLabel.textContent = 'Choose Trainer Email';
+      if (passwordInput) passwordInput.placeholder = 'Create a password';
+      if (strengthContainer) strengthContainer.style.display = 'flex';
+      if (trainerPerkCard) trainerPerkCard.style.display = 'flex';
+      if (forgotPasswordLink) forgotPasswordLink.style.display = 'none';
+    } else {
+      loginTab.className = 'flex-1 py-2 rounded-full font-headline-section text-body-sm text-on-primary bg-primary transition-all duration-200 shadow-sm flex items-center justify-center gap-1.5';
+      signupTab.className = 'flex-1 py-2 rounded-full font-headline-section text-body-sm text-text-secondary hover:text-text-primary transition-all duration-200 flex items-center justify-center gap-1.5';
+      submitBtnText.textContent = 'Log In';
+      emailLabel.textContent = 'Trainer Email';
+      if (passwordInput) passwordInput.placeholder = 'Enter your password';
+      if (strengthContainer) strengthContainer.style.display = 'none';
+      if (trainerPerkCard) trainerPerkCard.style.display = 'none';
+      if (forgotPasswordLink) forgotPasswordLink.style.display = 'inline';
+    }
+  }
+
+  function togglePasswordVisibility() {
+    const pwdInput = document.getElementById('trainer-password');
+    const eyeIcon = document.getElementById('password-eye-icon');
+    if (!pwdInput || !eyeIcon) return;
+    if (pwdInput.type === 'password') {
+      pwdInput.type = 'text';
+      eyeIcon.textContent = 'visibility_off';
+    } else {
+      pwdInput.type = 'password';
+      eyeIcon.textContent = 'visibility';
+    }
+  }
+
+  function updateRulePill(pillId, iconId, isMet) {
+    const pill = document.getElementById(pillId);
+    const icon = document.getElementById(iconId);
+    if (!pill || !icon) return;
+    if (isMet) {
+      pill.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-tint border border-primary/30 text-primary font-label-pill text-[10px] transition-all duration-200 shadow-sm';
+      icon.textContent = 'check';
+      icon.className = 'material-symbols-outlined text-[12px] text-primary';
+    } else {
+      pill.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-low border border-border-subtle text-text-muted font-label-pill text-[10px] transition-all duration-200';
+      icon.textContent = 'circle';
+      icon.className = 'material-symbols-outlined text-[12px] text-text-muted/60';
+    }
+  }
+
+  function evaluatePasswordStrength(val) {
+    const bars = [
+      document.getElementById('strength-bar-1'),
+      document.getElementById('strength-bar-2'),
+      document.getElementById('strength-bar-3'),
+      document.getElementById('strength-bar-4')
+    ];
+    const statusText = document.getElementById('strength-status-text');
+    const statusDot = document.getElementById('strength-status-dot');
+    const statusLabel = document.getElementById('strength-status-label');
+
+    if (!bars[0] || !statusText || !statusDot || !statusLabel) return;
+
+    if (!val || val.length === 0) {
+      bars.forEach(bar => {
+        bar.className = 'h-1.5 rounded-full bg-surface-container-high transition-colors duration-300';
+      });
+      statusText.className = 'flex items-center gap-1 font-label-pill text-label-pill text-text-muted font-bold';
+      statusDot.className = 'w-1.5 h-1.5 rounded-full bg-surface-container-highest transition-colors duration-200';
+      statusLabel.textContent = 'Enter password';
+      updateRulePill('pill-rule-length', 'icon-rule-length', false);
+      updateRulePill('pill-rule-number', 'icon-rule-number', false);
+      updateRulePill('pill-rule-mix', 'icon-rule-mix', false);
+      return;
+    }
+
+    const hasLength = val.length >= 8;
+    const hasNumber = /\d/.test(val);
+    const hasMix = /[A-Z]/.test(val) && /[a-z]/.test(val);
+    const hasSpecial = /[^A-Za-z0-9]/.test(val);
+
+    updateRulePill('pill-rule-length', 'icon-rule-length', hasLength);
+    updateRulePill('pill-rule-number', 'icon-rule-number', hasNumber);
+    updateRulePill('pill-rule-mix', 'icon-rule-mix', hasMix);
+
+    let score = 0;
+    if (val.length >= 6) score++;
+    if (hasLength) score++;
+    if (hasNumber) score++;
+    if (hasMix) score++;
+    if (hasSpecial && val.length >= 10) score++;
+
+    let level = 'weak';
+    let filledBars = 1;
+    let barColor = 'bg-alert-coral';
+    let label = 'Weak';
+    let textColor = 'text-alert-coral';
+    let dotClass = 'w-1.5 h-1.5 rounded-full bg-alert-coral transition-colors duration-200';
+
+    if (score >= 4 && val.length >= 10 && hasNumber && hasMix) {
+      level = 'strong';
+      filledBars = 4;
+      barColor = 'bg-primary';
+      label = 'Strong';
+      textColor = 'text-primary';
+      dotClass = 'w-1.5 h-1.5 rounded-full bg-primary animate-pulse transition-colors duration-200';
+    } else if (score >= 3 && hasLength) {
+      level = 'good';
+      filledBars = 3;
+      barColor = 'bg-primary';
+      label = 'Good';
+      textColor = 'text-primary';
+      dotClass = 'w-1.5 h-1.5 rounded-full bg-primary transition-colors duration-200';
+    } else if (score >= 2 && val.length >= 6) {
+      level = 'fair';
+      filledBars = 2;
+      barColor = 'bg-steps-amber';
+      label = 'Fair';
+      textColor = 'text-steps-amber';
+      dotClass = 'w-1.5 h-1.5 rounded-full bg-steps-amber transition-colors duration-200';
+    } else {
+      level = 'weak';
+      filledBars = 1;
+      barColor = 'bg-alert-coral';
+      label = 'Weak';
+      textColor = 'text-alert-coral';
+      dotClass = 'w-1.5 h-1.5 rounded-full bg-alert-coral transition-colors duration-200';
+    }
+
+    bars.forEach((bar, idx) => {
+      if (idx < filledBars) {
+        bar.className = 'h-1.5 rounded-full ' + barColor + ' transition-colors duration-300';
+      } else {
+        bar.className = 'h-1.5 rounded-full bg-surface-container-high transition-colors duration-300';
+      }
+    });
+
+    statusText.className = 'flex items-center gap-1 font-label-pill text-label-pill ' + textColor + ' font-bold';
+    statusDot.className = dotClass;
+    statusLabel.textContent = label;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const passwordInput = document.getElementById('trainer-password');
+    if (passwordInput) {
+      passwordInput.addEventListener('input', (e) => {
+        evaluatePasswordStrength(e.target.value);
+      });
+      evaluatePasswordStrength(passwordInput.value);
+    }
+  });
+</script></main>
+
+
+</body></html>

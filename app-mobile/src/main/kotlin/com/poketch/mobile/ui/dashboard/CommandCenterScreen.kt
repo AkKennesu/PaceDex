@@ -1071,13 +1071,16 @@ private fun StitchPrimaryActionCTA(
         label = "cta_scale"
     )
 
+    val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
+    val ctaContentColor = if (isDark) Color(0xFF022C22) else Color.White
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp)
             .scale(scale)
             .shadow(
-                elevation = 8.dp,
+                elevation = if (isDark) 0.dp else 8.dp,
                 shape = RoundedCornerShape(26.dp),
                 ambientColor = StitchPrimary.copy(alpha = 0.2f),
                 spotColor = StitchPrimary.copy(alpha = 0.35f)
@@ -1099,7 +1102,7 @@ private fun StitchPrimaryActionCTA(
             Icon(
                 imageVector = Icons.Default.AddCircle,
                 contentDescription = "Add",
-                tint = Color.White,
+                tint = ctaContentColor,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -1107,7 +1110,7 @@ private fun StitchPrimaryActionCTA(
                 text = "Log Meal or Quick Calories",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = ctaContentColor
             )
         }
     }
@@ -1121,11 +1124,13 @@ private fun StitchSnorlaxRecoveryCard(
     recovery: SnorlaxRecoveryState,
     modifier: Modifier = Modifier
 ) {
+    val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 4.dp,
+                elevation = if (isDark) 0.dp else 4.dp,
                 shape = RoundedCornerShape(22.dp),
                 ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
                 spotColor = StitchDarkSlate.copy(alpha = 0.06f)
@@ -1145,7 +1150,7 @@ private fun StitchSnorlaxRecoveryCard(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFFF1F5F9)),
+                    .background(if (isDark) Color(0xFF090F0D) else Color(0xFFF1F5F9)),
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(

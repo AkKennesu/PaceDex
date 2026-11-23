@@ -68,6 +68,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.poketch.mobile.ui.theme.LocalStitchColors
+import com.poketch.mobile.ui.theme.LocalThemeIsOledDark
 import com.poketch.mobile.ui.theme.StitchAlertCoral
 import com.poketch.mobile.ui.theme.StitchBorderSubtle
 import com.poketch.mobile.ui.theme.StitchCanvasBackground
@@ -89,7 +91,7 @@ import java.util.Locale
 /**
  * Google Stitch Watch & Sync Settings Screen
  * Features Bento Wear OS status card with sync button, smart reminder switches,
- * and appearance / trainer account card.
+ * and appearance / trainer account card with Botanical Light vs Tactical Mint OLED Dark switcher.
  */
 @Composable
 fun SyncDiagnosticsScreen(
@@ -103,7 +105,9 @@ fun SyncDiagnosticsScreen(
     var hydrationNudgeOn by rememberSaveable { mutableStateOf(true) }
     var runPromptOn by rememberSaveable { mutableStateOf(true) }
     var mealCheckInOn by rememberSaveable { mutableStateOf(true) }
-    var isOledDark by rememberSaveable { mutableStateOf(false) }
+
+    val oledDarkState = LocalThemeIsOledDark.current
+    val isDark = LocalStitchColors.current.isOledDark
 
     LaunchedEffect(Unit) {
         viewModel.refreshDiagnostics()
@@ -137,7 +141,7 @@ fun SyncDiagnosticsScreen(
                 )
             }
 
-            // 1. Elevated White "Wear OS Watch" Status Card
+            // 1. Elevated White / Tactical Deep Mint "Wear OS Watch" Status Card
             StitchWearOsStatusCard(
                 isSyncing = state.isSyncing,
                 hasNodes = state.diagnostics.connectedNodes.isNotEmpty(),
@@ -248,7 +252,7 @@ fun SyncDiagnosticsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(
-                        elevation = 6.dp,
+                        elevation = if (isDark) 0.dp else 6.dp,
                         shape = RoundedCornerShape(22.dp),
                         ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
                         spotColor = StitchDarkSlate.copy(alpha = 0.06f)
@@ -269,22 +273,23 @@ fun SyncDiagnosticsScreen(
                     )
 
                     // Light / OLED Dark Segmented Switcher
+                    val switcherBg = if (isDark) Color(0xFF090F0D) else Color(0xFFF1F5F2)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0xFFF1F5F2))
+                            .background(switcherBg)
                             .padding(4.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Surface(
+                            onClick = { oledDarkState.value = false },
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { isOledDark = false },
-                            color = if (!isOledDark) StitchSurfaceCard else Color.Transparent,
+                                .clip(RoundedCornerShape(12.dp)),
+                            color = if (!isDark) Color.White else Color.Transparent,
                             shape = RoundedCornerShape(12.dp),
-                            shadowElevation = if (!isOledDark) 2.dp else 0.dp
+                            shadowElevation = if (!isDark) 2.dp else 0.dp
                         ) {
                             Box(
                                 modifier = Modifier.padding(vertical = 8.dp),
@@ -293,20 +298,21 @@ fun SyncDiagnosticsScreen(
                                 Text(
                                     text = "Botanical Light",
                                     style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (!isOledDark) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (!isOledDark) StitchDarkSlate else StitchTextSecondary
+                                    fontWeight = if (!isDark) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (!isDark) Color(0xFF0F172A) else StitchTextSecondary
                                 )
                             }
                         }
 
                         Surface(
+                            onClick = { oledDarkState.value = true },
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { isOledDark = true },
-                            color = if (isOledDark) StitchDarkSlate else Color.Transparent,
+                                .clip(RoundedCornerShape(12.dp)),
+                            color = if (isDark) Color(0xFF131E19) else Color.Transparent,
                             shape = RoundedCornerShape(12.dp),
-                            shadowElevation = if (isOledDark) 2.dp else 0.dp
+                            border = if (isDark) BorderStroke(1.dp, StitchBorderSubtle) else null,
+                            shadowElevation = 0.dp
                         ) {
                             Box(
                                 modifier = Modifier.padding(vertical = 8.dp),
@@ -315,8 +321,8 @@ fun SyncDiagnosticsScreen(
                                 Text(
                                     text = "OLED Dark",
                                     style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (isOledDark) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isOledDark) Color.White else StitchTextSecondary
+                                    fontWeight = if (isDark) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isDark) Color(0xFF34D399) else StitchTextSecondary
                                 )
                             }
                         }
@@ -364,7 +370,7 @@ fun SyncDiagnosticsScreen(
 }
 
 /**
- * Elevated White "Wear OS Watch" Status Card
+ * Elevated White / Tactical Deep Mint "Wear OS Watch" Status Card
  */
 @Composable
 private fun StitchWearOsStatusCard(
@@ -375,6 +381,8 @@ private fun StitchWearOsStatusCard(
     onSyncClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalStitchColors.current.isOledDark
+
     val syncInteraction = remember { MutableInteractionSource() }
     val isPressed by syncInteraction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -407,7 +415,7 @@ private fun StitchWearOsStatusCard(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 10.dp,
+                elevation = if (isDark) 0.dp else 10.dp,
                 shape = RoundedCornerShape(26.dp),
                 ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
                 spotColor = StitchDarkSlate.copy(alpha = 0.08f)
@@ -431,7 +439,7 @@ private fun StitchWearOsStatusCard(
                         modifier = Modifier
                             .size(50.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFF1F5F2)),
+                            .background(if (isDark) Color(0xFF141C18) else Color(0xFFF1F5F2)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = "◓", fontSize = 26.sp, color = StitchAlertCoral)
@@ -491,7 +499,10 @@ private fun StitchWearOsStatusCard(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Full-Width Dark Slate Pill CTA "Sync Now"
+            // Full-Width CTA "Sync Now" (Tactical Mint in OLED Dark, Deep Slate in Light)
+            val syncBtnColor = if (isDark) StitchPrimary else StitchDarkSlate
+            val syncTextColor = if (isDark) Color(0xFF022C22) else Color.White
+
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -504,7 +515,7 @@ private fun StitchWearOsStatusCard(
                         onClick = onSyncClick
                     ),
                 shape = RoundedCornerShape(24.dp),
-                color = StitchDarkSlate
+                color = syncBtnColor
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -514,7 +525,7 @@ private fun StitchWearOsStatusCard(
                     Icon(
                         imageVector = Icons.Default.Sync,
                         contentDescription = "Sync",
-                        tint = Color.White,
+                        tint = syncTextColor,
                         modifier = Modifier
                             .size(18.dp)
                             .then(if (isSyncing) Modifier.rotate(rotation) else Modifier)
@@ -524,7 +535,7 @@ private fun StitchWearOsStatusCard(
                         text = if (isSyncing) "Syncing with Watch..." else "Sync Now",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = syncTextColor
                     )
                 }
             }
@@ -536,7 +547,7 @@ private fun StitchWearOsStatusCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF8FAFC))
+                    .background(if (isDark) Color(0xFF090F0D) else Color(0xFFF8FAFC))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -572,11 +583,13 @@ private fun StitchReminderToggleCard(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalStitchColors.current.isOledDark
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 4.dp,
+                elevation = if (isDark) 0.dp else 4.dp,
                 shape = RoundedCornerShape(20.dp),
                 ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
                 spotColor = StitchDarkSlate.copy(alpha = 0.06f)
@@ -631,10 +644,10 @@ private fun StitchReminderToggleCard(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
+                    checkedThumbColor = if (isDark) Color(0xFF022C22) else Color.White,
                     checkedTrackColor = StitchPrimary,
                     uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = Color(0xFFE2E8F0)
+                    uncheckedTrackColor = if (isDark) Color(0xFF1F2E26) else Color(0xFFE2E8F0)
                 )
             )
         }

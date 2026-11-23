@@ -552,13 +552,14 @@ private fun StitchMacroCard(
             )
 
             // Circular Ring with Percentage
+            val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
             Box(
                 modifier = Modifier.size(54.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val sw = 5.dp.toPx()
-                    drawCircle(color = Color(0xFFE4EBE7), style = Stroke(sw))
+                    drawCircle(color = if (isDark) Color(0xFF1F2E26) else Color(0xFFE4EBE7), style = Stroke(sw))
                     drawArc(
                         color = color,
                         startAngle = -90f,
@@ -661,11 +662,12 @@ private fun SampleMealCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
                 Box(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFFF1F5F2)),
+                        .background(if (isDark) Color(0xFF131E19) else Color(0xFFF1F5F2)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -781,11 +783,12 @@ private fun StitchMealLogCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
                 Box(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFFF1F5F2)),
+                        .background(if (isDark) Color(0xFF131E19) else Color(0xFFF1F5F2)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
