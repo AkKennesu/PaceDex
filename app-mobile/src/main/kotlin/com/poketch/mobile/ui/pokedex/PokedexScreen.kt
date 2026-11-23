@@ -1,9 +1,17 @@
 package com.poketch.mobile.ui.pokedex
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import com.poketch.mobile.ui.theme.bouncyPress
+import com.poketch.mobile.ui.theme.rememberAnimatedProgress
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -150,7 +158,7 @@ fun PokedexScreen(
                 onFilterSelected = viewModel::onFilterSelected
             )
 
-            // 3. 3-Column Collector Bento Grid
+            // 3. 3-Column Collector Bento Grid with Modifier.animateItem() for smooth filtering
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier
@@ -167,7 +175,8 @@ fun PokedexScreen(
                     StitchPokemonCollectorCard(
                         pokemon = pokemon,
                         isPartner = pokemon.pokedexNumber == state.activeBuddyId,
-                        onClick = { viewModel.onPokemonClicked(pokemon) }
+                        onClick = { viewModel.onPokemonClicked(pokemon) },
+                        modifier = Modifier.animateItem()
                     )
                 }
             }
@@ -177,7 +186,7 @@ fun PokedexScreen(
         }
     }
 
-    // Detail Bottom Sheet
+    // Detail Bottom Sheet with AnimatedContent
     state.selectedPokemon?.let { selected ->
         ModalBottomSheet(
             onDismissRequest = { viewModel.onDismissBottomSheet() },
@@ -185,14 +194,23 @@ fun PokedexScreen(
             containerColor = StitchSurfaceCard,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
-            StitchPokemonDetailSheet(
-                pokemon = selected,
-                isPartner = selected.pokedexNumber == state.activeBuddyId,
-                onSetAsPartner = {
-                    viewModel.setActiveBuddy(selected.pokedexNumber)
-                    viewModel.onDismissBottomSheet()
-                }
-            )
+            AnimatedContent(
+                targetState = selected,
+                transitionSpec = {
+                    (fadeIn(spring(stiffness = Spring.StiffnessMediumLow)) + scaleIn(initialScale = 0.94f)) togetherWith
+                            (fadeOut(spring(stiffness = Spring.StiffnessMediumLow)) + scaleOut(targetScale = 0.94f))
+                },
+                label = "pokemon_detail_transition"
+            ) { currentPokemon ->
+                StitchPokemonDetailSheet(
+                    pokemon = currentPokemon,
+                    isPartner = currentPokemon.pokedexNumber == state.activeBuddyId,
+                    onSetAsPartner = {
+                        viewModel.setActiveBuddy(currentPokemon.pokedexNumber)
+                        viewModel.onDismissBottomSheet()
+                    }
+                )
+            }
         }
     }
 }
@@ -257,29 +275,15 @@ private fun StitchPokemonCollectorCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "card_scale"
-    )
-
     Surface(
         modifier = modifier
-            .scale(scale)
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(20.dp),
                 ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
                 spotColor = StitchDarkSlate.copy(alpha = 0.06f)
             )
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            ),
+            .bouncyPress(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = StitchSurfaceCard,
         border = BorderStroke(
@@ -397,8 +401,9 @@ private fun StitchPokemonCollectorCard(
                     fontSize = 10.sp
                 )
             } else {
+                val animatedLockedProgress by rememberAnimatedProgress(0.45f)
                 LinearProgressIndicator(
-                    progress = { 0.45f },
+                    progress = { animatedLockedProgress },
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
                         .height(4.dp)
@@ -419,14 +424,6 @@ private fun StitchPokemonCollectorCard(
 private fun StitchActiveMissionCard(
     modifier: Modifier = Modifier
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    val isPressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "btn_scale"
-    )
-
     val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
 
     Surface(
@@ -506,10 +503,11 @@ private fun StitchActiveMissionCard(
                 }
             }
 
-            // Progress Meter
+            // Progress Meter with rememberAnimatedProgress
+            val animatedMissionProgress by rememberAnimatedProgress(0.64f)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 LinearProgressIndicator(
-                    progress = { 0.64f },
+                    progress = { animatedMissionProgress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
@@ -536,18 +534,12 @@ private fun StitchActiveMissionCard(
                 }
             }
 
-            // Full-Width Emerald CTA Button
+            // Full-Width Emerald CTA Button with bouncyPress
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .scale(scale)
-                    .clip(RoundedCornerShape(24.dp))
-                    .clickable(
-                        interactionSource = interaction,
-                        indication = null,
-                        onClick = {}
-                    ),
+                    .bouncyPress(onClick = {}),
                 shape = RoundedCornerShape(24.dp),
                 color = StitchPrimary
             ) {

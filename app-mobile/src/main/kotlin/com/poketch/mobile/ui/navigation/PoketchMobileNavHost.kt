@@ -5,9 +5,12 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -161,19 +164,28 @@ fun PoketchMobileNavHost(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    when (currentTab) {
-                        MobileTab.DASHBOARD -> CommandCenterScreen(
-                            viewModel = commandCenterViewModel,
-                            onOpenProfile = { currentTab = MobileTab.ACCOUNT },
-                            onOpenLogMeal = { currentTab = MobileTab.NUTRITION }
-                        )
-                        MobileTab.NUTRITION -> NutritionScreen(viewModel = nutritionViewModel)
-                        MobileTab.POKEDEX -> PokedexScreen(viewModel = pokedexViewModel)
-                        MobileTab.DIAGNOSTICS -> SyncDiagnosticsScreen(
-                            viewModel = syncDiagnosticsViewModel,
-                            onOpenAccount = { currentTab = MobileTab.ACCOUNT }
-                        )
-                        MobileTab.ACCOUNT -> AuthScreen(viewModel = authViewModel)
+                    AnimatedContent(
+                        targetState = currentTab,
+                        transitionSpec = {
+                            (fadeIn(animationSpec = tween(220)) + slideInVertically(animationSpec = tween(220)) { it / 28 }) togetherWith
+                                    fadeOut(animationSpec = tween(160))
+                        },
+                        label = "tab_crossfade_micro_slide"
+                    ) { targetTab ->
+                        when (targetTab) {
+                            MobileTab.DASHBOARD -> CommandCenterScreen(
+                                viewModel = commandCenterViewModel,
+                                onOpenProfile = { currentTab = MobileTab.ACCOUNT },
+                                onOpenLogMeal = { currentTab = MobileTab.NUTRITION }
+                            )
+                            MobileTab.NUTRITION -> NutritionScreen(viewModel = nutritionViewModel)
+                            MobileTab.POKEDEX -> PokedexScreen(viewModel = pokedexViewModel)
+                            MobileTab.DIAGNOSTICS -> SyncDiagnosticsScreen(
+                                viewModel = syncDiagnosticsViewModel,
+                                onOpenAccount = { currentTab = MobileTab.ACCOUNT }
+                            )
+                            MobileTab.ACCOUNT -> AuthScreen(viewModel = authViewModel)
+                        }
                     }
                 }
             }
@@ -265,7 +277,10 @@ private fun StitchFloatingBottomNav(
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp)
-                            .scale(scale)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
                             .clip(RoundedCornerShape(26.dp))
                             .background(pillBgColor)
                             .clickable(

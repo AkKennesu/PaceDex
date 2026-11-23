@@ -25,11 +25,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import com.poketch.mobile.ui.theme.AnimatedStatNumber
+import com.poketch.mobile.ui.theme.bouncyPress
+import com.poketch.mobile.ui.theme.rememberAnimatedProgress
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BakeryDining
@@ -111,7 +116,6 @@ fun NutritionScreen(
     viewModel: NutritionViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val scrollState = rememberScrollState()
 
     var showAddMealDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -120,173 +124,196 @@ fun NutritionScreen(
             .fillMaxSize()
             .background(StitchCanvasBackground)
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
                 .padding(horizontal = 18.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Header: Nutrition on left, Edit TDEE pill on right
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Nutrition",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = StitchDarkSlate,
-                        letterSpacing = (-0.5).sp
-                    )
-                    Text(
-                        text = "Daily fuel & macro targets",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = StitchTextMuted
-                    )
-                }
-
-                Surface(
+            item(key = "nutrition_header") {
+                Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable { viewModel.toggleConfigCardExpanded() },
-                    shape = RoundedCornerShape(20.dp),
-                    color = StitchSurfaceCard,
-                    border = BorderStroke(1.dp, StitchBorderSubtle),
-                    shadowElevation = 2.dp
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit TDEE",
-                            tint = StitchDarkSlate,
-                            modifier = Modifier.size(14.dp)
+                    Column {
+                        Text(
+                            text = "Nutrition",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchDarkSlate,
+                            letterSpacing = (-0.5).sp
                         )
                         Text(
-                            text = if (state.isConfigCardExpanded) "Close TDEE" else "Edit TDEE",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = StitchDarkSlate
+                            text = "Daily fuel & macro targets",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = StitchTextMuted
                         )
                     }
-                }
-            }
-
-            // Expandable Biometrics & TDEE Configuration
-            AnimatedVisibility(
-                visible = state.isConfigCardExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                StitchBiometricsEditorCard(
-                    state = state,
-                    viewModel = viewModel
-                )
-            }
-
-            // 1. Dark Slate-Navy (#0F172A) Hero TDEE Target Card
-            StitchTdeeHeroCard(
-                targetCeiling = state.targetCalorieCeiling,
-                totalConsumed = state.totalCaloriesToday,
-                summary = state.calculationSummary
-            )
-
-            // 2. Three Bento Macro Cards (Protein, Carbs, Fat)
-            val totalProtein = state.todayLogs.sumOf { it.proteinG }
-            val totalCarbs = state.todayLogs.sumOf { it.carbsG }
-            val totalFat = state.todayLogs.sumOf { it.fatG }
-
-            StitchMacroCardsRow(
-                proteinGrams = if (totalProtein > 0) totalProtein else 112,
-                proteinGoal = 140,
-                carbsGrams = if (totalCarbs > 0) totalCarbs else 165,
-                carbsGoal = 220,
-                fatGrams = if (totalFat > 0) totalFat else 48,
-                fatGoal = 70
-            )
-
-            // 3. Today's Log Section Header + Add Button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp, start = 2.dp, end = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = "Today's Log",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = StitchDarkSlate
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(StitchPrimary)
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "${state.totalCaloriesToday} / ${state.targetCalorieCeiling} kcal",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = StitchTextMuted,
-                        fontWeight = FontWeight.SemiBold
-                    )
 
                     Surface(
                         modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable { showAddMealDialog = true },
-                        shape = CircleShape,
-                        color = StitchPrimary,
+                            .clip(RoundedCornerShape(20.dp))
+                            .bouncyPress { viewModel.toggleConfigCardExpanded() },
+                        shape = RoundedCornerShape(20.dp),
+                        color = StitchSurfaceCard,
+                        border = BorderStroke(1.dp, StitchBorderSubtle),
                         shadowElevation = 2.dp
                     ) {
-                        Box(
-                            modifier = Modifier.size(28.dp),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add Meal",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit TDEE",
+                                tint = StitchDarkSlate,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = if (state.isConfigCardExpanded) "Close TDEE" else "Edit TDEE",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = StitchDarkSlate
                             )
                         }
                     }
                 }
             }
 
-            // 4. Meal Cards List
-            if (state.todayLogs.isEmpty()) {
-                // Pre-populated realistic sample cards matching Stitch prototype
-                StitchDefaultMealCards(onAddClick = { showAddMealDialog = true })
-            } else {
-                state.todayLogs.forEach { log ->
-                    StitchMealLogCard(
-                        log = log,
-                        onDelete = { viewModel.deleteLog(log.logId) }
+            // Expandable Biometrics & TDEE Configuration
+            item(key = "biometrics_config") {
+                AnimatedVisibility(
+                    visible = state.isConfigCardExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    StitchBiometricsEditorCard(
+                        state = state,
+                        viewModel = viewModel
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            // 1. Dark Slate-Navy (#0F172A) Hero TDEE Target Card
+            item(key = "tdee_hero") {
+                StitchTdeeHeroCard(
+                    targetCeiling = state.targetCalorieCeiling,
+                    totalConsumed = state.totalCaloriesToday,
+                    summary = state.calculationSummary
+                )
+            }
+
+            // 2. Three Bento Macro Cards (Protein, Carbs, Fat)
+            item(key = "macro_cards") {
+                val totalProtein = state.todayLogs.sumOf { it.proteinG }
+                val totalCarbs = state.todayLogs.sumOf { it.carbsG }
+                val totalFat = state.todayLogs.sumOf { it.fatG }
+
+                StitchMacroCardsRow(
+                    proteinGrams = if (totalProtein > 0) totalProtein else 112,
+                    proteinGoal = 140,
+                    carbsGrams = if (totalCarbs > 0) totalCarbs else 165,
+                    carbsGoal = 220,
+                    fatGrams = if (totalFat > 0) totalFat else 48,
+                    fatGoal = 70
+                )
+            }
+
+            // 3. Today's Log Section Header + Add Button
+            item(key = "log_header") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, start = 2.dp, end = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Today's Log",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchDarkSlate
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(StitchPrimary)
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AnimatedStatNumber(
+                                targetValue = state.totalCaloriesToday,
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = StitchTextMuted
+                            )
+                            Text(
+                                text = " / ${state.targetCalorieCeiling} kcal",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = StitchTextMuted,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .bouncyPress { showAddMealDialog = true },
+                            shape = CircleShape,
+                            color = StitchPrimary,
+                            shadowElevation = 2.dp
+                        ) {
+                            Box(
+                                modifier = Modifier.size(28.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add Meal",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Meal Cards List with Modifier.animateItem() for smooth insertion/deletion
+            if (state.todayLogs.isEmpty()) {
+                item(key = "default_meal_cards") {
+                    StitchDefaultMealCards(onAddClick = { showAddMealDialog = true })
+                }
+            } else {
+                items(
+                    items = state.todayLogs,
+                    key = { it.logId }
+                ) { log ->
+                    StitchMealLogCard(
+                        log = log,
+                        onDelete = { viewModel.deleteLog(log.logId) },
+                        modifier = Modifier.animateItem()
+                    )
+                }
+            }
+
+            item(key = "spacer_bottom") {
+                Spacer(modifier = Modifier.height(28.dp))
+            }
         }
     }
 
@@ -323,11 +350,7 @@ private fun StitchTdeeHeroCard(
     val floor = 1500
     val progress = (totalConsumed.toFloat() / targetCeiling.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
 
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "tdee_progress"
-    )
+    val animatedProgress by rememberAnimatedProgress(progress)
 
     Surface(
         modifier = modifier
@@ -370,12 +393,14 @@ private fun StitchTdeeHeroCard(
                 }
             }
 
-            Text(
-                text = "${String.format(Locale.US, "%,d", targetCeiling)} kcal",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                letterSpacing = (-0.5).sp
+            AnimatedStatNumber(
+                targetValue = targetCeiling,
+                suffix = " kcal",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.5).sp
+                ),
+                color = Color.White
             )
 
             // Linear Gradient Progress Indicator
@@ -519,13 +544,8 @@ private fun StitchMacroCard(
     modifier: Modifier = Modifier
 ) {
     val ratio = (current.toFloat() / goal.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
-    val pct = (ratio * 100).toInt()
-
-    val animatedRatio by animateFloatAsState(
-        targetValue = ratio,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "macro_ratio_$label"
-    )
+    val animatedRatio by rememberAnimatedProgress(ratio)
+    val pct = (animatedRatio * 100).toInt()
 
     Surface(
         modifier = modifier
@@ -577,10 +597,10 @@ private fun StitchMacroCard(
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "${current}g",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                AnimatedStatNumber(
+                    targetValue = current,
+                    suffix = "g",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = StitchDarkSlate
                 )
                 Text(
@@ -749,7 +769,8 @@ private fun SampleMealCard(
 @Composable
 private fun StitchMealLogCard(
     log: CalorieLog,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val isWatch = log.sourceDevice == DeviceSource.WEAR
     val icon = when (log.mealCategory) {
@@ -760,7 +781,7 @@ private fun StitchMealLogCard(
     }
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .shadow(
                 elevation = 4.dp,

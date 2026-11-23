@@ -79,8 +79,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -104,6 +106,7 @@ import androidx.compose.material3.OutlinedButton
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.model.DeficitTier
 import com.poketch.core.domain.model.Pokemon
+import com.poketch.mobile.ui.theme.AnimatedStatNumber
 import com.poketch.mobile.ui.theme.StitchAlertCoral
 import com.poketch.mobile.ui.theme.StitchAlertTint
 import com.poketch.mobile.ui.theme.StitchBorderSubtle
@@ -118,6 +121,10 @@ import com.poketch.mobile.ui.theme.StitchPrimary
 import com.poketch.mobile.ui.theme.StitchPrimaryTint
 import com.poketch.mobile.ui.theme.StitchStepsAmber
 import com.poketch.mobile.ui.theme.StitchStepsTint
+import com.poketch.mobile.ui.theme.bouncyPress
+import com.poketch.mobile.ui.theme.rememberAnimatedProgress
+import com.poketch.mobile.ui.theme.rememberBuddyMotion
+import androidx.compose.ui.graphics.graphicsLayer
 import com.poketch.mobile.ui.theme.StitchSurfaceCard
 import com.poketch.mobile.ui.theme.StitchTextMuted
 import com.poketch.mobile.ui.theme.StitchTextPrimary
@@ -432,17 +439,29 @@ private fun StitchCalorieBudgetCard(
         is CalorieBudgetState.OverTargetWarning -> "Over Target"
     }
 
-    val statusBadgeColor = when {
+    val targetBadgeColor = when {
         isOver -> StitchAlertCoral
         isOnTrack -> StitchPrimary
         else -> StitchStepsAmber
     }
 
-    val statusBadgeBg = when {
+    val targetBadgeBg = when {
         isOver -> StitchAlertTint
         isOnTrack -> StitchPrimaryTint
         else -> StitchStepsTint
     }
+
+    val statusBadgeColor by animateColorAsState(
+        targetValue = targetBadgeColor,
+        animationSpec = tween(400),
+        label = "status_badge_color"
+    )
+
+    val statusBadgeBg by animateColorAsState(
+        targetValue = targetBadgeBg,
+        animationSpec = tween(400),
+        label = "status_badge_bg"
+    )
 
     val remainingKcal = when (budgetState) {
         is CalorieBudgetState.OnTrack -> budgetState.remainingKcal
@@ -451,11 +470,7 @@ private fun StitchCalorieBudgetCard(
     }
 
     val targetRatio = (consumedKcal.toFloat() / targetCeilingKcal.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetRatio,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow),
-        label = "calorie_ring_sweep"
-    )
+    val animatedProgress by rememberAnimatedProgress(targetRatio)
 
     Surface(
         modifier = modifier
@@ -549,12 +564,14 @@ private fun StitchCalorieBudgetCard(
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = if (remainingKcal >= 0) "$remainingKcal" else "+${-remainingKcal}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = StitchDarkSlate,
-                            letterSpacing = (-0.5).sp
+                        AnimatedStatNumber(
+                            targetValue = if (remainingKcal >= 0) remainingKcal else -remainingKcal,
+                            prefix = if (remainingKcal < 0) "+" else "",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = (-0.5).sp
+                            ),
+                            color = StitchDarkSlate
                         )
                         Text(
                             text = if (remainingKcal >= 0) "kcal left" else "over target",
@@ -579,10 +596,10 @@ private fun StitchCalorieBudgetCard(
                             style = MaterialTheme.typography.bodySmall,
                             color = StitchTextSecondary
                         )
-                        Text(
-                            text = "$consumedKcal kcal",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                        AnimatedStatNumber(
+                            targetValue = consumedKcal,
+                            suffix = " kcal",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                             color = StitchDarkSlate
                         )
                     }
@@ -653,17 +670,24 @@ private fun StitchActivePartnerCard(
     val partnerName = partner?.name ?: "Bulbasaur"
     val partnerAsset = partner?.spriteAssetPath ?: "sprites/pokemon_1.png"
 
-    // Gentle mascot breathing/floating animation via spring physics
-    val infiniteTransition = rememberInfiniteTransition(label = "partner_float")
-    val floatY by infiniteTransition.animateFloat(
-        initialValue = -3f,
-        targetValue = 3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "mascot_y"
-    )
+    // Dynamic mascot breathing float & tap-to-hop physics via PoketchMotion
+    val (buddyMotionY, triggerHop) = rememberBuddyMotion()
+    val scope = rememberCoroutineScope()
+    val heartAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
+    val heartY = remember { androidx.compose.animation.core.Animatable(0f) }
+
+    val handleBuddyCardTap = {
+        triggerHop()
+        scope.launch {
+            heartAlpha.snapTo(1f)
+            heartY.snapTo(0f)
+            launch {
+                heartAlpha.animateTo(0f, tween(750, easing = FastOutSlowInEasing))
+            }
+            heartY.animateTo(-42f, tween(750, easing = FastOutSlowInEasing))
+        }
+        onSelectBuddyClick()
+    }
 
     Surface(
         modifier = modifier
@@ -674,7 +698,7 @@ private fun StitchActivePartnerCard(
                 ambientColor = StitchPrimary.copy(alpha = 0.05f),
                 spotColor = StitchPrimary.copy(alpha = 0.08f)
             )
-            .clickable { onSelectBuddyClick() },
+            .clickable { handleBuddyCardTap() },
         shape = RoundedCornerShape(26.dp),
         color = StitchPartnerMint,
         border = BorderStroke(1.dp, StitchPartnerBorder)
@@ -765,11 +789,9 @@ private fun StitchActivePartnerCard(
                 }
             }
 
-            // 3D Companion Mascot Pedestal with gentle floating offset
+            // 3D Companion Mascot Pedestal with gentle floating offset & tap reaction
             Box(
-                modifier = Modifier
-                    .size(96.dp)
-                    .offset(y = floatY.dp),
+                modifier = Modifier.size(96.dp),
                 contentAlignment = Alignment.Center
             ) {
                 // Soft pedestal glow
@@ -786,8 +808,25 @@ private fun StitchActivePartnerCard(
                         .crossfade(true)
                         .build(),
                     contentDescription = partnerName,
-                    modifier = Modifier.size(76.dp)
+                    modifier = Modifier
+                        .size(76.dp)
+                        .graphicsLayer {
+                            translationY = buddyMotionY
+                        }
                 )
+
+                // Floating heart & sparkle pop
+                if (heartAlpha.value > 0.01f) {
+                    Text(
+                        text = "✨❤️✨",
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .graphicsLayer {
+                                alpha = heartAlpha.value
+                                translationY = heartY.value
+                            }
+                    )
+                }
             }
         }
     }
@@ -811,11 +850,7 @@ private fun StitchTwoColumnHabitCards(
     ) {
         // Water Hydration Bento Card
         val waterRatio = (todayWaterMl.toFloat() / dailyWaterGoalMl.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
-        val animatedWaterProgress by animateFloatAsState(
-            targetValue = waterRatio,
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-            label = "water_progress"
-        )
+        val animatedWaterProgress by rememberAnimatedProgress(waterRatio)
         val waterLiters = String.format(Locale.US, "%.1f", todayWaterMl / 1000.0)
         val waterGoalLiters = String.format(Locale.US, "%.1f", dailyWaterGoalMl / 1000.0)
 
@@ -887,25 +922,11 @@ private fun StitchTwoColumnHabitCards(
                     strokeCap = StrokeCap.Round
                 )
 
-                // Bouncy +250ml pill button
-                val waterInteraction = remember { MutableInteractionSource() }
-                val isWaterPressed by waterInteraction.collectIsPressedAsState()
-                val waterScale by animateFloatAsState(
-                    targetValue = if (isWaterPressed) 0.94f else 1f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                    label = "water_btn_scale"
-                )
-
+                // Bouncy +250ml pill button with bouncyPress
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .scale(waterScale)
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable(
-                            interactionSource = waterInteraction,
-                            indication = null,
-                            onClick = onAddWater
-                        ),
+                        .bouncyPress(onClick = onAddWater),
                     shape = RoundedCornerShape(20.dp),
                     color = StitchHydrationTint
                 ) {
@@ -934,11 +955,7 @@ private fun StitchTwoColumnHabitCards(
 
         // Steps Bento Card
         val stepsRatio = (todaySteps.toFloat() / 10000f).coerceIn(0f, 1f)
-        val animatedStepsProgress by animateFloatAsState(
-            targetValue = stepsRatio,
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-            label = "steps_progress"
-        )
+        val animatedStepsProgress by rememberAnimatedProgress(stepsRatio)
 
         Surface(
             modifier = Modifier
@@ -983,10 +1000,9 @@ private fun StitchTwoColumnHabitCards(
                 }
 
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = String.format(Locale.US, "%,d", todaySteps),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                    AnimatedStatNumber(
+                        targetValue = todaySteps,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = StitchDarkSlate
                     )
                     Text(
@@ -1008,25 +1024,11 @@ private fun StitchTwoColumnHabitCards(
                     strokeCap = StrokeCap.Round
                 )
 
-                // Bouncy 1-Mi Run pill button
-                val runInteraction = remember { MutableInteractionSource() }
-                val isRunPressed by runInteraction.collectIsPressedAsState()
-                val runScale by animateFloatAsState(
-                    targetValue = if (isRunPressed) 0.94f else 1f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                    label = "run_btn_scale"
-                )
-
+                // Bouncy 1-Mi Run pill button with bouncyPress
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .scale(runScale)
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable(
-                            interactionSource = runInteraction,
-                            indication = null,
-                            onClick = onStartRun
-                        ),
+                        .bouncyPress(onClick = onStartRun),
                     shape = RoundedCornerShape(20.dp),
                     color = StitchDarkSlate
                 ) {
@@ -1063,14 +1065,6 @@ private fun StitchPrimaryActionCTA(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "cta_scale"
-    )
-
     val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
     val ctaContentColor = if (isDark) Color(0xFF022C22) else Color.White
 
@@ -1078,19 +1072,13 @@ private fun StitchPrimaryActionCTA(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp)
-            .scale(scale)
             .shadow(
                 elevation = if (isDark) 0.dp else 8.dp,
                 shape = RoundedCornerShape(26.dp),
                 ambientColor = StitchPrimary.copy(alpha = 0.2f),
                 spotColor = StitchPrimary.copy(alpha = 0.35f)
             )
-            .clip(RoundedCornerShape(26.dp))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            ),
+            .bouncyPress(onClick = onClick),
         shape = RoundedCornerShape(26.dp),
         color = StitchPrimary
     ) {

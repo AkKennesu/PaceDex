@@ -2,12 +2,22 @@ package com.poketch.mobile.ui.auth
 
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.border
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.graphics.graphicsLayer
+import com.poketch.mobile.ui.theme.bouncyPress
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -69,6 +79,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -264,6 +275,11 @@ fun AuthScreen(
     }
 }
 
+enum class AuthStep {
+    EMAIL_ENTRY,
+    OTP_VERIFICATION
+}
+
 /**
  * Stitch Login / Registration Component matching bb8fedd9157d47619efde6e5967b8a27.html
  */
@@ -280,6 +296,20 @@ private fun StitchUnauthenticatedAuthSection(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var passwordVisible by remember { mutableStateOf(false) }
+
+    var authStep by rememberSaveable { mutableStateOf(AuthStep.EMAIL_ENTRY) }
+    var otpDigits by rememberSaveable { mutableStateOf("") }
+    val shakeOffset = remember { Animatable(0f) }
+
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null && authStep == AuthStep.OTP_VERIFICATION) {
+            shakeOffset.animateTo(16f, tween(50))
+            shakeOffset.animateTo(-16f, tween(50))
+            shakeOffset.animateTo(10f, tween(50))
+            shakeOffset.animateTo(-10f, tween(50))
+            shakeOffset.animateTo(0f, tween(50))
+        }
+    }
 
     val resId = remember { context.resources.getIdentifier("default_web_client_id", "string", context.packageName) }
     val activeClientId = if (resId != 0) context.getString(resId) else FIREBASE_WEB_CLIENT_ID
@@ -448,221 +478,378 @@ private fun StitchUnauthenticatedAuthSection(
         }
     }
 
-    // 3. Bento Primary Card: Email & Password
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.08f)
-            ),
-        shape = RoundedCornerShape(24.dp),
-        color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Email Field
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Badge,
-                        contentDescription = null,
-                        tint = StitchPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = if (uiState.isSignUp) "Choose Trainer Email" else "Trainer Email",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = StitchDarkSlate
-                    )
-                }
-
-                OutlinedTextField(
-                    value = uiState.email,
-                    onValueChange = onEmailChanged,
-                    placeholder = { Text("trainer@poketch.app", color = StitchTextMuted) },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Mail,
-                            contentDescription = null,
-                            tint = StitchTextMuted,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = StitchSurfaceCard,
-                        unfocusedContainerColor = if (isDark) Color(0xFF131E19) else Color(0xFFF1F4F2),
-                        focusedBorderColor = StitchPrimary,
-                        unfocusedBorderColor = if (isDark) Color(0xFF1E3328) else Color.Transparent
-                    )
-                )
+    // 3. Animated Step Switcher: EMAIL_ENTRY <-> OTP_VERIFICATION with directional horizontal slide
+    AnimatedContent(
+        targetState = authStep,
+        transitionSpec = {
+            if (targetState == AuthStep.OTP_VERIFICATION) {
+                (slideInHorizontally(tween(260)) { it } + fadeIn(tween(260))) togetherWith
+                        (slideOutHorizontally(tween(200)) { -it } + fadeOut(tween(200)))
+            } else {
+                (slideInHorizontally(tween(260)) { -it } + fadeIn(tween(260))) togetherWith
+                        (slideOutHorizontally(tween(200)) { it } + fadeOut(tween(200)))
             }
-
-            // Password Field
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+        },
+        label = "auth_step_transition"
+    ) { currentStep ->
+        when (currentStep) {
+            AuthStep.EMAIL_ENTRY -> {
+                // Bento Primary Card: Email & Password
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(
+                            elevation = 8.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
+                            spotColor = StitchDarkSlate.copy(alpha = 0.08f)
+                        ),
+                    shape = RoundedCornerShape(24.dp),
+                    color = StitchSurfaceCard,
+                    border = BorderStroke(1.dp, StitchBorderSubtle)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = StitchPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "Password",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = StitchDarkSlate
-                    )
-                }
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        // Email Field
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Badge,
+                                    contentDescription = null,
+                                    tint = StitchPrimary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = if (uiState.isSignUp) "Choose Trainer Email" else "Trainer Email",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = StitchDarkSlate
+                                )
+                            }
 
-                OutlinedTextField(
-                    value = uiState.password,
-                    onValueChange = onPasswordChanged,
-                    placeholder = { Text(if (uiState.isSignUp) "Create a password" else "Enter password", color = StitchTextMuted) },
-                    singleLine = true,
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = StitchTextMuted,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                tint = StitchTextMuted,
-                                modifier = Modifier.size(20.dp)
+                            OutlinedTextField(
+                                value = uiState.email,
+                                onValueChange = onEmailChanged,
+                                placeholder = { Text("trainer@poketch.app", color = StitchTextMuted) },
+                                singleLine = true,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Mail,
+                                        contentDescription = null,
+                                        tint = StitchTextMuted,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = StitchSurfaceCard,
+                                    unfocusedContainerColor = if (isDark) Color(0xFF131E19) else Color(0xFFF1F4F2),
+                                    focusedBorderColor = StitchPrimary,
+                                    unfocusedBorderColor = if (isDark) Color(0xFF1E3328) else Color.Transparent
+                                )
                             )
                         }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = StitchSurfaceCard,
-                        unfocusedContainerColor = if (isDark) Color(0xFF131E19) else Color(0xFFF1F4F2),
-                        focusedBorderColor = StitchPrimary,
-                        unfocusedBorderColor = if (isDark) Color(0xFF1E3328) else Color.Transparent
-                    )
-                )
-            }
 
-            // Password Strength Indicator (during Sign Up)
-            if (uiState.isSignUp) {
-                StitchPasswordStrengthIndicator(password = uiState.password)
-            }
+                        // Password Field
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = StitchPrimary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "Password",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = StitchDarkSlate
+                                )
+                            }
 
-            // Error Message (if any)
-            uiState.errorMessage?.let { err ->
-                Text(
-                    text = err,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = StitchAlertCoral,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+                            OutlinedTextField(
+                                value = uiState.password,
+                                onValueChange = onPasswordChanged,
+                                placeholder = { Text(if (uiState.isSignUp) "Create a password" else "Enter password", color = StitchTextMuted) },
+                                singleLine = true,
+                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = StitchTextMuted,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                },
+                                trailingIcon = {
+                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                        Icon(
+                                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                            tint = StitchTextMuted,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = StitchSurfaceCard,
+                                    unfocusedContainerColor = if (isDark) Color(0xFF131E19) else Color(0xFFF1F4F2),
+                                    focusedBorderColor = StitchPrimary,
+                                    unfocusedBorderColor = if (isDark) Color(0xFF1E3328) else Color.Transparent
+                                )
+                            )
+                        }
 
-            // Primary Emerald Action Button
-            val submitInteraction = remember { MutableInteractionSource() }
-            val isPressed by submitInteraction.collectIsPressedAsState()
-            val scale by animateFloatAsState(
-                targetValue = if (isPressed) 0.96f else 1f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                label = "auth_btn_scale"
-            )
+                        // Password Strength Indicator (during Sign Up)
+                        if (uiState.isSignUp) {
+                            StitchPasswordStrengthIndicator(password = uiState.password)
+                        }
 
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .scale(scale)
-                    .shadow(
-                        elevation = if (isDark) 0.dp else 6.dp,
-                        shape = RoundedCornerShape(25.dp),
-                        ambientColor = StitchPrimary.copy(alpha = 0.2f),
-                        spotColor = StitchPrimary.copy(alpha = 0.35f)
-                    )
-                    .clip(RoundedCornerShape(25.dp))
-                    .clickable(
-                        interactionSource = submitInteraction,
-                        indication = null,
-                        onClick = onSubmitEmailAuth
-                    ),
-                shape = RoundedCornerShape(25.dp),
-                color = StitchPrimary
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            color = if (isDark) Color(0xFF022C22) else Color.White,
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(
-                            text = if (uiState.isSignUp) "Create Account" else "Sign In",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isDark) Color(0xFF022C22) else Color.White
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Default.ArrowForward,
-                            contentDescription = null,
-                            tint = if (isDark) Color(0xFF022C22) else Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        // Error Message (if any)
+                        uiState.errorMessage?.let { err ->
+                            Text(
+                                text = err,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = StitchAlertCoral,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        // Primary Emerald Action Button with bouncyPress
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .shadow(
+                                    elevation = if (isDark) 0.dp else 6.dp,
+                                    shape = RoundedCornerShape(25.dp),
+                                    ambientColor = StitchPrimary.copy(alpha = 0.2f),
+                                    spotColor = StitchPrimary.copy(alpha = 0.35f)
+                                )
+                                .bouncyPress(onClick = onSubmitEmailAuth),
+                            shape = RoundedCornerShape(25.dp),
+                            color = StitchPrimary
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (uiState.isLoading) {
+                                    CircularProgressIndicator(
+                                        color = if (isDark) Color(0xFF022C22) else Color.White,
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text(
+                                        text = if (uiState.isSignUp) "Create Account" else "Sign In",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isDark) Color(0xFF022C22) else Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowForward,
+                                        contentDescription = null,
+                                        tint = if (isDark) Color(0xFF022C22) else Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // 6-Digit Email OTP Switcher Pill
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = StitchPrimaryTint,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .bouncyPress {
+                                    authStep = AuthStep.OTP_VERIFICATION
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.VerifiedUser,
+                                    contentDescription = "Verified",
+                                    tint = StitchPrimary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = "Or Sign In with 6-Digit Email OTP →",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDark) Color(0xFF34D399) else Color(0xFF005320),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
                     }
                 }
             }
-
-            // Passwordless Reassurance Chip
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = StitchPrimaryTint,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+            AuthStep.OTP_VERIFICATION -> {
+                // 6-Digit OTP Verification Card with spring scale pop on digits and shake on error
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer { translationX = shakeOffset.value }
+                        .shadow(
+                            elevation = 8.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
+                            spotColor = StitchDarkSlate.copy(alpha = 0.08f)
+                        ),
+                    shape = RoundedCornerShape(24.dp),
+                    color = StitchSurfaceCard,
+                    border = BorderStroke(1.dp, StitchBorderSubtle)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.VerifiedUser,
-                        contentDescription = "Verified",
-                        tint = StitchPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = "Password or 6-Digit OTP supported for future sign-ins",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isDark) Color(0xFF34D399) else Color(0xFF005320),
-                        fontSize = 10.sp
-                    )
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "6-Digit Security Code",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchDarkSlate
+                        )
+                        Text(
+                            text = "Enter the 6-digit verification code sent to ${uiState.email.ifBlank { "trainer@poketch.app" }}.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = StitchTextSecondary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        // 6 Animated Digit Boxes
+                        Box(contentAlignment = Alignment.Center) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                for (i in 0 until 6) {
+                                    val digit = otpDigits.getOrNull(i)?.toString() ?: ""
+                                    val isFilled = digit.isNotBlank()
+                                    val digitScale by animateFloatAsState(
+                                        targetValue = if (isFilled) 1.08f else 1.0f,
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessMedium
+                                        ),
+                                        label = "otp_digit_scale_$i"
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .graphicsLayer {
+                                                scaleX = digitScale
+                                                scaleY = digitScale
+                                            }
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (isDark) Color(0xFF131E19) else Color(0xFFF1F4F2))
+                                            .border(
+                                                width = if (isFilled) 2.dp else 1.dp,
+                                                color = if (isFilled) StitchPrimary else StitchBorderSubtle,
+                                                shape = RoundedCornerShape(12.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = digit,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = StitchDarkSlate
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Transparent overlay capturing numeric input
+                            BasicTextField(
+                                value = otpDigits,
+                                onValueChange = {
+                                    if (it.length <= 6 && it.all { ch -> ch.isDigit() }) {
+                                        otpDigits = it
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .graphicsLayer { alpha = 0.01f }
+                            )
+                        }
+
+                        // Submit OTP Button with bouncyPress
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .shadow(
+                                    elevation = if (isDark) 0.dp else 6.dp,
+                                    shape = RoundedCornerShape(25.dp),
+                                    ambientColor = StitchPrimary.copy(alpha = 0.2f),
+                                    spotColor = StitchPrimary.copy(alpha = 0.35f)
+                                )
+                                .bouncyPress {
+                                    if (otpDigits.length == 6) {
+                                        onSubmitEmailAuth()
+                                    } else {
+                                        coroutineScope.launch {
+                                            shakeOffset.animateTo(16f, tween(50))
+                                            shakeOffset.animateTo(-16f, tween(50))
+                                            shakeOffset.animateTo(10f, tween(50))
+                                            shakeOffset.animateTo(-10f, tween(50))
+                                            shakeOffset.animateTo(0f, tween(50))
+                                        }
+                                    }
+                                },
+                            shape = RoundedCornerShape(25.dp),
+                            color = StitchPrimary
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Verify & Access Pokétch",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDark) Color(0xFF022C22) else Color.White
+                                )
+                            }
+                        }
+
+                        // Return to Password Entry
+                        Text(
+                            text = "← Return to Password Entry",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = StitchPrimary,
+                            modifier = Modifier
+                                .clickable { authStep = AuthStep.EMAIL_ENTRY }
+                                .padding(vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }
