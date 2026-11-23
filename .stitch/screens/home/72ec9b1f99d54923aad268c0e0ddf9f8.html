@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>Pokétch</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;min-height:100%;margin:0;padding:0;background-color:#f7faf8;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary": "#565e74", "surface-container": "#ebefed", "error-container": "#ffdad6", "surface-container-lowest": "#ffffff", "on-error": "#ffffff", "on-error-container": "#93000a", "steps-tint": "#FEF3C7", "on-primary-fixed": "#002109", "surface-bright": "#f7faf8", "outline-variant": "#bdcaba", "surface": "#f7faf8", "secondary-container": "#dae2fd", "surface-container-low": "#f1f4f2", "on-surface-variant": "#3e4a3d", "tertiary-container": "#007cb1", "surface-tint": "#006e2d", "on-tertiary-fixed-variant": "#004c6e", "on-secondary-container": "#5c647a", "on-primary-fixed-variant": "#005320", "steps-amber": "#F59E0B", "tertiary-fixed": "#c9e6ff", "primary-tint": "#DCFCE7", "primary-fixed-dim": "#62df7d", "on-primary-container": "#f7fff2", "primary": "#006b2c", "on-primary": "#ffffff", "on-tertiary-container": "#fcfcff", "outline": "#6e7b6c", "on-secondary-fixed": "#131b2e", "on-tertiary-fixed": "#001e2f", "inverse-primary": "#62df7d", "surface-variant": "#e0e3e1", "primary-fixed": "#7ffc97", "alert-coral": "#EF4444", "on-secondary-fixed-variant": "#3f465c", "on-secondary": "#ffffff", "on-background": "#181c1b", "tertiary-fixed-dim": "#89ceff", "text-muted": "#94A3B8", "text-secondary": "#475569", "text-primary": "#0F172A", "surface-container-high": "#e6e9e7", "secondary-fixed": "#dae2fd", "error": "#ba1a1a", "surface-card": "#FFFFFF", "inverse-surface": "#2d3130", "hydration-tint": "#E0F2FE", "on-surface": "#181c1b", "inverse-on-surface": "#eef1ef", "on-tertiary": "#ffffff", "tertiary": "#00628d", "surface-dim": "#d7dbd9", "background": "#f7faf8", "surface-container-highest": "#e0e3e1", "secondary-fixed-dim": "#bec6e0", "primary-container": "#00873a", "border-subtle": "#E4EBE7" }, "borderRadius": { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }, "spacing": { "space-xs": "0.25rem", "space-sm": "0.5rem", "space-xl": "1.5rem", "space-lg": "1.25rem", "gutter": "1rem", "margin": "1rem", "space-md": "1rem" }, "fontFamily": { "display-hero-mobile": ["Plus Jakarta Sans"], "headline-title": ["Plus Jakarta Sans"], "metric-counter": ["Plus Jakarta Sans"], "display-hero": ["Plus Jakarta Sans"], "headline-section": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "label-pill": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"] }, "fontSize": { "display-hero-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-title": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "metric-counter": ["20px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "display-hero": ["34px", { "lineHeight": "40px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "headline-section": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "label-pill": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md text-body-md min-h-screen relative flex flex-col antialiased selection:bg-primary-tint selection:text-primary"><div class="fixed top-0 inset-x-0 h-40 bg-gradient-to-b from-primary/10 via-primary-tint/20 to-transparent pointer-events-none z-40"></div><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Pokétch App Icon" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCvq1uyQ9lkWpibIqFAYarYr3F7Qh4jX1HSUmcQqacuOFpxb4_bElv0uhMPPk5IwTHNobUU0ypR72SchjjsvXqfcU8IKzYU6ss8d_tSuB82t7EglxNYrZ5Vgp3QoU7GbQS7UAOkW_vh__Lpu9aHBRNUjoX-_dBfrZi-LsEutejtw5M9ElvGcNWpE1vDZMYFKJCATOKQIPaa6uQ-1Fe10UEMQzf4-xfJ9ljMnsRdVcGQsQ"/><div class="flex flex-col"><span class="font-headline-section text-headline-section text-text-primary leading-tight tracking-tight">Pokétch</span><span class="font-label-pill text-label-pill text-text-muted capitalize">Home</span></div></div><div class="flex items-center gap-space-sm"><button aria-label="Notifications" class="w-11 h-11 flex items-center justify-center rounded-full text-secondary hover:text-text-primary hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-28 bg-surface"><div class="flex flex-col w-full px-margin pb-6 gap-space-lg">
+<!-- Today Header Section -->
+<div class="flex items-end justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-display-hero-mobile text-display-hero-mobile text-text-primary tracking-tight">Today</span>
+<span class="font-body-md text-body-md text-text-muted mt-0.5">Mon, Nov 23</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-card shadow-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-pill text-label-pill text-text-secondary tracking-normal">Watch 92%</span>
+</div>
+</div>
+<!-- Hero: Calorie Budget Bento Card -->
+<div class="w-full bg-surface-card rounded-[24px] p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-primary-tint flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<h2 class="font-headline-section text-headline-section text-text-primary">Calorie Budget</h2>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-primary-tint text-primary font-label-pill text-label-pill">On Track</span>
+</div>
+<div class="flex items-center gap-space-lg pt-1">
+<!-- Emerald SVG Circular Progress Ring -->
+<div class="relative w-32 h-32 flex-shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90 transform" viewbox="0 0 120 120">
+<circle class="text-surface-container" cx="60" cy="60" fill="transparent" r="48" stroke="currentColor" stroke-width="10"></circle>
+<circle class="text-primary transition-all duration-1000 ease-out" cx="60" cy="60" fill="transparent" r="48" stroke="currentColor" stroke-dasharray="301.59" stroke-dashoffset="66.35" stroke-linecap="round" stroke-width="10"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
+<span class="font-headline-title text-headline-title text-text-primary tracking-tight" id="cal-left-num">455</span>
+<span class="font-label-pill text-label-pill text-text-muted -mt-0.5">kcal left</span>
+</div>
+</div>
+<!-- Right Column Metrics Breakdown -->
+<div class="flex-1 flex flex-col justify-center gap-2.5 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-text-secondary truncate">Consumed</span>
+<span class="font-headline-section text-headline-section text-text-primary ml-2">1,640 <span class="font-body-sm text-body-sm text-text-muted font-normal">kcal</span></span>
+</div>
+<div class="h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[78%]"></div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-text-secondary truncate">Daily Goal</span>
+<span class="font-headline-section text-headline-section text-text-primary ml-2">2,095 <span class="font-body-sm text-body-sm text-text-muted font-normal">kcal</span></span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-text-secondary truncate">Target Deficit</span>
+<span class="font-headline-section text-headline-section text-primary ml-2">-500 <span class="font-body-sm text-body-sm text-text-muted font-normal">kcal</span></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Partner Bento Card -->
+<div class="w-full bg-[#EEF9F1] rounded-[24px] p-space-lg shadow-sm flex items-center justify-between relative overflow-hidden">
+<div class="flex-1 flex flex-col gap-1.5 z-10 pr-2">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[14px]" style="font-variation-settings: 'FILL' 1;">eco</span>
+<span class="font-label-pill text-label-pill text-primary uppercase tracking-wider">Active Partner</span>
+</div>
+<h3 class="font-headline-title text-headline-title text-text-primary leading-tight">Bulbasaur</h3>
+<p class="font-body-sm text-body-sm text-text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-steps-amber" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+        7-day streak • Next: <span class="font-headline-section text-body-sm text-text-primary">Ponyta</span>
+</p>
+<!-- Streak Progress Level -->
+<div class="mt-2 w-full max-w-[170px]">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-pill text-label-pill text-text-secondary">Evo Gauge</span>
+<span class="font-label-pill text-label-pill text-steps-amber">70%</span>
+</div>
+<div class="h-2 w-full bg-surface-card rounded-full overflow-hidden shadow-inner">
+<div class="h-full bg-steps-amber rounded-full w-[70%] transition-all duration-700"></div>
+</div>
+</div>
+</div>
+<!-- Soft Glow & 3D Companion Mascot -->
+<div class="relative w-32 h-32 flex-shrink-0 flex items-center justify-center">
+<div class="absolute inset-0 bg-primary-tint/60 rounded-full blur-xl scale-95"></div>
+<div class="relative w-28 h-28 rounded-full overflow-hidden flex items-center justify-center shadow-md bg-surface-card/40 backdrop-blur-sm">
+<img class="w-full h-full object-cover rounded-full" data-alt="A charming high-end vinyl figurine of Bulbasaur with subtle glossy lighting, sitting calmly on a smooth neutral stone pedestal with soft botanical bokeh plants in warm pastel studio lighting, matching a clean health tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlNapr1hUlJ3f3nBgOzyUjOVYf_LnxY-GbmOHXaqrX2HOUursg6BOc8pARzl0dkgwU8Pi4iGFG5b7hfPvF8RyCTbkReZ2uGhhwzVTqo0jYaVQldI6xtpIAIWKDwrnrNY8rWa9tem7i5VhaKtawhCAx9hvD3P8xgBBp4e5kUxrRCc-RKSHH1wDvCAF65dY-2gfbBzti9kYl8czEUDRhWOlYyJ7IX4E7pnMYydZLO3hw"/>
+</div>
+</div>
+</div>
+<!-- Two-Column Bento Habit Cards -->
+<div class="grid grid-cols-2 gap-space-md w-full">
+<!-- Water Hydration Card -->
+<div class="bg-surface-card rounded-[22px] p-space-md shadow-sm flex flex-col justify-between gap-3">
+<div class="flex items-center justify-between">
+<span class="px-2.5 py-0.5 rounded-full bg-hydration-tint text-tertiary-container font-label-pill text-label-pill">Water</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-counter text-metric-counter text-text-primary" id="water-val">1.5</span>
+<span class="font-body-sm text-body-sm text-text-muted">/ 2.5 L</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden mt-2">
+<div class="h-full bg-tertiary-container rounded-full w-[60%] transition-all duration-300" id="water-bar"></div>
+</div>
+</div>
+<button aria-label="Add 250 milliliters of water" class="w-full py-2 px-3 rounded-full bg-hydration-tint hover:bg-hydration-tint/80 active:scale-[0.97] transition-all text-tertiary-container font-label-pill text-label-pill flex items-center justify-center gap-1" id="btn-add-water">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>250 ml</span>
+</button>
+</div>
+<!-- Steps Card -->
+<div class="bg-surface-card rounded-[22px] p-space-md shadow-sm flex flex-col justify-between gap-3">
+<div class="flex items-center justify-between">
+<span class="px-2.5 py-0.5 rounded-full bg-steps-tint text-steps-amber font-label-pill text-label-pill">Steps</span>
+<span class="material-symbols-outlined text-[18px] text-steps-amber" style="font-variation-settings: 'FILL' 1;">directions_walk</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-1">
+<span class="font-metric-counter text-metric-counter text-text-primary">6,840</span>
+<span class="font-body-sm text-body-sm text-text-muted">/ 10k</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden mt-2">
+<div class="h-full bg-steps-amber rounded-full w-[68%]"></div>
+</div>
+</div>
+<button aria-label="Start one mile outdoor run" class="w-full py-2 px-3 rounded-full bg-text-primary hover:bg-text-secondary active:scale-[0.97] transition-all text-surface-container-lowest font-label-pill text-label-pill flex items-center justify-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]">play_arrow</span>
+<span>1-Mi Run</span>
+</button>
+</div>
+</div>
+<!-- Primary Floating Action Button -->
+<button class="w-full h-[52px] rounded-full bg-primary hover:bg-primary-container active:scale-[0.98] text-on-primary font-headline-section text-headline-section flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(22,163,74,0.24)] transition-all mt-1">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span>Log Meal or Quick Calories</span>
+</button>
+</div>
+<script>
+  (function () {
+    // Interactive Water Habit Quick Increment
+    const waterBtn = document.getElementById('btn-add-water');
+    const waterVal = document.getElementById('water-val');
+    const waterBar = document.getElementById('water-bar');
+    let currentLiters = 1.5;
+    const maxLiters = 2.5;
+
+    if (waterBtn && waterVal && waterBar) {
+      waterBtn.addEventListener('click', function () {
+        if (currentLiters < 3.5) {
+          currentLiters = Math.min(3.5, currentLiters + 0.25);
+          waterVal.textContent = currentLiters.toFixed(2).replace(/\.?0+$/, '');
+          const pct = Math.min(100, Math.round((currentLiters / maxLiters) * 100));
+          waterBar.style.width = pct + '%';
+
+          // Micro feedback animation
+          waterBtn.classList.add('scale-95');
+          setTimeout(() => waterBtn.classList.remove('scale-95'), 150);
+        }
+      });
+    }
+
+    // Set Active State on Tab Bar
+    const navItems = document.querySelectorAll('nav a[data-path]');
+    navItems.forEach(item => {
+      if (item.getAttribute('data-path') === 'home') {
+        item.classList.remove('text-text-secondary');
+        item.classList.add('bg-text-primary', 'text-surface-container-lowest', 'font-headline-section', 'shadow-sm');
+      }
+    });
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe pointer-events-none" data-active-classes="bg-text-primary text-surface-container-lowest font-headline-section shadow-sm"><div class="p-margin flex justify-center"><div class="pointer-events-auto w-full max-w-md bg-surface-card rounded-[30px] p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.10)] flex items-center justify-between gap-1"><a aria-current="page" class="flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 transition-all duration-200 bg-text-primary text-surface-container-lowest font-headline-section shadow-sm" data-path="home" href="#"><span class="material-symbols-outlined text-[20px]">home</span><span class="font-label-pill text-label-pill">Home</span></a><a class="flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 text-text-secondary hover:text-text-primary transition-all duration-200" data-path="log" href="#"><span class="material-symbols-outlined text-[20px]">edit_note</span><span class="font-label-pill text-label-pill">Log</span></a><a class="flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 text-text-secondary hover:text-text-primary transition-all duration-200" data-path="pokedex" href="#"><span class="material-symbols-outlined text-[20px]">20mp</span><span class="font-label-pill text-label-pill">Pokédex</span></a><a class="flex-1 min-h-[44px] py-1.5 px-2 rounded-full flex items-center justify-center gap-1.5 text-text-secondary hover:text-text-primary transition-all duration-200" data-path="sync" href="#"><span class="material-symbols-outlined text-[20px]">sync</span><span class="font-label-pill text-label-pill">Sync</span></a></div></div></nav></body></html>

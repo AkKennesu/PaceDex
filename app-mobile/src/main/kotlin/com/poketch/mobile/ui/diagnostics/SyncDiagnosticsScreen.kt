@@ -1,8 +1,20 @@
 package com.poketch.mobile.ui.diagnostics
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,420 +32,610 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.DirectionsRun
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.poketch.mobile.ui.theme.PoketchBorder
-import com.poketch.mobile.ui.theme.PoketchBorderSubtle
-import com.poketch.mobile.ui.theme.PoketchCrimson
-import com.poketch.mobile.ui.theme.PoketchCyan
-import com.poketch.mobile.ui.theme.PoketchEmerald
-import com.poketch.mobile.ui.theme.PoketchSurface
+import com.poketch.mobile.ui.theme.StitchAlertCoral
+import com.poketch.mobile.ui.theme.StitchBorderSubtle
+import com.poketch.mobile.ui.theme.StitchCanvasBackground
+import com.poketch.mobile.ui.theme.StitchDarkSlate
+import com.poketch.mobile.ui.theme.StitchHydration
+import com.poketch.mobile.ui.theme.StitchHydrationTint
+import com.poketch.mobile.ui.theme.StitchPrimary
+import com.poketch.mobile.ui.theme.StitchPrimaryTint
+import com.poketch.mobile.ui.theme.StitchStepsAmber
+import com.poketch.mobile.ui.theme.StitchStepsTint
+import com.poketch.mobile.ui.theme.StitchSurfaceCard
+import com.poketch.mobile.ui.theme.StitchTextMuted
+import com.poketch.mobile.ui.theme.StitchTextPrimary
+import com.poketch.mobile.ui.theme.StitchTextSecondary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Google Stitch Watch & Sync Settings Screen
+ * Features Bento Wear OS status card with sync button, smart reminder switches,
+ * and appearance / trainer account card.
+ */
 @Composable
 fun SyncDiagnosticsScreen(
     modifier: Modifier = Modifier,
-    viewModel: SyncDiagnosticsViewModel = viewModel()
+    viewModel: SyncDiagnosticsViewModel = viewModel(),
+    onOpenAccount: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
+
+    var hydrationNudgeOn by rememberSaveable { mutableStateOf(true) }
+    var runPromptOn by rememberSaveable { mutableStateOf(true) }
+    var mealCheckInOn by rememberSaveable { mutableStateOf(true) }
+    var isOledDark by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.refreshDiagnostics()
     }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(StitchCanvasBackground)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // Header
+            // Header: Watch & Sync
+            Column(modifier = Modifier.padding(top = 4.dp)) {
+                Text(
+                    text = "Watch & Sync",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = StitchDarkSlate,
+                    letterSpacing = (-0.5).sp
+                )
+                Text(
+                    text = "Wear OS telemetry & background sync",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = StitchTextMuted
+                )
+            }
+
+            // 1. Elevated White "Wear OS Watch" Status Card
+            StitchWearOsStatusCard(
+                isSyncing = state.isSyncing,
+                hasNodes = state.diagnostics.connectedNodes.isNotEmpty(),
+                nodeName = state.diagnostics.connectedNodes.firstOrNull()?.displayName,
+                lastSyncTime = state.diagnostics.lastSyncTimestampMillis,
+                onSyncClick = { viewModel.forceFullSyncNow() }
+            )
+
+            // Feedback Toast / Banner
+            state.feedbackMessage?.let { msg ->
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = StitchPrimaryTint,
+                    border = BorderStroke(1.dp, StitchPrimary.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Success",
+                            tint = StitchPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = msg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = StitchDarkSlate,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+
+            // 2. Smart Reminders Section
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = "Reminders",
+                            tint = StitchPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Smart Reminders",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchDarkSlate
+                        )
+                    }
+                    Text(
+                        text = "HAPTIC ALERTS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = StitchTextMuted,
+                        letterSpacing = 1.sp
+                    )
+                }
+
+                // Reminder 1: Hydration Nudges
+                StitchReminderToggleCard(
+                    title = "Hydration Nudges",
+                    subtitle = "Every 90 min • 08:00–21:00",
+                    icon = Icons.Default.WaterDrop,
+                    iconTint = StitchHydration,
+                    iconBg = StitchHydrationTint,
+                    checked = hydrationNudgeOn,
+                    onCheckedChange = { hydrationNudgeOn = it }
+                )
+
+                // Reminder 2: 1-Mile Run Prompt
+                StitchReminderToggleCard(
+                    title = "1-Mile Run Prompt",
+                    subtitle = "Daily at 17:00 if under 50% steps",
+                    icon = Icons.Default.DirectionsRun,
+                    iconTint = StitchStepsAmber,
+                    iconBg = StitchStepsTint,
+                    checked = runPromptOn,
+                    onCheckedChange = { runPromptOn = it }
+                )
+
+                // Reminder 3: Meal Check-Ins
+                StitchReminderToggleCard(
+                    title = "Meal Check-Ins",
+                    subtitle = "Breakfast, Lunch & Dinner",
+                    icon = Icons.Default.Restaurant,
+                    iconTint = StitchPrimary,
+                    iconBg = StitchPrimaryTint,
+                    checked = mealCheckInOn,
+                    onCheckedChange = { mealCheckInOn = it }
+                )
+            }
+
+            // 3. Appearance & Trainer Account Card
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        elevation = 6.dp,
+                        shape = RoundedCornerShape(22.dp),
+                        ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
+                        spotColor = StitchDarkSlate.copy(alpha = 0.06f)
+                    ),
+                shape = RoundedCornerShape(22.dp),
+                color = StitchSurfaceCard,
+                border = BorderStroke(1.dp, StitchBorderSubtle)
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "Appearance & Account",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = StitchDarkSlate
+                    )
+
+                    // Light / OLED Dark Segmented Switcher
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0xFFF1F5F2))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { isOledDark = false },
+                            color = if (!isOledDark) StitchSurfaceCard else Color.Transparent,
+                            shape = RoundedCornerShape(12.dp),
+                            shadowElevation = if (!isOledDark) 2.dp else 0.dp
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Botanical Light",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (!isOledDark) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (!isOledDark) StitchDarkSlate else StitchTextSecondary
+                                )
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { isOledDark = true },
+                            color = if (isOledDark) StitchDarkSlate else Color.Transparent,
+                            shape = RoundedCornerShape(12.dp),
+                            shadowElevation = if (isOledDark) 2.dp else 0.dp
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "OLED Dark",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (isOledDark) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isOledDark) Color.White else StitchTextSecondary
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = StitchBorderSubtle)
+
+                    // Account & Sign Out Action
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "trainer@poketch.app",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = StitchDarkSlate
+                            )
+                            Text(
+                                text = "Google Account Linked",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = StitchTextMuted
+                            )
+                        }
+
+                        Text(
+                            text = "Trainer Account",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchPrimary,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onOpenAccount() }
+                                .padding(8.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+        }
+    }
+}
+
+/**
+ * Elevated White "Wear OS Watch" Status Card
+ */
+@Composable
+private fun StitchWearOsStatusCard(
+    isSyncing: Boolean,
+    hasNodes: Boolean,
+    nodeName: String?,
+    lastSyncTime: Long,
+    onSyncClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val syncInteraction = remember { MutableInteractionSource() }
+    val isPressed by syncInteraction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "sync_scale"
+    )
+
+    // Infinite rotation for sync icon during sync
+    val infiniteTransition = rememberInfiniteTransition(label = "sync_spin")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "spin_angle"
+    )
+
+    val lastSyncFormatted = remember(lastSyncTime) {
+        if (lastSyncTime > 0) {
+            SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(lastSyncTime))
+        } else {
+            "Just now"
+        }
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 10.dp,
+                shape = RoundedCornerShape(26.dp),
+                ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
+                spotColor = StitchDarkSlate.copy(alpha = 0.08f)
+            ),
+        shape = RoundedCornerShape(26.dp),
+        color = StitchSurfaceCard,
+        border = BorderStroke(1.dp, StitchBorderSubtle)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(PoketchCyan)
-                        )
-                        Text(
-                            text = "WEAR OS TELEMETRY",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.2.sp,
-                            color = PoketchCyan
-                        )
-                    }
-                    Text(
-                        text = "Watch Link & Sync",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Black
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF1E293B),
-                    border = BorderStroke(1.dp, PoketchBorder)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Button(
-                        onClick = { viewModel.refreshDiagnostics() },
-                        contentPadding = ButtonDefaults.TextButtonContentPadding,
-                        colors = ButtonDefaults.textButtonColors()
+                    // Poké Ball Icon inside circular container
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFF1F5F2)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Text(text = "◓", fontSize = 26.sp, color = StitchAlertCoral)
                     }
-                }
-            }
 
-            // Connection Guide Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
-                shape = RoundedCornerShape(18.dp),
-                border = BorderStroke(1.dp, PoketchBorder)
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(PoketchCyan.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("⌚", fontSize = 16.sp)
-                        }
+                    Column {
                         Text(
-                            text = "How Watch Link Works",
-                            style = MaterialTheme.typography.titleSmall,
+                            text = "Wear OS Watch",
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = StitchDarkSlate
                         )
-                    }
-                    Text(
-                        text = "• Physical Watch: Automatically connects via Google Play Services Wearable when Bluetooth is active.\n• Emulators: Scan the QR code from the watch's Bag menu or use the Trainer tab to link directly.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF94A3B8)
-                    )
-                }
-            }
-
-            // Card 1: Connected Wear Watch Nodes
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = PoketchSurface),
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, PoketchBorder)
-            ) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "CONNECTED WEAR OS NODES",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Black,
-                        color = PoketchCyan,
-                        letterSpacing = 1.sp
-                    )
-
-                    if (state.diagnostics.connectedNodes.isNotEmpty()) {
-                        state.diagnostics.connectedNodes.forEach { node ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(Color(0xFF0F172A))
-                                    .border(1.dp, PoketchBorderSubtle, RoundedCornerShape(14.dp))
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .clip(CircleShape)
-                                            .background(if (node.isNearby) PoketchEmerald else Color(0xFFFFB300))
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Text(
-                                            text = node.displayName.ifBlank { "Wear OS Device" },
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
-                                        Text(
-                                            text = "Node ID: ${node.id.take(12)}...",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontFamily = FontFamily.Monospace,
-                                            color = Color(0xFF94A3B8)
-                                        )
-                                    }
-                                }
-
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (node.isNearby) PoketchEmerald.copy(alpha = 0.15f) else Color(0xFFFFB300).copy(alpha = 0.15f)
-                                ) {
-                                    Text(
-                                        text = if (node.isNearby) "Nearby (BT/WiFi)" else "Cloud Relay",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (node.isNearby) PoketchEmerald else Color(0xFFFFB300),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                    )
-                                }
-                            }
-                        }
-                    } else {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF1E293B).copy(alpha = 0.5f))
-                                .border(1.dp, PoketchBorderSubtle, RoundedCornerShape(12.dp))
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = PoketchCrimson
+                                imageVector = Icons.Default.Sensors,
+                                contentDescription = "Sensors",
+                                tint = StitchPrimary,
+                                modifier = Modifier.size(14.dp)
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "No Wear OS watch currently connected via Google Play Services.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFCBD5E1)
+                                text = "Last synced $lastSyncFormatted via Data Layer",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = StitchTextMuted
                             )
                         }
                     }
                 }
-            }
 
-            // Card 2: Offline Outbox Queue & Sync State
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = PoketchSurface),
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, PoketchBorder)
-            ) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "OFFLINE OUTBOX QUEUE",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Black,
-                        color = PoketchCyan,
-                        letterSpacing = 1.sp
-                    )
-
+                // Connected Pill
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = StitchPrimaryTint
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        QueueMetricItem(
-                            label = "Pending Calories",
-                            count = state.diagnostics.pendingCaloriesCount,
-                            modifier = Modifier.weight(1f)
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(StitchPrimary)
                         )
-                        QueueMetricItem(
-                            label = "Pending Habits",
-                            count = state.diagnostics.pendingHabitsCount,
-                            modifier = Modifier.weight(1f)
-                        )
-                        QueueMetricItem(
-                            label = "Total Unsynced",
-                            count = state.diagnostics.totalPendingCount,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    HorizontalDivider(color = PoketchBorderSubtle, modifier = Modifier.padding(vertical = 4.dp))
-
-                    val timeFormatted = if (state.diagnostics.lastSyncTimestampMillis > 0L) {
-                        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                        sdf.format(Date(state.diagnostics.lastSyncTimestampMillis))
-                    } else {
-                        "No synchronizations performed this session"
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = PoketchEmerald,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Last Sync: $timeFormatted",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF94A3B8)
-                        )
-                    }
-                }
-            }
-
-            // Card 3: Synchronization Protocol Info
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = PoketchSurface),
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, PoketchBorder)
-            ) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = PoketchCyan,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "SYNC PROTOCOL & DATA PATHS",
+                            text = if (hasNodes) "92%" else "Linked",
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Black,
-                            color = PoketchCyan,
-                            letterSpacing = 1.sp
+                            fontWeight = FontWeight.Bold,
+                            color = StitchPrimary
                         )
                     }
-
-                    Text(
-                        text = "• Conflict Resolution: Last-Write-Wins (LWW) via UTC Epoch Milliseconds\n" +
-                               "• /profile/settings: User target calorie ceiling, target water ml, active buddy\n" +
-                               "• /catalog/pokedex: 151 Pokémon unlock and shiny bitmasks\n" +
-                               "• /logs/calories/: UUID-keyed immutable food and meal logs\n" +
-                               "• /logs/habits/: UUID-keyed daily water, step milestones, and runs",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        lineHeight = 18.sp,
-                        color = Color(0xFF94A3B8)
-                    )
                 }
             }
 
-            // Feedback Status Text
-            if (state.feedbackMessage != null) {
-                Text(
-                    text = state.feedbackMessage ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = PoketchCyan,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-            }
+            Spacer(modifier = Modifier.height(18.dp))
 
-            // Action Button: Force Full Sync Now
-            Button(
-                onClick = { viewModel.forceFullSyncNow() },
-                enabled = !state.isSyncing,
+            // Full-Width Dark Slate Pill CTA "Sync Now"
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E))
+                    .height(48.dp)
+                    .scale(scale)
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable(
+                        interactionSource = syncInteraction,
+                        indication = null,
+                        onClick = onSyncClick
+                    ),
+                shape = RoundedCornerShape(24.dp),
+                color = StitchDarkSlate
             ) {
-                if (state.isSyncing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Sync,
+                        contentDescription = "Sync",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .then(if (isSyncing) Modifier.rotate(rotation) else Modifier)
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Synchronizing Full Dataset...",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                } else {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Force Full Sync Now",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = if (isSyncing) "Syncing with Watch..." else "Sync Now",
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Companion Telemetry Tiny Glance Strip
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF8FAFC))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = nodeName ?: "Galaxy Watch6",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = StitchTextSecondary
+                )
+                Text(
+                    text = "Latency < 140ms",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = StitchPrimary
+                )
             }
         }
     }
 }
 
+/**
+ * Smart Reminder Toggle Card with Emerald Switch
+ */
 @Composable
-private fun QueueMetricItem(
-    label: String,
-    count: Int,
+private fun StitchReminderToggleCard(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    iconBg: Color,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier,
-        color = Color(0xFF0F172A),
-        border = BorderStroke(1.dp, PoketchBorderSubtle),
-        shape = RoundedCornerShape(12.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
+                spotColor = StitchDarkSlate.copy(alpha = 0.06f)
+            ),
+        shape = RoundedCornerShape(20.dp),
+        color = StitchSurfaceCard,
+        border = BorderStroke(1.dp, StitchBorderSubtle)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "$count",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Black,
-                color = if (count == 0) PoketchEmerald else Color(0xFFFF9800)
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF94A3B8),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(iconBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = title,
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = StitchDarkSlate
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = StitchTextMuted
+                    )
+                }
+            }
+
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = StitchPrimary,
+                    uncheckedThumbColor = Color.White,
+                    uncheckedTrackColor = Color(0xFFE2E8F0)
+                )
             )
         }
     }

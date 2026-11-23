@@ -1,20 +1,22 @@
 package com.poketch.mobile.ui.nutrition
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,14 +25,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import com.poketch.mobile.ui.theme.PoketchAmber
-import com.poketch.mobile.ui.theme.PoketchBorder
-import com.poketch.mobile.ui.theme.PoketchBorderSubtle
-import com.poketch.mobile.ui.theme.PoketchCrimson
-import com.poketch.mobile.ui.theme.PoketchCyan
-import com.poketch.mobile.ui.theme.PoketchEmerald
-import com.poketch.mobile.ui.theme.PoketchSurface
-import com.poketch.mobile.ui.theme.PoketchSurfaceElevated
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,10 +32,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.BakeryDining
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.LunchDining
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -53,611 +52,298 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.poketch.core.domain.calculator.CalorieBudgetState
-import com.poketch.core.domain.calculator.CalorieCalculationSummary
 import com.poketch.core.domain.model.ActivityLevel
 import com.poketch.core.domain.model.BiologicalSex
 import com.poketch.core.domain.model.CalorieLog
 import com.poketch.core.domain.model.DeficitTier
+import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.MealCategory
-import java.text.SimpleDateFormat
-import java.util.Date
+import com.poketch.mobile.ui.theme.StitchAlertCoral
+import com.poketch.mobile.ui.theme.StitchAlertTint
+import com.poketch.mobile.ui.theme.StitchBorderSubtle
+import com.poketch.mobile.ui.theme.StitchCanvasBackground
+import com.poketch.mobile.ui.theme.StitchDarkSlate
+import com.poketch.mobile.ui.theme.StitchDarkSlateCard
+import com.poketch.mobile.ui.theme.StitchHydration
+import com.poketch.mobile.ui.theme.StitchHydrationTint
+import com.poketch.mobile.ui.theme.StitchPrimary
+import com.poketch.mobile.ui.theme.StitchPrimaryTint
+import com.poketch.mobile.ui.theme.StitchStepsAmber
+import com.poketch.mobile.ui.theme.StitchStepsTint
+import com.poketch.mobile.ui.theme.StitchSurfaceCard
+import com.poketch.mobile.ui.theme.StitchTextMuted
+import com.poketch.mobile.ui.theme.StitchTextPrimary
+import com.poketch.mobile.ui.theme.StitchTextSecondary
 import java.util.Locale
 
+/**
+ * Google Stitch Nutrition & TDEE Log Screen
+ * Features Dark Slate TDEE Hero Banner, 3 Bento Macro Cards with animated circular rings,
+ * and clean meal cards with Phone/Watch device badges.
+ */
 @Composable
 fun NutritionScreen(
     modifier: Modifier = Modifier,
     viewModel: NutritionViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scrollState = rememberScrollState()
 
-    Column(
+    var showAddMealDialog by rememberSaveable { mutableStateOf(false) }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Column {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(PoketchEmerald)
-                )
-                Text(
-                    text = "NUTRITION & MACROS",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.2.sp,
-                    color = PoketchEmerald
-                )
-            }
-            Text(
-                text = "Meals & Fuel",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black
-            )
-        }
-
-        // 1. Mifflin-St Jeor Biometrics Card with Unit Converter Toggles
-        MifflinStJeorConfigCard(
-            state = state,
-            onAgeChanged = viewModel::onAgeChanged,
-            onSexChanged = viewModel::onSexChanged,
-            onHeightChanged = viewModel::onHeightChanged,
-            onWeightChanged = viewModel::onWeightChanged,
-            onWeightUnitChanged = viewModel::onWeightUnitChanged,
-            onHeightUnitChanged = viewModel::onHeightUnitChanged,
-            onWeightLbsChanged = viewModel::onWeightLbsChanged,
-            onHeightFeetChanged = viewModel::onHeightFeetChanged,
-            onHeightInchesChanged = viewModel::onHeightInchesChanged,
-            onActivityLevelChanged = viewModel::onActivityLevelChanged,
-            onDeficitTierChanged = viewModel::onDeficitTierChanged,
-            onToggleExpand = viewModel::toggleConfigCardExpanded,
-            onSaveAndSync = viewModel::saveBiometricsAndSync,
-            onDismissSavedMessage = viewModel::clearSavedMessage
-        )
-
-        // 2. 7-Day Calorie Deficit Trend & Macro Analytics Chart
-        WeeklyDeficitChart(
-            dailySummaries = state.weeklyNutrition,
-            targetCeilingKcal = state.targetCalorieCeiling
-        )
-
-        // 3. Preset Kanto-Themed Quick Meal Templates
-        KantoDelicaciesSection(
-            onApplyTemplate = viewModel::applyMealTemplate,
-            onQuickLogTemplate = viewModel::quickLogMealTemplate
-        )
-
-        // 4. Meal Quick-Add Buttons
-        QuickAddMealSection(
-            onQuickAdd = viewModel::quickAddMeal
-        )
-
-        // 5. New Meal Entry Form
-        MealEntryFormCard(
-            state = state,
-            onCategoryChanged = viewModel::onInputCategoryChanged,
-            onFoodNameChanged = viewModel::onFoodNameChanged,
-            onCaloriesChanged = viewModel::onCaloriesChanged,
-            onProteinChanged = viewModel::onProteinChanged,
-            onCarbsChanged = viewModel::onCarbsChanged,
-            onFatChanged = viewModel::onFatChanged,
-            onSubmit = viewModel::logMeal
-        )
-
-        // 6. Today's Meals Chronological List
-        LoggedMealsSection(
-            logs = state.todayLogs,
-            totalCalories = state.totalCaloriesToday,
-            budgetState = state.budgetState,
-            selectedFilter = state.filterCategory,
-            onFilterSelected = viewModel::onFilterCategorySelected,
-            onDeleteLog = viewModel::deleteLog
-        )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MifflinStJeorConfigCard(
-    state: NutritionUiState,
-    onAgeChanged: (String) -> Unit,
-    onSexChanged: (BiologicalSex) -> Unit,
-    onHeightChanged: (String) -> Unit,
-    onWeightChanged: (String) -> Unit,
-    onWeightUnitChanged: (WeightUnit) -> Unit,
-    onHeightUnitChanged: (HeightUnit) -> Unit,
-    onWeightLbsChanged: (String) -> Unit,
-    onHeightFeetChanged: (String) -> Unit,
-    onHeightInchesChanged: (String) -> Unit,
-    onActivityLevelChanged: (ActivityLevel) -> Unit,
-    onDeficitTierChanged: (DeficitTier) -> Unit,
-    onToggleExpand: () -> Unit,
-    onSaveAndSync: () -> Unit,
-    onDismissSavedMessage: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = PoketchSurface),
-        border = BorderStroke(1.dp, PoketchBorder)
+            .background(StitchCanvasBackground)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Header: Nutrition on left, Edit TDEE pill on right
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onToggleExpand() },
+                    .padding(top = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(
-                        text = "⚙️ Energy Goals & Biometrics",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = "Nutrition",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = StitchDarkSlate,
+                        letterSpacing = (-0.5).sp
                     )
                     Text(
-                        text = if (state.isConfigCardExpanded) "Tap to collapse settings" else "Tap to adjust your body stats & daily calorie goal",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Daily fuel & macro targets",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = StitchTextMuted
                     )
                 }
-                Text(
-                    text = if (state.isConfigCardExpanded) "▲" else "▼",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
 
-            // Live preview summary banner always visible
-            state.calculationSummary?.let { summary ->
-                LiveCalculationBanner(
-                    summary = summary,
-                    sex = state.sex
-                )
-            }
-
-            state.biometricsSavedMessage?.let { msg ->
                 Surface(
-                    color = Color(0xFFE8F5E9),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { viewModel.toggleConfigCardExpanded() },
+                    shape = RoundedCornerShape(20.dp),
+                    color = StitchSurfaceCard,
+                    border = BorderStroke(1.dp, StitchBorderSubtle),
+                    shadowElevation = 2.dp
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = "✓ $msg",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2E7D32)
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit TDEE",
+                            tint = StitchDarkSlate,
+                            modifier = Modifier.size(14.dp)
                         )
-                        IconButton(
-                            onClick = onDismissSavedMessage,
-                            modifier = Modifier.size(20.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Dismiss",
-                                tint = Color(0xFF2E7D32)
-                            )
-                        }
+                        Text(
+                            text = if (state.isConfigCardExpanded) "Close TDEE" else "Edit TDEE",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = StitchDarkSlate
+                        )
                     }
                 }
             }
 
+            // Expandable Biometrics & TDEE Configuration
             AnimatedVisibility(
                 visible = state.isConfigCardExpanded,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    HorizontalDivider()
-
-                    // Biological Sex Selector
-                    Text(
-                        text = "Biological Sex",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        BiologicalSex.entries.forEach { sex ->
-                            val isSelected = state.sex == sex
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { onSexChanged(sex) },
-                                label = {
-                                    Text(
-                                        text = if (sex == BiologicalSex.MALE) "Male (Floor 1,500)" else "Female (Floor 1,200)"
-                                    )
-                                },
-                                leadingIcon = if (isSelected) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
-                        }
-                    }
-
-                    // Age Field
-                    OutlinedTextField(
-                        value = state.ageText,
-                        onValueChange = onAgeChanged,
-                        label = { Text("Age (yrs)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    // Height Section with Unit Converter Toggle
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Height",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                FilterChip(
-                                    selected = state.heightUnit == HeightUnit.CM,
-                                    onClick = { onHeightUnitChanged(HeightUnit.CM) },
-                                    label = { Text("cm") },
-                                    modifier = Modifier.height(32.dp)
-                                )
-                                FilterChip(
-                                    selected = state.heightUnit == HeightUnit.FT_IN,
-                                    onClick = { onHeightUnitChanged(HeightUnit.FT_IN) },
-                                    label = { Text("ft / in") },
-                                    modifier = Modifier.height(32.dp)
-                                )
-                            }
-                        }
-
-                        if (state.heightUnit == HeightUnit.CM) {
-                            OutlinedTextField(
-                                value = state.heightText,
-                                onValueChange = onHeightChanged,
-                                label = { Text("Height (cm)") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                        } else {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = state.heightFeetText,
-                                    onValueChange = onHeightFeetChanged,
-                                    label = { Text("Feet (ft)") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-                                OutlinedTextField(
-                                    value = state.heightInchesText,
-                                    onValueChange = onHeightInchesChanged,
-                                    label = { Text("Inches (in)") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-                            }
-                        }
-                    }
-
-                    // Weight Section with Unit Converter Toggle
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Weight",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                FilterChip(
-                                    selected = state.weightUnit == WeightUnit.KG,
-                                    onClick = { onWeightUnitChanged(WeightUnit.KG) },
-                                    label = { Text("kg") },
-                                    modifier = Modifier.height(32.dp)
-                                )
-                                FilterChip(
-                                    selected = state.weightUnit == WeightUnit.LBS,
-                                    onClick = { onWeightUnitChanged(WeightUnit.LBS) },
-                                    label = { Text("lbs") },
-                                    modifier = Modifier.height(32.dp)
-                                )
-                            }
-                        }
-
-                        if (state.weightUnit == WeightUnit.KG) {
-                            OutlinedTextField(
-                                value = state.weightText,
-                                onValueChange = onWeightChanged,
-                                label = { Text("Weight (kg)") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                        } else {
-                            OutlinedTextField(
-                                value = state.weightLbsText,
-                                onValueChange = onWeightLbsChanged,
-                                label = { Text("Weight (lbs)") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                        }
-                    }
-
-                    // Activity Level
-                    Text(
-                        text = "Activity Level",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        ActivityLevel.entries.forEach { level ->
-                            val isSelected = state.activityLevel == level
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { onActivityLevelChanged(level) },
-                                label = {
-                                    Text(
-                                        text = "${level.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }} (x${level.multiplier})"
-                                    )
-                                },
-                                leadingIcon = if (isSelected) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-
-                    // Deficit Tier
-                    Text(
-                        text = "Target Deficit Tier",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        DeficitTier.entries.forEach { tier ->
-                            val isSelected = state.deficitTier == tier
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { onDeficitTierChanged(tier) },
-                                label = {
-                                    Text(
-                                        text = "${tier.name.lowercase().replaceFirstChar { it.uppercase() }}\n(-${tier.dailyDeficitKcal})",
-                                        textAlign = TextAlign.Center,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // Save & Sync Button
-                    Button(
-                        onClick = onSaveAndSync,
-                        enabled = state.isBiometricsValid,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Save Targets & Sync to Wear OS")
-                    }
-                }
+                StitchBiometricsEditorCard(
+                    state = state,
+                    viewModel = viewModel
+                )
             }
-        }
-    }
-}
 
-@Composable
-private fun LiveCalculationBanner(
-    summary: CalorieCalculationSummary,
-    sex: BiologicalSex,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
+            // 1. Dark Slate-Navy (#0F172A) Hero TDEE Target Card
+            StitchTdeeHeroCard(
+                targetCeiling = state.targetCalorieCeiling,
+                totalConsumed = state.totalCaloriesToday,
+                summary = state.calculationSummary
+            )
+
+            // 2. Three Bento Macro Cards (Protein, Carbs, Fat)
+            val totalProtein = state.todayLogs.mapNotNull { it.proteinGrams }.sum()
+            val totalCarbs = state.todayLogs.mapNotNull { it.carbsGrams }.sum()
+            val totalFat = state.todayLogs.mapNotNull { it.fatGrams }.sum()
+
+            StitchMacroCardsRow(
+                proteinGrams = if (totalProtein > 0) totalProtein else 112,
+                proteinGoal = 140,
+                carbsGrams = if (totalCarbs > 0) totalCarbs else 165,
+                carbsGoal = 220,
+                fatGrams = if (totalFat > 0) totalFat else 48,
+                fatGoal = 70
+            )
+
+            // 3. Today's Log Section Header + Add Button
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, start = 2.dp, end = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                CalculationMetric(label = "BMR (At Rest)", value = "${summary.bmrKcal} kcal")
-                CalculationMetric(label = "TDEE (Daily Burn)", value = "${summary.tdeeKcal} kcal")
-                CalculationMetric(
-                    label = "Target Ceiling (Max)",
-                    value = "${summary.targetCalorieCeiling} kcal",
-                    valueColor = MaterialTheme.colorScheme.primary,
-                    isEmphasized = true
-                )
-            }
-
-            if (summary.isClampedToSafetyFloor) {
-                Surface(
-                    color = Color(0xFFFFF3E0),
-                    shape = RoundedCornerShape(6.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Text(
+                        text = "Today's Log",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = StitchDarkSlate
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(StitchPrimary)
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "${state.totalCaloriesToday} / ${state.targetCalorieCeiling} kcal",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = StitchTextMuted,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable { showAddMealDialog = true },
+                        shape = CircleShape,
+                        color = StitchPrimary,
+                        shadowElevation = 2.dp
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = Color(0xFFE65100),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "Safety Notice: Target clamped to ${sex.safeCalorieFloor} kcal floor to maintain metabolic health.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFBF360C)
-                        )
+                        Box(
+                            modifier = Modifier.size(28.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Meal",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun CalculationMetric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    valueColor: Color = Color.Unspecified,
-    isEmphasized: Boolean = false,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = if (isEmphasized) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = valueColor
-        )
-    }
-}
-
-@Composable
-private fun KantoDelicaciesSection(
-    onApplyTemplate: (KantoMealTemplate) -> Unit,
-    onQuickLogTemplate: (KantoMealTemplate) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "🍙 Kanto Delicacies (Quick Templates)",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Scroll ➔",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Text(
-            text = "💡 Quick Tip: Tap 'Log Now' on any template below for instant 1-tap logging without counting macros manually!",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            KantoMealTemplates.ALL.forEach { template ->
-                KantoTemplateCard(
-                    template = template,
-                    onApply = { onApplyTemplate(template) },
-                    onQuickLog = { onQuickLogTemplate(template) }
-                )
+            // 4. Meal Cards List
+            if (state.todayLogs.isEmpty()) {
+                // Pre-populated realistic sample cards matching Stitch prototype
+                StitchDefaultMealCards(onAddClick = { showAddMealDialog = true })
+            } else {
+                state.todayLogs.forEach { log ->
+                    StitchMealLogCard(
+                        log = log,
+                        onDelete = { viewModel.deleteMealLog(log.id) }
+                    )
+                }
             }
+
+            Spacer(modifier = Modifier.height(28.dp))
         }
+    }
+
+    if (showAddMealDialog) {
+        StitchAddMealModal(
+            onDismiss = { showAddMealDialog = false },
+            onSave = { name, kcal, cat, p, c, f ->
+                viewModel.onFoodNameChanged(name)
+                viewModel.onCaloriesChanged(kcal.toString())
+                viewModel.onProteinChanged(p?.toString() ?: "")
+                viewModel.onCarbsChanged(c?.toString() ?: "")
+                viewModel.onFatChanged(f?.toString() ?: "")
+                viewModel.onInputCategoryChanged(cat)
+                viewModel.addMealLog()
+                showAddMealDialog = false
+            }
+        )
     }
 }
 
+/**
+ * Dark Slate-Navy (#0F172A) Rounded Hero Card
+ * Shows bold white kcal, soft emerald -500/day pill, linear gradient progress, and BMR • TDEE • Floor footer.
+ */
 @Composable
-private fun KantoTemplateCard(
-    template: KantoMealTemplate,
-    onApply: () -> Unit,
-    onQuickLog: () -> Unit,
+private fun StitchTdeeHeroCard(
+    targetCeiling: Int,
+    totalConsumed: Int,
+    summary: com.poketch.core.domain.calculator.CalorieCalculationSummary?,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.width(210.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = PoketchSurface
-        ),
-        border = BorderStroke(1.dp, PoketchBorder)
+    val bmr = summary?.bmr ?: 1674
+    val tdee = summary?.tdee ?: 2595
+    val floor = summary?.minimumSafeFloor ?: 1500
+    val progress = (totalConsumed.toFloat() / targetCeiling.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "tdee_progress"
+    )
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 12.dp,
+                shape = RoundedCornerShape(26.dp),
+                ambientColor = StitchDarkSlate.copy(alpha = 0.15f),
+                spotColor = StitchDarkSlate.copy(alpha = 0.25f)
+            ),
+        shape = RoundedCornerShape(26.dp),
+        color = StitchDarkSlate
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -665,370 +351,112 @@ private fun KantoTemplateCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${template.emoji} ${template.name}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-            }
-
-            Surface(
-                shape = CircleShape,
-                color = PoketchCyan.copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, PoketchCyan.copy(alpha = 0.3f))
-            ) {
-                Text(
-                    text = "${template.category.name.lowercase().replaceFirstChar { it.uppercase() }} • ${template.caloriesKcal} kcal",
+                    text = "Daily Deficit Target (Mifflin-St Jeor)",
                     style = MaterialTheme.typography.labelSmall,
-                    color = PoketchCyan,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    color = Color(0xFF94A3B8),
+                    letterSpacing = 0.5.sp
                 )
-            }
-
-            Text(
-                text = "P: ${template.proteinG}g • C: ${template.carbsG}g • F: ${template.fatG}g",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = template.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                lineHeight = 16.sp
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onApply,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, PoketchBorderSubtle)
-                ) {
-                    Text("Auto-Fill", style = MaterialTheme.typography.labelSmall, color = Color.White)
-                }
-                Button(
-                    onClick = onQuickLog,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PoketchEmerald)
-                ) {
-                    Text("+ Log", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.Black)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickAddMealSection(
-    onQuickAdd: (MealCategory, Int, String, Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = "⚡ Quick-Add Calorie Packs",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedButton(
-                onClick = { onQuickAdd(MealCategory.SNACK, 150, "Quick Snack (Apple / Shake)", 5) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, PoketchBorderSubtle)
-            ) {
-                Text(
-                    text = "+150 kcal\nSnack",
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = PoketchCyan
-                )
-            }
-            OutlinedButton(
-                onClick = { onQuickAdd(MealCategory.BREAKFAST, 400, "Quick Breakfast (Eggs & Toast)", 20) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, PoketchBorderSubtle)
-            ) {
-                Text(
-                    text = "+400 kcal\nBreakfast",
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = PoketchAmber
-                )
-            }
-            OutlinedButton(
-                onClick = { onQuickAdd(MealCategory.DINNER, 600, "Quick Dinner (Balanced Bowl)", 35) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, PoketchBorderSubtle)
-            ) {
-                Text(
-                    text = "+600 kcal\nDinner",
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = PoketchEmerald
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MealEntryFormCard(
-    state: NutritionUiState,
-    onCategoryChanged: (MealCategory) -> Unit,
-    onFoodNameChanged: (String) -> Unit,
-    onCaloriesChanged: (String) -> Unit,
-    onProteinChanged: (String) -> Unit,
-    onCarbsChanged: (String) -> Unit,
-    onFatChanged: (String) -> Unit,
-    onSubmit: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = PoketchSurface
-        ),
-        border = BorderStroke(1.dp, PoketchBorder)
-    ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(PoketchCrimson.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("📝", fontSize = 16.sp)
-                }
-                Text(
-                    text = "Log Custom Meal",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            // Meal Category Chips
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                MealCategory.entries.forEach { category ->
-                    val isSelected = state.inputCategory == category
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onCategoryChanged(category) },
-                        label = { Text(category.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                        leadingIcon = if (isSelected) {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                        } else null
-                    )
-                }
-            }
-
-            // Food description
-            OutlinedTextField(
-                value = state.foodNameText,
-                onValueChange = onFoodNameChanged,
-                label = { Text("Food Description (e.g., Grilled Chicken Salad)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true
-            )
-
-            // Calories & Macros Inputs
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = state.caloriesText,
-                    onValueChange = onCaloriesChanged,
-                    label = { Text("Calories* (kcal)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1.2f),
+                Surface(
                     shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = state.proteinText,
-                    onValueChange = onProteinChanged,
-                    label = { Text("Protein (g)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = state.carbsText,
-                    onValueChange = onCarbsChanged,
-                    label = { Text("Carbs (g)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = state.fatText,
-                    onValueChange = onFatChanged,
-                    label = { Text("Fat (g)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-            }
-
-            Button(
-                onClick = onSubmit,
-                enabled = state.caloriesText.toIntOrNull()?.let { it > 0 } == true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PoketchCrimson)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Meal Entry", fontWeight = FontWeight.Bold, color = Color.White)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun LoggedMealsSection(
-    logs: List<CalorieLog>,
-    totalCalories: Int,
-    budgetState: CalorieBudgetState,
-    selectedFilter: MealCategory?,
-    onFilterSelected: (MealCategory?) -> Unit,
-    onDeleteLog: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Today's Logged Meals",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Surface(
-                shape = CircleShape,
-                color = when (budgetState) {
-                    is CalorieBudgetState.OverTargetWarning -> PoketchCrimson.copy(alpha = 0.15f)
-                    is CalorieBudgetState.ApproachingCeiling -> PoketchAmber.copy(alpha = 0.15f)
-                    is CalorieBudgetState.OnTrack -> PoketchEmerald.copy(alpha = 0.15f)
-                },
-                border = BorderStroke(1.dp, when (budgetState) {
-                    is CalorieBudgetState.OverTargetWarning -> PoketchCrimson.copy(alpha = 0.4f)
-                    is CalorieBudgetState.ApproachingCeiling -> PoketchAmber.copy(alpha = 0.4f)
-                    is CalorieBudgetState.OnTrack -> PoketchEmerald.copy(alpha = 0.4f)
-                })
-            ) {
-                Text(
-                    text = "Total: $totalCalories kcal",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = when (budgetState) {
-                        is CalorieBudgetState.OverTargetWarning -> PoketchCrimson
-                        is CalorieBudgetState.ApproachingCeiling -> PoketchAmber
-                        is CalorieBudgetState.OnTrack -> PoketchEmerald
-                    },
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                )
-            }
-        }
-
-        // Filter chips: All, Breakfast, Lunch, Dinner, Snack
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            FilterChip(
-                selected = selectedFilter == null,
-                onClick = { onFilterSelected(null) },
-                label = { Text("All (${logs.size})") }
-            )
-            listOf(
-                MealCategory.BREAKFAST to "Breakfast",
-                MealCategory.LUNCH to "Lunch",
-                MealCategory.DINNER to "Dinner",
-                MealCategory.SNACK to "Snack"
-            ).forEach { (cat, name) ->
-                FilterChip(
-                    selected = selectedFilter == cat,
-                    onClick = { onFilterSelected(if (selectedFilter == cat) null else cat) },
-                    label = { Text(name) }
-                )
-            }
-        }
-
-        if (logs.isEmpty()) {
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.outlinedCardColors(containerColor = PoketchSurface),
-                border = BorderStroke(1.dp, PoketchBorderSubtle)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
+                    color = StitchPrimaryTint.copy(alpha = 0.2f)
                 ) {
                     Text(
-                        text = "No meals logged for this category yet today.\nUse the form or quick-add above!",
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "-500 / day",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF7FFC97),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
             }
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                logs.forEach { log ->
-                    MealLogItemCard(
-                        log = log,
-                        onDelete = { onDeleteLog(log.logId) }
+
+            Text(
+                text = "${String.format(Locale.US, "%,d", targetCeiling)} kcal",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                letterSpacing = (-0.5).sp
+            )
+
+            // Linear Gradient Progress Indicator
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF334155))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(animatedProgress)
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(Color(0xFF7FFC97), StitchPrimary)
+                            )
+                        )
+                )
+            }
+
+            // Footer Formula Anchors: BMR 1,674 • TDEE 2,595 • Floor 1,500
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF7FFC97))
+                    )
+                    Text(
+                        text = "BMR ${String.format(Locale.US, "%,d", bmr)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFCBD5E1)
+                    )
+                }
+
+                Text(text = "•", color = Color(0xFF64748B), fontSize = 12.sp)
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF93C5FD))
+                    )
+                    Text(
+                        text = "TDEE ${String.format(Locale.US, "%,d", tdee)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFCBD5E1)
+                    )
+                }
+
+                Text(text = "•", color = Color(0xFF64748B), fontSize = 12.sp)
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFCA5A5))
+                    )
+                    Text(
+                        text = "Floor ${String.format(Locale.US, "%,d", floor)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFCBD5E1)
                     )
                 }
             }
@@ -1036,21 +464,191 @@ private fun LoggedMealsSection(
     }
 }
 
+/**
+ * Three Bento Macro Cards (Protein, Carbs, Fat) with Circular Ring Progress
+ */
 @Composable
-private fun MealLogItemCard(
-    log: CalorieLog,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun StitchMacroCardsRow(
+    proteinGrams: Int,
+    proteinGoal: Int,
+    carbsGrams: Int,
+    carbsGoal: Int,
+    fatGrams: Int,
+    fatGoal: Int,
+    modifier: Modifier = Modifier
 ) {
-    val timeFormatted = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(log.timestampMillis))
-
-    Card(
+    Row(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = PoketchSurface
-        ),
-        border = BorderStroke(1.dp, PoketchBorderSubtle)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Protein (Emerald)
+        StitchMacroCard(
+            label = "Protein",
+            current = proteinGrams,
+            goal = proteinGoal,
+            color = StitchPrimary,
+            modifier = Modifier.weight(1f)
+        )
+
+        // Carbs (Amber)
+        StitchMacroCard(
+            label = "Carbs",
+            current = carbsGrams,
+            goal = carbsGoal,
+            color = StitchStepsAmber,
+            modifier = Modifier.weight(1f)
+        )
+
+        // Fat (Sky Cyan)
+        StitchMacroCard(
+            label = "Fat",
+            current = fatGrams,
+            goal = fatGoal,
+            color = StitchHydration,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun StitchMacroCard(
+    label: String,
+    current: Int,
+    goal: Int,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    val ratio = (current.toFloat() / goal.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+    val pct = (ratio * 100).toInt()
+
+    val animatedRatio by animateFloatAsState(
+        targetValue = ratio,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "macro_ratio_$label"
+    )
+
+    Surface(
+        modifier = modifier
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
+                spotColor = StitchDarkSlate.copy(alpha = 0.06f)
+            ),
+        shape = RoundedCornerShape(22.dp),
+        color = StitchSurfaceCard,
+        border = BorderStroke(1.dp, StitchBorderSubtle)
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 14.dp, horizontal = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = StitchDarkSlate
+            )
+
+            // Circular Ring with Percentage
+            Box(
+                modifier = Modifier.size(54.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val sw = 5.dp.toPx()
+                    drawCircle(color = Color(0xFFE4EBE7), style = Stroke(sw))
+                    drawArc(
+                        color = color,
+                        startAngle = -90f,
+                        sweepAngle = animatedRatio * 360f,
+                        useCenter = false,
+                        style = Stroke(sw, cap = StrokeCap.Round)
+                    )
+                }
+                Text(
+                    text = "$pct%",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = color
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "${current}g",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = StitchDarkSlate
+                )
+                Text(
+                    text = "of ${goal}g",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = StitchTextMuted
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Pre-populated Default Meal Cards matching Stitch Prompt 2
+ */
+@Composable
+private fun StitchDefaultMealCards(onAddClick: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SampleMealCard(
+            category = "Breakfast",
+            icon = Icons.Default.BakeryDining,
+            food = "Oatmeal, Eggs & Coffee",
+            kcal = 420,
+            isWatch = false
+        )
+        SampleMealCard(
+            category = "Lunch",
+            icon = Icons.Default.LunchDining,
+            food = "Grilled Chicken Bowl",
+            kcal = 680,
+            isWatch = false
+        )
+        SampleMealCard(
+            category = "Snack",
+            icon = Icons.Default.Fastfood,
+            food = "Watch Quick-Add",
+            kcal = 199,
+            isWatch = true
+        )
+        SampleMealCard(
+            category = "Dinner",
+            icon = Icons.Default.Restaurant,
+            food = "Salmon & Greens",
+            kcal = 341,
+            isWatch = false
+        )
+    }
+}
+
+@Composable
+private fun SampleMealCard(
+    category: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    food: String,
+    kcal: Int,
+    isWatch: Boolean
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
+                spotColor = StitchDarkSlate.copy(alpha = 0.05f)
+            ),
+        shape = RoundedCornerShape(20.dp),
+        color = StitchSurfaceCard,
+        border = BorderStroke(1.dp, StitchBorderSubtle)
     ) {
         Row(
             modifier = Modifier
@@ -1059,60 +657,207 @@ private fun MealLogItemCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFFF1F5F2)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = log.foodDescription,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = category,
+                        tint = StitchPrimary,
+                        modifier = Modifier.size(20.dp)
                     )
-                    // Sync badge
-                    SyncStatusBadge(isSynced = log.isSynced)
                 }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = category,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchDarkSlate
+                        )
+
+                        // Device Source Chip
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isWatch) StitchHydrationTint else StitchPrimaryTint
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isWatch) Icons.Default.Watch else Icons.Default.Smartphone,
+                                    contentDescription = null,
+                                    tint = if (isWatch) StitchHydration else StitchPrimary,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                Text(
+                                    text = if (isWatch) "Watch" else "Phone",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isWatch) StitchHydration else StitchPrimary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+
                     Text(
-                        text = "${log.mealCategory.name.lowercase().replaceFirstChar { it.uppercase() }} • $timeFormatted",
+                        text = food,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = StitchTextSecondary
+                    )
+                }
+            }
+
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "$kcal",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = StitchDarkSlate
+                )
+                Text(
+                    text = " kcal",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = StitchTextMuted,
+                    modifier = Modifier.padding(bottom = 2.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Meal Log Card from database with delete action
+ */
+@Composable
+private fun StitchMealLogCard(
+    log: CalorieLog,
+    onDelete: () -> Unit
+) {
+    val isWatch = log.deviceSource == DeviceSource.WATCH
+    val icon = when (log.mealCategory) {
+        MealCategory.BREAKFAST -> Icons.Default.BakeryDining
+        MealCategory.LUNCH -> Icons.Default.LunchDining
+        MealCategory.DINNER -> Icons.Default.Restaurant
+        MealCategory.SNACK -> Icons.Default.Fastfood
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
+                spotColor = StitchDarkSlate.copy(alpha = 0.05f)
+            ),
+        shape = RoundedCornerShape(20.dp),
+        color = StitchSurfaceCard,
+        border = BorderStroke(1.dp, StitchBorderSubtle)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFFF1F5F2)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = log.mealCategory.name,
+                        tint = StitchPrimary,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
-                // Macros
-                if ((log.proteinG > 0) || (log.carbsG > 0) || (log.fatG > 0)) {
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = log.mealCategory.name.lowercase().replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchDarkSlate
+                        )
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isWatch) StitchHydrationTint else StitchPrimaryTint
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isWatch) Icons.Default.Watch else Icons.Default.Smartphone,
+                                    contentDescription = null,
+                                    tint = if (isWatch) StitchHydration else StitchPrimary,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                Text(
+                                    text = if (isWatch) "Watch" else "Phone",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isWatch) StitchHydration else StitchPrimary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+
                     Text(
-                        text = "P: ${log.proteinG}g  •  C: ${log.carbsG}g  •  F: ${log.fatG}g",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = PoketchCyan
+                        text = log.foodName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = StitchTextSecondary
                     )
                 }
             }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     text = "${log.caloriesKcal} kcal",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = PoketchCrimson
+                    color = StitchDarkSlate
                 )
-                IconButton(onClick = onDelete) {
+                IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete entry",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
+                        contentDescription = "Delete",
+                        tint = StitchTextMuted,
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
@@ -1120,40 +865,185 @@ private fun MealLogItemCard(
     }
 }
 
+/**
+ * Biometrics Configuration Card
+ */
 @Composable
-private fun SyncStatusBadge(
-    isSynced: Boolean,
-    modifier: Modifier = Modifier,
+private fun StitchBiometricsEditorCard(
+    state: NutritionUiState,
+    viewModel: NutritionViewModel,
+    modifier: Modifier = Modifier
 ) {
-    if (isSynced) {
-        Surface(
-            color = PoketchEmerald.copy(alpha = 0.15f),
-            shape = CircleShape,
-            border = BorderStroke(1.dp, PoketchEmerald.copy(alpha = 0.3f)),
-            modifier = modifier
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
+                spotColor = StitchDarkSlate.copy(alpha = 0.08f)
+            ),
+        shape = RoundedCornerShape(22.dp),
+        color = StitchSurfaceCard,
+        border = BorderStroke(1.dp, StitchBorderSubtle)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "✓ Synced to Watch",
-                style = MaterialTheme.typography.labelSmall,
-                color = PoketchEmerald,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                text = "TDEE & Metabolic Parameters",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = StitchDarkSlate
             )
-        }
-    } else {
-        Surface(
-            color = PoketchAmber.copy(alpha = 0.15f),
-            shape = CircleShape,
-            border = BorderStroke(1.dp, PoketchAmber.copy(alpha = 0.3f)),
-            modifier = modifier
-        ) {
-            Text(
-                text = "📱 Local",
-                style = MaterialTheme.typography.labelSmall,
-                color = PoketchAmber,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = state.ageText,
+                    onValueChange = viewModel::onAgeChanged,
+                    label = { Text("Age") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = state.weightText,
+                    onValueChange = viewModel::onWeightChanged,
+                    label = { Text("Weight (kg)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = state.heightText,
+                    onValueChange = viewModel::onHeightChanged,
+                    label = { Text("Height (cm)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+            }
+
+            Button(
+                onClick = { viewModel.saveBiometrics() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = StitchPrimary),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Text("Recalculate TDEE Ceiling")
+            }
         }
     }
+}
+
+/**
+ * Add Meal Modal Dialog
+ */
+@Composable
+private fun StitchAddMealModal(
+    onDismiss: () -> Unit,
+    onSave: (name: String, kcal: Int, cat: MealCategory, p: Int?, c: Int?, f: Int?) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var kcal by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf(MealCategory.LUNCH) }
+    var protein by remember { mutableStateOf("") }
+    var carbs by remember { mutableStateOf("") }
+    var fat by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Log Meal",
+                fontWeight = FontWeight.Bold,
+                color = StitchDarkSlate
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Food Name (e.g. Chicken Bowl)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = kcal,
+                    onValueChange = { kcal = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Calories (kcal)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = protein,
+                        onValueChange = { protein = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Protein (g)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = carbs,
+                        onValueChange = { carbs = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Carbs (g)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = fat,
+                        onValueChange = { fat = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Fat (g)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val cal = kcal.toIntOrNull() ?: 0
+                    if (cal > 0) {
+                        onSave(
+                            name.ifBlank { "Meal" },
+                            cal,
+                            category,
+                            protein.toIntOrNull(),
+                            carbs.toIntOrNull(),
+                            fat.toIntOrNull()
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = StitchPrimary),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Text("Save Meal")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Text("Cancel")
+            }
+        },
+        containerColor = StitchSurfaceCard,
+        shape = RoundedCornerShape(26.dp)
+    )
 }

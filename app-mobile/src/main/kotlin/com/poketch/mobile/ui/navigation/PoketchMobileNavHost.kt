@@ -1,6 +1,18 @@
 package com.poketch.mobile.ui.navigation
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,26 +21,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CatchingPokemon
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,12 +52,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -66,6 +78,13 @@ import com.poketch.mobile.ui.nutrition.NutritionScreen
 import com.poketch.mobile.ui.nutrition.NutritionViewModel
 import com.poketch.mobile.ui.pokedex.PokedexScreen
 import com.poketch.mobile.ui.pokedex.PokedexViewModel
+import com.poketch.mobile.ui.theme.StitchBorderSubtle
+import com.poketch.mobile.ui.theme.StitchCanvasBackground
+import com.poketch.mobile.ui.theme.StitchDarkSlate
+import com.poketch.mobile.ui.theme.StitchPrimary
+import com.poketch.mobile.ui.theme.StitchSurfaceCard
+import com.poketch.mobile.ui.theme.StitchTextMuted
+import com.poketch.mobile.ui.theme.StitchTextSecondary
 
 enum class MobileTab(
     val route: String,
@@ -73,9 +92,9 @@ enum class MobileTab(
     val icon: ImageVector,
 ) {
     DASHBOARD("dashboard", "Home", Icons.Default.Home),
-    NUTRITION("nutrition", "Meals", Icons.Default.Restaurant),
-    POKEDEX("pokedex", "Pokédex", Icons.Default.Star),
-    DIAGNOSTICS("diagnostics", "Watch Link", Icons.Default.Watch),
+    NUTRITION("nutrition", "Log", Icons.Default.EditNote),
+    POKEDEX("pokedex", "Pokédex", Icons.Default.CatchingPokemon),
+    DIAGNOSTICS("diagnostics", "Sync", Icons.Default.Sync),
     ACCOUNT("account", "Trainer", Icons.Default.AccountCircle),
 }
 
@@ -96,22 +115,22 @@ fun PoketchMobileNavHost(
             Box(
                 modifier = modifier
                     .fillMaxSize()
-                    .background(Color(0xFF0F172A)),
+                    .background(StitchCanvasBackground),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = Color(0xFFE11D48))
+                    CircularProgressIndicator(color = StitchPrimary)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Authenticating Trainer...",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium
+                        color = StitchDarkSlate,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
         }
         is AuthState.Unauthenticated -> {
-            // User MUST log in or register before they can access the app
             AuthScreen(
                 viewModel = authViewModel,
                 modifier = modifier.fillMaxSize()
@@ -129,47 +148,12 @@ fun PoketchMobileNavHost(
 
             Scaffold(
                 modifier = modifier.fillMaxSize(),
-                containerColor = MaterialTheme.colorScheme.background,
+                containerColor = StitchCanvasBackground,
                 bottomBar = {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 4.dp,
-                        shadowElevation = 8.dp
-                    ) {
-                        NavigationBar(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 0.dp
-                        ) {
-                            MobileTab.entries.forEach { tab ->
-                                val selected = currentTab == tab
-                                NavigationBarItem(
-                                    selected = selected,
-                                    onClick = { currentTab = tab },
-                                    icon = {
-                                        Icon(
-                                            imageVector = tab.icon,
-                                            contentDescription = tab.title,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    },
-                                    label = {
-                                        Text(
-                                            text = tab.title,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-                                        )
-                                    },
-                                    colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                )
-                            }
-                        }
-                    }
+                    StitchFloatingBottomNav(
+                        currentTab = currentTab,
+                        onTabSelected = { currentTab = it }
+                    )
                 }
             ) { innerPadding ->
                 Box(
@@ -178,159 +162,138 @@ fun PoketchMobileNavHost(
                         .padding(innerPadding)
                 ) {
                     when (currentTab) {
-                        MobileTab.DASHBOARD -> CommandCenterScreen(viewModel = commandCenterViewModel)
+                        MobileTab.DASHBOARD -> CommandCenterScreen(
+                            viewModel = commandCenterViewModel,
+                            onOpenProfile = { currentTab = MobileTab.ACCOUNT },
+                            onOpenLogMeal = { currentTab = MobileTab.NUTRITION }
+                        )
                         MobileTab.NUTRITION -> NutritionScreen(viewModel = nutritionViewModel)
                         MobileTab.POKEDEX -> PokedexScreen(viewModel = pokedexViewModel)
-                        MobileTab.DIAGNOSTICS -> SyncDiagnosticsScreen(viewModel = syncDiagnosticsViewModel)
+                        MobileTab.DIAGNOSTICS -> SyncDiagnosticsScreen(
+                            viewModel = syncDiagnosticsViewModel,
+                            onOpenAccount = { currentTab = MobileTab.ACCOUNT }
+                        )
                         MobileTab.ACCOUNT -> AuthScreen(viewModel = authViewModel)
                     }
                 }
             }
 
             unlockedPokemonDialog?.let { unlockEvent ->
-                if (unlockEvent.isEvolution && unlockEvent.preEvolution != null) {
-                    EvolutionCeremonyDialog(
-                        event = unlockEvent,
-                        onSetAsActiveBuddy = { buddyId ->
-                            commandCenterViewModel.setActiveBuddy(buddyId)
-                        },
-                        onDismiss = { unlockedPokemonDialog = null }
-                    )
-                } else {
-                    UnlockedPokemonCelebrationDialog(
-                        event = unlockEvent,
-                        onDismiss = { unlockedPokemonDialog = null }
-                    )
-                }
+                EvolutionCeremonyDialog(
+                    event = unlockEvent,
+                    onSetAsActiveBuddy = { commandCenterViewModel.setActiveBuddy(it) },
+                    onDismiss = { unlockedPokemonDialog = null }
+                )
             }
         }
     }
 }
 
+/**
+ * Google Stitch Floating Capsule Bottom Navigation Dock
+ * Matches DESIGN.md: Floating white capsule dock with 30px radius, soft drop shadow,
+ * and animated solid #0F172A dark slate pill for the active tab.
+ */
 @Composable
-private fun UnlockedPokemonCelebrationDialog(
-    event: UnlockEvent.NewPokemonUnlocked,
-    onDismiss: () -> Unit
+private fun StitchFloatingBottomNav(
+    currentTab: MobileTab,
+    onTabSelected: (MobileTab) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val pokemon = event.pokemon
-    val context = LocalContext.current
-    val imageUri = "file:///android_asset/${pokemon.spriteAssetPath}"
+    val navTabs = listOf(
+        MobileTab.DASHBOARD,
+        MobileTab.NUTRITION,
+        MobileTab.POKEDEX,
+        MobileTab.DIAGNOSTICS
+    )
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "🎉 POKÉMON UNLOCKED!",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Black,
-                    color = Color(0xFFD32F2F),
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = "#%03d ${pokemon.name.uppercase()}".format(pokemon.pokedexNumber),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        },
-        text = {
-            Column(
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 14.dp,
+                    shape = RoundedCornerShape(32.dp),
+                    ambientColor = StitchDarkSlate.copy(alpha = 0.08f),
+                    spotColor = StitchDarkSlate.copy(alpha = 0.16f)
+                ),
+            shape = RoundedCornerShape(32.dp),
+            color = StitchSurfaceCard,
+            border = BorderStroke(1.dp, StitchBorderSubtle)
+        ) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE8F5E9)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(imageUri)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = pokemon.name,
-                        modifier = Modifier.size(110.dp)
+                navTabs.forEach { tab ->
+                    val isSelected = currentTab == tab
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val scale by animateFloatAsState(
+                        targetValue = if (isPressed) 0.93f else 1f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                        label = "tab_scale"
                     )
-                }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
+                    val pillBgColor by animateColorAsState(
+                        targetValue = if (isSelected) StitchDarkSlate else Color.Transparent,
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        label = "tab_bg"
+                    )
+                    val contentColor by animateColorAsState(
+                        targetValue = if (isSelected) Color.White else StitchTextSecondary,
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        label = "tab_content_color"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .scale(scale)
+                            .clip(RoundedCornerShape(26.dp))
+                            .background(pillBgColor)
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = { onTabSelected(tab) }
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = pokemon.primaryType,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    pokemon.secondaryType?.let { sec ->
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(horizontal = 10.dp)
                         ) {
-                            Text(
-                                text = sec,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            Icon(
+                                imageVector = tab.icon,
+                                contentDescription = tab.title,
+                                tint = contentColor,
+                                modifier = Modifier.size(20.dp)
                             )
+                            if (isSelected) {
+                                Spacer(modifier = Modifier.size(6.dp))
+                                Text(
+                                    text = tab.title,
+                                    color = contentColor,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
                 }
-
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "Achievement Unlocked",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = event.triggerReason,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Claim to Pokédex!",
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
-    )
+    }
 }
