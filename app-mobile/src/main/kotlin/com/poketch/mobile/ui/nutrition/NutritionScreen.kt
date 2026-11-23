@@ -200,9 +200,9 @@ fun NutritionScreen(
             )
 
             // 2. Three Bento Macro Cards (Protein, Carbs, Fat)
-            val totalProtein = state.todayLogs.mapNotNull { it.proteinGrams }.sum()
-            val totalCarbs = state.todayLogs.mapNotNull { it.carbsGrams }.sum()
-            val totalFat = state.todayLogs.mapNotNull { it.fatGrams }.sum()
+            val totalProtein = state.todayLogs.sumOf { it.proteinG }
+            val totalCarbs = state.todayLogs.sumOf { it.carbsG }
+            val totalFat = state.todayLogs.sumOf { it.fatG }
 
             StitchMacroCardsRow(
                 proteinGrams = if (totalProtein > 0) totalProtein else 112,
@@ -281,7 +281,7 @@ fun NutritionScreen(
                 state.todayLogs.forEach { log ->
                     StitchMealLogCard(
                         log = log,
-                        onDelete = { viewModel.deleteMealLog(log.id) }
+                        onDelete = { viewModel.deleteLog(log.logId) }
                     )
                 }
             }
@@ -300,7 +300,7 @@ fun NutritionScreen(
                 viewModel.onCarbsChanged(c?.toString() ?: "")
                 viewModel.onFatChanged(f?.toString() ?: "")
                 viewModel.onInputCategoryChanged(cat)
-                viewModel.addMealLog()
+                viewModel.logMeal()
                 showAddMealDialog = false
             }
         )
@@ -318,9 +318,9 @@ private fun StitchTdeeHeroCard(
     summary: com.poketch.core.domain.calculator.CalorieCalculationSummary?,
     modifier: Modifier = Modifier
 ) {
-    val bmr = summary?.bmr ?: 1674
-    val tdee = summary?.tdee ?: 2595
-    val floor = summary?.minimumSafeFloor ?: 1500
+    val bmr = summary?.bmrKcal ?: 1674
+    val tdee = summary?.tdeeKcal ?: 2595
+    val floor = 1500
     val progress = (totalConsumed.toFloat() / targetCeiling.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
 
     val animatedProgress by animateFloatAsState(
@@ -749,12 +749,12 @@ private fun StitchMealLogCard(
     log: CalorieLog,
     onDelete: () -> Unit
 ) {
-    val isWatch = log.deviceSource == DeviceSource.WATCH
+    val isWatch = log.sourceDevice == DeviceSource.WEAR
     val icon = when (log.mealCategory) {
         MealCategory.BREAKFAST -> Icons.Default.BakeryDining
         MealCategory.LUNCH -> Icons.Default.LunchDining
         MealCategory.DINNER -> Icons.Default.Restaurant
-        MealCategory.SNACK -> Icons.Default.Fastfood
+        MealCategory.SNACK, MealCategory.WATCH_QUICK_ADD -> Icons.Default.Fastfood
     }
 
     Surface(
@@ -835,7 +835,7 @@ private fun StitchMealLogCard(
                     }
 
                     Text(
-                        text = log.foodName,
+                        text = log.foodDescription,
                         style = MaterialTheme.typography.bodySmall,
                         color = StitchTextSecondary
                     )
@@ -929,7 +929,7 @@ private fun StitchBiometricsEditorCard(
             }
 
             Button(
-                onClick = { viewModel.saveBiometrics() },
+                onClick = { viewModel.saveBiometricsAndSync() },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = StitchPrimary),
                 shape = RoundedCornerShape(20.dp)
