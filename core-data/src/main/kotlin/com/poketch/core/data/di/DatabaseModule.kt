@@ -59,4 +59,9 @@ object DatabaseModule {
     fun provideSavedFoodDao(database: PoketchDatabase): com.poketch.core.data.local.dao.SavedFoodDao {
         return database.savedFoodDao()
     }
+
+    @Provides
+    fun provideRecoveryQuestDao(database: PoketchDatabase): com.poketch.core.data.local.dao.RecoveryQuestDao {
+        return database.recoveryQuestDao()
+    }
 }

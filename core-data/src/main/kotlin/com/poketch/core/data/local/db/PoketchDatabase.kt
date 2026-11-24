@@ -10,12 +10,14 @@ import com.poketch.core.data.local.dao.CalorieDao
 import com.poketch.core.data.local.dao.HabitDao
 import com.poketch.core.data.local.dao.HourlyWeatherCacheDao
 import com.poketch.core.data.local.dao.PokemonDao
+import com.poketch.core.data.local.dao.RecoveryQuestDao
 import com.poketch.core.data.local.dao.SavedFoodDao
 import com.poketch.core.data.local.dao.UserDao
 import com.poketch.core.data.local.entity.CalorieLogEntity
 import com.poketch.core.data.local.entity.HabitLogEntity
 import com.poketch.core.data.local.entity.HourlyWeatherCacheEntity
 import com.poketch.core.data.local.entity.PokemonEntity
+import com.poketch.core.data.local.entity.RecoveryQuestEntity
 import com.poketch.core.data.local.entity.SavedFoodEntity
 import com.poketch.core.data.local.entity.UserProfileEntity
 import com.poketch.core.data.local.seed.PokemonSeedParser
@@ -30,9 +32,10 @@ import kotlinx.coroutines.launch
         HabitLogEntity::class,
         PokemonEntity::class,
         HourlyWeatherCacheEntity::class,
-        SavedFoodEntity::class
+        SavedFoodEntity::class,
+        RecoveryQuestEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class PoketchDatabase : RoomDatabase() {
@@ -43,6 +46,7 @@ abstract class PoketchDatabase : RoomDatabase() {
     abstract fun pokemonDao(): PokemonDao
     abstract fun hourlyWeatherCacheDao(): HourlyWeatherCacheDao
     abstract fun savedFoodDao(): SavedFoodDao
+    abstract fun recoveryQuestDao(): RecoveryQuestDao
 
     suspend fun ensureSeeded(context: Context?) {
         val count = pokemonDao().getUnlockedCount()
@@ -173,6 +177,30 @@ abstract class PoketchDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Migration from Database version 3 to version 4.
+         * Creates the `recovery_quests` table for persisting Playable Over-Target Recovery Quests,
+         * preserving all existing user profiles, calorie logs, habits, pokedex progress, and saved foods.
+         */
+        val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `recovery_quests` (
+                        `dateIso` TEXT NOT NULL,
+                        `surplusKcal` INTEGER NOT NULL,
+                        `targetOffsetSteps` INTEGER NOT NULL,
+                        `startingStepsSnapshot` INTEGER NOT NULL,
+                        `currentOffsetSteps` INTEGER NOT NULL,
+                        `isCompleted` INTEGER NOT NULL,
+                        `updatedAtMillis` INTEGER NOT NULL,
+                        PRIMARY KEY(`dateIso`)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         @Volatile
         private var instance: PoketchDatabase? = null
 
@@ -195,7 +223,7 @@ abstract class PoketchDatabase : RoomDatabase() {
                 PoketchDatabase::class.java,
                 DATABASE_NAME
             )
-            .addMigrations(MIGRATION_2_3)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .addCallback(object : Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {

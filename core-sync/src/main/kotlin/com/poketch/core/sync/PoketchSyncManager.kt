@@ -3,6 +3,8 @@ package com.poketch.core.sync
 import android.content.Context
 import com.google.android.gms.wearable.DataMap
 import com.poketch.core.data.gamification.UnlockEventDispatcher
+import com.poketch.core.data.local.dao.RecoveryQuestDao
+import com.poketch.core.data.local.entity.RecoveryQuestEntity
 import com.poketch.core.domain.model.CalorieLog
 import com.poketch.core.domain.model.HabitLog
 import com.poketch.core.domain.model.RecoveryQuest
@@ -41,7 +43,8 @@ class PoketchSyncManager @Inject constructor(
     private val calorieRepository: CalorieRepository,
     private val habitRepository: HabitRepository,
     private val pokemonRepository: PokemonRepository,
-    private val unlockEventDispatcher: UnlockEventDispatcher
+    private val unlockEventDispatcher: UnlockEventDispatcher,
+    private val recoveryQuestDao: RecoveryQuestDao? = null
 ) {
 
     private val _overCalorieAlerts = MutableSharedFlow<Int>(extraBufferCapacity = 16)
@@ -63,6 +66,11 @@ class PoketchSyncManager @Inject constructor(
     init {
         syncScope.launch {
             refreshConnectedNodes()
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            val savedQuest = recoveryQuestDao?.getQuestByDate(today)?.toDomain()
+            if (savedQuest != null) {
+                _recoveryQuestFlow.value = savedQuest
+            }
         }
     }
 
@@ -120,10 +128,16 @@ class PoketchSyncManager @Inject constructor(
 
     fun emitRecoveryQuest(quest: RecoveryQuest?) {
         _recoveryQuestFlow.value = quest
+        if (quest != null) {
+            syncScope.launch {
+                recoveryQuestDao?.upsertQuest(RecoveryQuestEntity.fromDomain(quest))
+            }
+        }
     }
 
     suspend fun sendRecoveryQuest(quest: RecoveryQuest) {
         _recoveryQuestFlow.value = quest
+        recoveryQuestDao?.upsertQuest(RecoveryQuestEntity.fromDomain(quest))
         val dataMap = DataMap().apply {
             putString("dateIso", quest.dateIso)
             putInt("surplusKcal", quest.surplusKcal)
@@ -136,6 +150,19 @@ class PoketchSyncManager @Inject constructor(
         runCatching {
             transport.putDataMap(PoketchSyncConstants.PATH_RECOVERY_QUEST, dataMap)
         }
+    }
+
+    suspend fun updateRecoveryQuestProgress(currentTotalSteps: Int): RecoveryQuest? {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val quest = _recoveryQuestFlow.value ?: recoveryQuestDao?.getQuestByDate(today)?.toDomain() ?: return null
+        val offset = maxOf(0, currentTotalSteps - quest.startingStepsSnapshot)
+        val isCompleted = offset >= quest.targetOffsetSteps
+        val updated = quest.copy(
+            currentOffsetSteps = offset,
+            isCompleted = isCompleted
+        )
+        sendRecoveryQuest(updated)
+        return updated
     }
 
     suspend fun sendPokemonUnlocked(pokemonNumber: Int, triggerReason: String) {
@@ -154,7 +181,7 @@ class PoketchSyncManager @Inject constructor(
         if (totalCalories > ceiling) {
             val surplus = totalCalories - ceiling
             val currentSteps = habitRepository.observeDailySteps(targetDate).firstOrNull()?.toInt() ?: 0
-            val existingQuest = _recoveryQuestFlow.value
+            val existingQuest = _recoveryQuestFlow.value ?: recoveryQuestDao?.getQuestByDate(targetDate)?.toDomain()
             val quest = if (existingQuest != null && existingQuest.dateIso == targetDate) {
                 val offset = maxOf(0, currentSteps - existingQuest.startingStepsSnapshot)
                 existingQuest.copy(

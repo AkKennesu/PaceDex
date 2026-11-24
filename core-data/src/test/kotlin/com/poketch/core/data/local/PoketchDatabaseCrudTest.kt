@@ -10,6 +10,7 @@ import com.poketch.core.data.local.dao.UserDao
 import com.poketch.core.data.local.db.PoketchDatabase
 import com.poketch.core.data.local.entity.CalorieLogEntity
 import com.poketch.core.data.local.entity.HabitLogEntity
+import com.poketch.core.data.local.entity.RecoveryQuestEntity
 import com.poketch.core.data.local.entity.SavedFoodEntity
 import com.poketch.core.data.local.seed.PokemonSeedData
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -261,5 +262,71 @@ class PoketchDatabaseCrudTest {
         savedFoodDao.toggleFavorite("012345678901", false)
         val unfavorited = savedFoodDao.getByBarcode("012345678901")
         assertThat(unfavorited?.isFavorite).isFalse()
+    }
+
+    @Test
+    fun migration_3_4_createsRecoveryQuestsTablePreservingSchema() {
+        val helper = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(ApplicationProvider.getApplicationContext())
+                .name("test_migration_3_4.db")
+                .callback(object : SupportSQLiteOpenHelper.Callback(3) {
+                    override fun onCreate(db: SupportSQLiteDatabase) {}
+                    override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+                })
+                .build()
+        )
+        val writableDb = helper.writableDatabase
+        PoketchDatabase.MIGRATION_3_4.migrate(writableDb)
+
+        val cursor = writableDb.query("SELECT * FROM recovery_quests")
+        assertThat(cursor).isNotNull()
+        assertThat(cursor.columnCount).isEqualTo(7)
+        cursor.close()
+        writableDb.close()
+    }
+
+    @Test
+    fun recoveryQuestDao_upsert_observe_updateProgress_delete() = runBlocking {
+        val questDao = db.recoveryQuestDao()
+        val testDate = "2026-11-24"
+        val quest = RecoveryQuestEntity(
+            dateIso = testDate,
+            surplusKcal = 350,
+            targetOffsetSteps = 7778,
+            startingStepsSnapshot = 4500,
+            currentOffsetSteps = 0,
+            isCompleted = false,
+            updatedAtMillis = 1000L
+        )
+
+        questDao.upsertQuest(quest)
+
+        assertThat(questDao.getCount()).isEqualTo(1)
+
+        val retrieved = questDao.getQuestByDate(testDate)
+        assertThat(retrieved).isNotNull()
+        assertThat(retrieved?.surplusKcal).isEqualTo(350)
+        assertThat(retrieved?.targetOffsetSteps).isEqualTo(7778)
+        assertThat(retrieved?.isCompleted).isFalse()
+
+        val observed = questDao.observeQuestByDate(testDate).first()
+        assertThat(observed).isEqualTo(retrieved)
+
+        // Update progress
+        questDao.updateProgress(testDate, 4000, false, 2000L)
+        val inProgress = questDao.getQuestByDate(testDate)
+        assertThat(inProgress?.currentOffsetSteps).isEqualTo(4000)
+        assertThat(inProgress?.isCompleted).isFalse()
+
+        // Complete quest
+        questDao.updateProgress(testDate, 7778, true, 3000L)
+        val completed = questDao.getQuestByDate(testDate)
+        assertThat(completed?.currentOffsetSteps).isEqualTo(7778)
+        assertThat(completed?.isCompleted).isTrue()
+
+        // Delete quest
+        questDao.deleteQuest(testDate)
+        assertThat(questDao.getQuestByDate(testDate)).isNull()
+        assertThat(questDao.getCount()).isEqualTo(0)
     }
 }
