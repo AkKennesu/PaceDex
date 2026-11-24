@@ -38,7 +38,9 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.poketch.core.domain.model.RecoveryQuest
 import com.poketch.wear.ui.layout.rememberResponsiveColumnState
+import java.util.Locale
 
 @Composable
 fun OverTargetRedAlertScreen(
@@ -209,16 +211,21 @@ fun OverTargetRedAlertContent(
                 }
             }
 
-            // Action 1: Start 1-Mile Burn Run (only if not completed)
+            // Action 1: Start Recovery Walk (only if not completed)
             if (!isQuestCompleted) {
                 item {
+                    val targetSteps = state.recoveryQuest?.targetOffsetSteps
+                        ?: if (state.surplusKcal > 0) RecoveryQuest.calculateTargetOffsetSteps(state.surplusKcal) else 2400
+                    val formattedTarget = java.text.NumberFormat.getIntegerInstance(Locale.US).format(targetSteps)
                     CompactChip(
                         onClick = onStartRun,
                         label = {
                             Text(
-                                text = "Start 1-Mile Burn Run",
+                                text = "Start Recovery Walk ($formattedTarget stp)",
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                textAlign = TextAlign.Center
                             )
                         },
                         colors = ChipDefaults.primaryChipColors(

@@ -44,10 +44,10 @@ class OverTargetRedAlertScreenTest {
         composeTestRule.onNodeWithText("OVER TARGET BY +300 KCAL").assertIsDisplayed()
         composeTestRule.onNodeWithText("2100 / 1800 kcal").assertIsDisplayed()
 
-        // 2. Action: Start 1-Mile Burn Run
-        val startRunButton = composeTestRule.onNodeWithText("Start 1-Mile Burn Run")
-        startRunButton.assertIsDisplayed()
-        startRunButton.performClick()
+        // 2. Action: Start Recovery Walk
+        val startWalkButton = composeTestRule.onNodeWithText("Start Recovery Walk (6,667 stp)")
+        startWalkButton.assertIsDisplayed()
+        startWalkButton.performClick()
         assertThat(startRunClicked).isTrue()
 
         // 3. Action: Acknowledge
@@ -125,5 +125,39 @@ class OverTargetRedAlertScreenTest {
         dismissButton.assertIsDisplayed()
         dismissButton.performClick()
         assertThat(dismissedClicked).isTrue()
+    }
+
+    @Test
+    fun redAlertScreen_rendersStartRecoveryWalkButton_withTargetSteps() {
+        var startWalkClicked = false
+        val quest = com.poketch.core.domain.model.RecoveryQuest(
+            dateIso = "2026-11-24",
+            surplusKcal = 110,
+            targetOffsetSteps = 2400,
+            startingStepsSnapshot = 1000,
+            currentOffsetSteps = 950,
+            isCompleted = false
+        )
+        val testState = OverTargetRedAlertUiState(
+            consumedKcal = 1910,
+            targetCalorieCeiling = 1800,
+            surplusKcal = 110,
+            activeBuddy = null,
+            recoveryQuest = quest,
+            isLoading = false
+        )
+
+        composeTestRule.setContent {
+            OverTargetRedAlertContent(
+                state = testState,
+                onStartRun = { startWalkClicked = true },
+                onAcknowledge = {}
+            )
+        }
+
+        val startWalkButton = composeTestRule.onNodeWithText("Start Recovery Walk (2,400 stp)")
+        startWalkButton.assertIsDisplayed()
+        startWalkButton.performClick()
+        assertThat(startWalkClicked).isTrue()
     }
 }

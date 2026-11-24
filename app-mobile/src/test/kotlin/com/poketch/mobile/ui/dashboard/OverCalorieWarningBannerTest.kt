@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import org.junit.Rule
 import org.junit.Test
@@ -44,5 +45,43 @@ class OverCalorieWarningBannerTest {
         composeTestRule.onNodeWithText("Suggested burn offsets:").assertIsDisplayed()
         composeTestRule.onNodeWithText("• Walk 7000 steps (~7k)").assertIsDisplayed()
         composeTestRule.onNodeWithText("• Or jog 2.5 miles").assertIsDisplayed()
+    }
+
+    @Test
+    fun overCalorieWarningBanner_rendersRecoveryQuestProgressBarAndSendButton() {
+        var sendClicked = false
+        val warningState = CalorieBudgetState.OverTargetWarning(
+            consumedKcal = 1910,
+            targetCeilingKcal = 1800,
+            surplusKcal = 110,
+            suggestedOffsetSteps = 2400,
+            suggestedOffsetRunMiles = 1.0,
+            consumptionRatio = 1.06
+        )
+        val quest = com.poketch.core.domain.model.RecoveryQuest(
+            dateIso = "2026-11-24",
+            surplusKcal = 110,
+            targetOffsetSteps = 2400,
+            startingStepsSnapshot = 1000,
+            currentOffsetSteps = 950,
+            isCompleted = false
+        )
+
+        composeTestRule.setContent {
+            OverCalorieWarningCard(
+                warning = warningState,
+                recoveryQuest = quest,
+                onSendQuestToWatch = { sendClicked = true }
+            )
+        }
+
+        // Live Recovery Quest progress bar title and text: "Walk 2,400 steps to clear +110 kcal surplus — 950 / 2,400"
+        composeTestRule.onNodeWithText("Walk 2,400 steps to clear +110 kcal surplus — 950 / 2,400").assertIsDisplayed()
+
+        // 1-tap "Send Quest to Watch" button
+        val sendButton = composeTestRule.onNodeWithText("Send Quest to Watch")
+        sendButton.assertIsDisplayed()
+        sendButton.performClick()
+        org.junit.Assert.assertTrue(sendClicked)
     }
 }

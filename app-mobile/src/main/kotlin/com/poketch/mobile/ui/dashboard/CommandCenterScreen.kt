@@ -26,6 +26,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -230,7 +231,8 @@ fun CommandCenterScreen(
                 if (budgetState is CalorieBudgetState.OverTargetWarning) {
                     OverCalorieWarningCard(
                         warning = budgetState,
-                        recoveryQuest = uiState.recoveryQuest
+                        recoveryQuest = uiState.recoveryQuest,
+                        onSendQuestToWatch = { viewModel.sendRecoveryQuestToWatch() }
                     )
                 }
             }
@@ -1386,6 +1388,7 @@ private fun FieldGuideRow(emoji: String, title: String, desc: String) {
 internal fun OverCalorieWarningCard(
     warning: CalorieBudgetState.OverTargetWarning,
     recoveryQuest: RecoveryQuest? = null,
+    onSendQuestToWatch: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -1452,51 +1455,91 @@ internal fun OverCalorieWarningCard(
                 }
             }
 
-            recoveryQuest?.let { quest ->
-                Spacer(modifier = Modifier.height(10.dp))
-                Surface(
-                    color = Color.White,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, StitchStepsAmber.copy(alpha = 0.5f)),
-                    modifier = Modifier.fillMaxWidth()
+            val targetSteps = recoveryQuest?.targetOffsetSteps ?: warning.suggestedOffsetSteps
+            val surplus = recoveryQuest?.surplusKcal ?: warning.surplusKcal
+            val currentSteps = recoveryQuest?.currentOffsetSteps ?: 0
+            val progressFraction = recoveryQuest?.progressFraction ?: 0f
+            val isCompleted = recoveryQuest?.isCompleted ?: false
+
+            val formattedTarget = java.text.NumberFormat.getIntegerInstance(Locale.US).format(targetSteps)
+            val formattedCurrent = java.text.NumberFormat.getIntegerInstance(Locale.US).format(currentSteps)
+            val questProgressText = "Walk $formattedTarget steps to clear +$surplus kcal surplus — $formattedCurrent / $formattedTarget"
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Surface(
+                color = Color.White,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, StitchStepsAmber.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Text(
+                            text = if (isCompleted) "🎉 RECOVERY QUEST COMPLETE" else "⚡ PLAYABLE RECOVERY QUEST",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isCompleted) StitchPrimary else StitchStepsAmber
+                        )
+                        if (isCompleted) {
                             Text(
-                                text = if (quest.isCompleted) "🎉 RECOVERY QUEST COMPLETE" else "⚡ PLAYABLE RECOVERY QUEST",
+                                text = "Deficit Restored",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (quest.isCompleted) StitchPrimary else StitchStepsAmber
-                            )
-                            Text(
-                                text = "${quest.currentOffsetSteps} / ${quest.targetOffsetSteps} steps",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = StitchDarkSlate
+                                color = StitchPrimary
                             )
                         }
-                        LinearProgressIndicator(
-                            progress = { quest.progressFraction },
+                    }
+
+                    Text(
+                        text = questProgressText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = StitchDarkSlate
+                    )
+
+                    LinearProgressIndicator(
+                        progress = { progressFraction },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = if (isCompleted) StitchPrimary else StitchStepsAmber,
+                        trackColor = Color(0xFFF1F5F2),
+                        strokeCap = StrokeCap.Round
+                    )
+
+                    if (!isCompleted) {
+                        Button(
+                            onClick = onSendQuestToWatch,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp)),
-                            color = if (quest.isCompleted) StitchPrimary else StitchStepsAmber,
-                            trackColor = Color(0xFFF1F5F2),
-                            strokeCap = StrokeCap.Round
-                        )
-                        Text(
-                            text = if (quest.isCompleted) "Target burned! Snorlax recovering" else "${quest.remainingSteps} offset steps remaining to balance your budget",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = StitchTextSecondary
-                        )
+                                .height(40.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = StitchAlertCoral,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Sync,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Send Quest to Watch",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

@@ -361,6 +361,22 @@ class CommandCenterViewModel @Inject constructor(
             }
         }
     }
+
+    fun sendRecoveryQuestToWatch() {
+        viewModelScope.launch {
+            val currentQuest = recoveryQuestFlow.value ?: run {
+                syncManager.reEvaluateDailyCalorieCeiling(todayIso)
+                recoveryQuestFlow.value
+            } ?: return@launch
+
+            try {
+                syncManager.sendRecoveryQuest(currentQuest)
+                syncMessageFlow.value = "Recovery Quest sent to watch!"
+            } catch (e: Exception) {
+                syncMessageFlow.value = "Error sending quest to watch: ${e.localizedMessage}"
+            }
+        }
+    }
 }
 
 private data class CalorieRawData(
