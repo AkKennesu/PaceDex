@@ -585,7 +585,7 @@ class NutritionViewModel @Inject constructor(
         onNotFound: (String) -> Unit
     ) {
         viewModelScope.launch {
-            val food = savedFoodRepository.getFoodById(barcode)
+            val food = savedFoodRepository.getByBarcode(barcode)
             if (food != null) {
                 onFound(food)
             } else {

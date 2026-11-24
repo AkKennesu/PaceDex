@@ -2,6 +2,7 @@ package com.poketch.core.data.repository
 
 import com.poketch.core.data.local.dao.SavedFoodDao
 import com.poketch.core.data.local.entity.SavedFoodEntity
+import com.poketch.core.data.remote.OpenFoodFactsClient
 import com.poketch.core.domain.model.SavedFood
 import com.poketch.core.domain.repository.SavedFoodRepository
 import kotlinx.coroutines.flow.Flow
@@ -11,7 +12,8 @@ import javax.inject.Singleton
 
 @Singleton
 class OfflineFirstSavedFoodRepository @Inject constructor(
-    private val savedFoodDao: SavedFoodDao
+    private val savedFoodDao: SavedFoodDao,
+    private val openFoodFactsClient: OpenFoodFactsClient
 ) : SavedFoodRepository {
 
     override fun observeFavoritesAndRecents(limit: Int): Flow<List<SavedFood>> {
@@ -39,11 +41,14 @@ class OfflineFirstSavedFoodRepository @Inject constructor(
     }
 
     override suspend fun getFoodById(foodId: String): SavedFood? {
-        return savedFoodDao.getFoodById(foodId)?.toDomain()
+        val cached = savedFoodDao.getFoodById(foodId)?.toDomain()
+        if (cached != null) return cached
+        return openFoodFactsClient.lookupBarcode(foodId).getOrNull()?.toDomain()
     }
 
     override suspend fun getByBarcode(barcode: String): SavedFood? {
-        return savedFoodDao.getByBarcode(barcode)?.toDomain()
+        return openFoodFactsClient.lookupBarcode(barcode).getOrNull()?.toDomain()
+            ?: savedFoodDao.getByBarcode(barcode)?.toDomain()
     }
 
     override suspend fun saveFood(food: SavedFood) {
