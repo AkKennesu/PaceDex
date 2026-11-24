@@ -10,7 +10,11 @@ import com.poketch.core.data.local.dao.UserDao
 import com.poketch.core.data.local.db.PoketchDatabase
 import com.poketch.core.data.local.entity.CalorieLogEntity
 import com.poketch.core.data.local.entity.HabitLogEntity
+import com.poketch.core.data.local.entity.SavedFoodEntity
 import com.poketch.core.data.local.seed.PokemonSeedData
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -183,5 +187,79 @@ class PoketchDatabaseCrudTest {
         // Delete log1
         calorieDao.deleteCalorieLog(log1.logId)
         assertThat(calorieDao.observeTotalCaloriesByDate(dateIso).first()).isEqualTo(650)
+    }
+
+    @Test
+    fun migration_2_3_createsSavedFoodsTablePreservingSchema() {
+        val helper = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(ApplicationProvider.getApplicationContext())
+                .name("test_migration.db")
+                .callback(object : SupportSQLiteOpenHelper.Callback(2) {
+                    override fun onCreate(db: SupportSQLiteDatabase) {}
+                    override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+                })
+                .build()
+        )
+        val writableDb = helper.writableDatabase
+        PoketchDatabase.MIGRATION_2_3.migrate(writableDb)
+
+        val cursor = writableDb.query("SELECT * FROM saved_foods")
+        assertThat(cursor).isNotNull()
+        assertThat(cursor.columnCount).isEqualTo(11)
+        cursor.close()
+        writableDb.close()
+    }
+
+    @Test
+    fun savedFoodDao_upsertAndObserveFavoritesAndRecents() = runBlocking {
+        val savedFoodDao = db.savedFoodDao()
+        val food1 = SavedFoodEntity(
+            foodId = "012345678901",
+            name = "Protein Bar",
+            brand = "Quest",
+            caloriesPerServing = 200,
+            proteinG = 20,
+            carbsG = 22,
+            fatG = 7,
+            isFavorite = true,
+            useCount = 1,
+            lastUsedMillis = 1000L
+        )
+        val food2 = SavedFoodEntity(
+            foodId = "fav_apple",
+            name = "Honeycrisp Apple",
+            caloriesPerServing = 95,
+            proteinG = 0,
+            carbsG = 25,
+            fatG = 0,
+            isFavorite = false,
+            useCount = 3,
+            lastUsedMillis = 2000L
+        )
+
+        savedFoodDao.upsert(food1)
+        savedFoodDao.upsert(food2)
+
+        val list = savedFoodDao.observeFavoritesAndRecents(10).first()
+        assertThat(list).hasSize(2)
+        // food1 is favorite, so it should be first
+        assertThat(list[0].foodId).isEqualTo("012345678901")
+        assertThat(list[0].isFavorite).isTrue()
+
+        // Lookup by barcode
+        val barcodeLookup = savedFoodDao.getByBarcode("012345678901")
+        assertThat(barcodeLookup).isNotNull()
+        assertThat(barcodeLookup?.name).isEqualTo("Protein Bar")
+
+        // Increment usage
+        savedFoodDao.incrementUsage("012345678901", 3000L)
+        val updated = savedFoodDao.getByBarcode("012345678901")
+        assertThat(updated?.useCount).isEqualTo(2)
+        assertThat(updated?.lastUsedMillis).isEqualTo(3000L)
+
+        // Toggle favorite
+        savedFoodDao.toggleFavorite("012345678901", false)
+        val unfavorited = savedFoodDao.getByBarcode("012345678901")
+        assertThat(unfavorited?.isFavorite).isFalse()
     }
 }

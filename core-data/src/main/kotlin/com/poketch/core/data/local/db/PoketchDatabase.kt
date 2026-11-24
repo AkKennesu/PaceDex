@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.poketch.core.data.local.dao.CalorieDao
 import com.poketch.core.data.local.dao.HabitDao
@@ -144,6 +145,34 @@ abstract class PoketchDatabase : RoomDatabase() {
     companion object {
         const val DATABASE_NAME = "poketch.db"
 
+        /**
+         * Migration from Database version 2 to version 3.
+         * Creates the `saved_foods` table for offline barcode food scanning & 1-tap favorites,
+         * preserving all existing user profiles, calorie logs, habits, and pokedex progress.
+         */
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `saved_foods` (
+                        `foodId` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `brand` TEXT,
+                        `caloriesPerServing` INTEGER NOT NULL,
+                        `proteinG` INTEGER NOT NULL,
+                        `carbsG` INTEGER NOT NULL,
+                        `fatG` INTEGER NOT NULL,
+                        `servingLabel` TEXT NOT NULL,
+                        `isFavorite` INTEGER NOT NULL,
+                        `useCount` INTEGER NOT NULL,
+                        `lastUsedMillis` INTEGER NOT NULL,
+                        PRIMARY KEY(`foodId`)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         @Volatile
         private var instance: PoketchDatabase? = null
 
@@ -165,7 +194,9 @@ abstract class PoketchDatabase : RoomDatabase() {
                 context.applicationContext,
                 PoketchDatabase::class.java,
                 DATABASE_NAME
-            ).fallbackToDestructiveMigration()
+            )
+            .addMigrations(MIGRATION_2_3)
+            .fallbackToDestructiveMigration()
             .addCallback(object : Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
