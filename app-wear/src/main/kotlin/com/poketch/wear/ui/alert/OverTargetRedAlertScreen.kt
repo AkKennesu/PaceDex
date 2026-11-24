@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -159,6 +160,46 @@ fun OverTargetRedAlertContent(
 
             item {
                 Spacer(modifier = Modifier.height(2.dp))
+            }
+
+            // Playable Over-Target Recovery Quest
+            if (state.recoveryQuest != null) {
+                item {
+                    val quest = state.recoveryQuest
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0x33000000))
+                            .padding(vertical = 6.dp, horizontal = 8.dp)
+                    ) {
+                        Text(
+                            text = if (quest.isCompleted) "🎉 QUEST COMPLETE!" else "⚡ RECOVERY QUEST ⚡",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (quest.isCompleted) Color(0xFF81C784) else Color(0xFFFFD54F),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "${quest.currentOffsetSteps} / ${quest.targetOffsetSteps} Steps",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = if (quest.isCompleted) "Target burned! Snorlax recovering" else "${quest.remainingSteps} steps remaining to balance",
+                            fontSize = 9.sp,
+                            color = Color(0xFFE0E0E0),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
             }
 
             // Action 1: Start 1-Mile Burn Run

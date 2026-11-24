@@ -17,6 +17,7 @@ import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.HabitLog
 import com.poketch.core.domain.model.HabitType
 import com.poketch.core.domain.model.MealCategory
+import com.poketch.core.domain.model.RecoveryQuest
 import com.poketch.core.domain.model.UserProfile
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.HabitRepository
@@ -154,7 +155,29 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
             path == PoketchSyncConstants.PATH_LOCATION_TIMEZONE -> {
                 handleLocationTimeZoneSync(dataMap)
             }
+            path == PoketchSyncConstants.PATH_RECOVERY_QUEST -> {
+                handleRecoveryQuestSync(dataMap)
+            }
         }
+    }
+
+    private fun handleRecoveryQuestSync(dataMap: DataMap) {
+        val dateIso = dataMap.getString("dateIso") ?: return
+        val surplusKcal = dataMap.getInt("surplusKcal", 0)
+        val targetOffsetSteps = dataMap.getInt("targetOffsetSteps", 0)
+        val startingStepsSnapshot = dataMap.getInt("startingStepsSnapshot", 0)
+        val currentOffsetSteps = dataMap.getInt("currentOffsetSteps", 0)
+        val isCompleted = dataMap.getBoolean("isCompleted", false)
+
+        val quest = RecoveryQuest(
+            dateIso = dateIso,
+            surplusKcal = surplusKcal,
+            targetOffsetSteps = targetOffsetSteps,
+            startingStepsSnapshot = startingStepsSnapshot,
+            currentOffsetSteps = currentOffsetSteps,
+            isCompleted = isCompleted
+        )
+        syncManager.emitRecoveryQuest(quest)
     }
 
     private fun handleLocationTimeZoneSync(dataMap: DataMap) {

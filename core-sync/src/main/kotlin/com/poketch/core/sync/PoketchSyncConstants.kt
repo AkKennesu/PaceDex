@@ -8,6 +8,7 @@ object PoketchSyncConstants {
     const val PATH_LOGS_HABITS_BATCH = "/logs/habits_batch"
     const val PATH_POKEDEX_UNLOCKS = "/pokedex/unlocks"
     const val PATH_ALERT_OVER_CALORIE = "/alert/over_calorie"
+    const val PATH_RECOVERY_QUEST = "/quest/recovery"
     const val PATH_EVENT_NEW_POKEMON = "/event/new_pokemon"
     const val PATH_WEATHER_HOURLY_CACHE = "/weather/hourly_cache"
     const val PATH_LOCATION_TIMEZONE = "/location/timezone"

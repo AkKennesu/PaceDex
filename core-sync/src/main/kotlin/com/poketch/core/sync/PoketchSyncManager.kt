@@ -5,6 +5,7 @@ import com.google.android.gms.wearable.DataMap
 import com.poketch.core.data.gamification.UnlockEventDispatcher
 import com.poketch.core.domain.model.CalorieLog
 import com.poketch.core.domain.model.HabitLog
+import com.poketch.core.domain.model.RecoveryQuest
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.HabitRepository
 import com.poketch.core.domain.repository.PokemonRepository
@@ -45,6 +46,9 @@ class PoketchSyncManager @Inject constructor(
 
     private val _overCalorieAlerts = MutableSharedFlow<Int>(extraBufferCapacity = 16)
     val overCalorieAlerts: SharedFlow<Int> = _overCalorieAlerts.asSharedFlow()
+
+    private val _recoveryQuestFlow = MutableStateFlow<RecoveryQuest?>(null)
+    val recoveryQuestFlow: StateFlow<RecoveryQuest?> = _recoveryQuestFlow.asStateFlow()
 
     var syncDispatcher: CoroutineDispatcher = Dispatchers.IO
         set(value) {
@@ -114,6 +118,26 @@ class PoketchSyncManager @Inject constructor(
         }
     }
 
+    fun emitRecoveryQuest(quest: RecoveryQuest?) {
+        _recoveryQuestFlow.value = quest
+    }
+
+    suspend fun sendRecoveryQuest(quest: RecoveryQuest) {
+        _recoveryQuestFlow.value = quest
+        val dataMap = DataMap().apply {
+            putString("dateIso", quest.dateIso)
+            putInt("surplusKcal", quest.surplusKcal)
+            putInt("targetOffsetSteps", quest.targetOffsetSteps)
+            putInt("startingStepsSnapshot", quest.startingStepsSnapshot)
+            putInt("currentOffsetSteps", quest.currentOffsetSteps)
+            putBoolean("isCompleted", quest.isCompleted)
+            putLong("timestamp", System.currentTimeMillis())
+        }
+        runCatching {
+            transport.putDataMap(PoketchSyncConstants.PATH_RECOVERY_QUEST, dataMap)
+        }
+    }
+
     suspend fun sendPokemonUnlocked(pokemonNumber: Int, triggerReason: String) {
         val payload = "$pokemonNumber|$triggerReason".toByteArray(Charsets.UTF_8)
         runCatching {
@@ -129,6 +153,25 @@ class PoketchSyncManager @Inject constructor(
         val totalCalories = calorieRepository.observeTotalCaloriesByDate(targetDate).firstOrNull() ?: 0
         if (totalCalories > ceiling) {
             val surplus = totalCalories - ceiling
+            val currentSteps = habitRepository.observeDailySteps(targetDate).firstOrNull()?.toInt() ?: 0
+            val existingQuest = _recoveryQuestFlow.value
+            val quest = if (existingQuest != null && existingQuest.dateIso == targetDate) {
+                val offset = maxOf(0, currentSteps - existingQuest.startingStepsSnapshot)
+                existingQuest.copy(
+                    surplusKcal = surplus,
+                    targetOffsetSteps = RecoveryQuest.calculateTargetOffsetSteps(surplus),
+                    currentOffsetSteps = offset,
+                    isCompleted = offset >= existingQuest.targetOffsetSteps
+                )
+            } else {
+                RecoveryQuest.create(
+                    dateIso = targetDate,
+                    surplusKcal = surplus,
+                    startingStepsSnapshot = currentSteps,
+                    currentTotalSteps = currentSteps
+                )
+            }
+            sendRecoveryQuest(quest)
             sendOverCalorieAlert(surplus)
             emitOverCalorieAlert(surplus)
             return surplus

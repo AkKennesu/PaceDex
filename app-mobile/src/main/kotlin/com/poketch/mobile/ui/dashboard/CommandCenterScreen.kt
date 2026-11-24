@@ -106,6 +106,7 @@ import androidx.compose.material3.OutlinedButton
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.model.DeficitTier
 import com.poketch.core.domain.model.Pokemon
+import com.poketch.core.domain.model.RecoveryQuest
 import com.poketch.core.domain.model.WeatherBoost
 import com.poketch.mobile.ui.theme.AnimatedStatNumber
 import com.poketch.mobile.ui.theme.rememberAnimatedCounter
@@ -208,7 +209,10 @@ fun CommandCenterScreen(
                 exit = slideOutVertically() + fadeOut()
             ) {
                 if (budgetState is CalorieBudgetState.OverTargetWarning) {
-                    OverCalorieWarningCard(warning = budgetState)
+                    OverCalorieWarningCard(
+                        warning = budgetState,
+                        recoveryQuest = uiState.recoveryQuest
+                    )
                 }
             }
 
@@ -1352,6 +1356,7 @@ private fun FieldGuideRow(emoji: String, title: String, desc: String) {
 @Composable
 internal fun OverCalorieWarningCard(
     warning: CalorieBudgetState.OverTargetWarning,
+    recoveryQuest: RecoveryQuest? = null,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -1415,6 +1420,55 @@ internal fun OverCalorieWarningCard(
                         fontWeight = FontWeight.SemiBold,
                         color = StitchDarkSlate
                     )
+                }
+            }
+
+            recoveryQuest?.let { quest ->
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, StitchStepsAmber.copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (quest.isCompleted) "🎉 RECOVERY QUEST COMPLETE" else "⚡ PLAYABLE RECOVERY QUEST",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (quest.isCompleted) StitchPrimary else StitchStepsAmber
+                            )
+                            Text(
+                                text = "${quest.currentOffsetSteps} / ${quest.targetOffsetSteps} steps",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = StitchDarkSlate
+                            )
+                        }
+                        LinearProgressIndicator(
+                            progress = { quest.progressFraction },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = if (quest.isCompleted) StitchPrimary else StitchStepsAmber,
+                            trackColor = Color(0xFFF1F5F2),
+                            strokeCap = StrokeCap.Round
+                        )
+                        Text(
+                            text = if (quest.isCompleted) "Target burned! Snorlax recovering" else "${quest.remainingSteps} offset steps remaining to balance your budget",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = StitchTextSecondary
+                        )
+                    }
                 }
             }
         }

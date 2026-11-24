@@ -19,6 +19,7 @@ import com.poketch.mobile.health.HealthConnectManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.poketch.core.domain.model.CalorieLog
 import com.poketch.core.domain.model.MealCategory
+import com.poketch.core.domain.model.RecoveryQuest
 import com.poketch.core.domain.model.WeatherBoost
 import com.poketch.core.domain.repository.WeatherRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -64,7 +65,8 @@ data class CommandCenterUiState(
     val isSyncingWatch: Boolean = false,
     val syncMessage: String? = null,
     val isLoading: Boolean = false,
-    val weatherBoost: WeatherBoost? = null
+    val weatherBoost: WeatherBoost? = null,
+    val recoveryQuest: RecoveryQuest? = null
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -167,6 +169,15 @@ class CommandCenterViewModel @Inject constructor(
         watchSyncFlow
     ) { (profile, consumed, budgetState, snorlaxRecovery), (waterMl, steps, runMiles), (buddy, unlockedBuddies, weatherBoost), (nodes, isSyncing, syncMsg) ->
         val watch = nodes.firstOrNull()
+        val recoveryQuest = if (budgetState is CalorieBudgetState.OverTargetWarning) {
+            RecoveryQuest.create(
+                dateIso = todayIso,
+                surplusKcal = budgetState.surplusKcal,
+                startingStepsSnapshot = 0,
+                currentTotalSteps = steps.toInt()
+            )
+        } else null
+
         CommandCenterUiState(
             todayIso = todayIso,
             tdeeKcal = profile?.tdeeKcal ?: 2200,
@@ -186,7 +197,8 @@ class CommandCenterViewModel @Inject constructor(
             isSyncingWatch = isSyncing,
             syncMessage = syncMsg,
             isLoading = false,
-            weatherBoost = weatherBoost
+            weatherBoost = weatherBoost,
+            recoveryQuest = recoveryQuest
         )
     }.stateIn(
         scope = viewModelScope,

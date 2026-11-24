@@ -206,4 +206,46 @@ class DomainModelsValidationTest {
             validProfile.copy(activeBuddyPokemonId = 152)
         }
     }
+
+    @Test
+    fun recoveryQuest_targetOffsetStepsCalculationAndProgress() {
+        // (surplusKcal / 0.045).roundToInt().coerceIn(800, 8000)
+        // 100 kcal -> 100 / 0.045 = 2222 steps
+        val quest = RecoveryQuest.create(
+            dateIso = "2026-11-24",
+            surplusKcal = 100,
+            startingStepsSnapshot = 3000,
+            currentTotalSteps = 4111
+        )
+
+        assertThat(quest.targetOffsetSteps).isEqualTo(2222)
+        assertThat(quest.currentOffsetSteps).isEqualTo(1111)
+        assertThat(quest.remainingSteps).isEqualTo(1111)
+        assertThat(quest.progressFraction).isWithin(0.01f).of(0.5f)
+        assertThat(quest.isCompleted).isFalse()
+
+        // Low surplus coercion (min 800)
+        val lowSurplusQuest = RecoveryQuest.create(
+            dateIso = "2026-11-24",
+            surplusKcal = 10,
+            startingStepsSnapshot = 1000,
+            currentTotalSteps = 1900
+        )
+        assertThat(lowSurplusQuest.targetOffsetSteps).isEqualTo(800)
+        assertThat(lowSurplusQuest.currentOffsetSteps).isEqualTo(900)
+        assertThat(lowSurplusQuest.remainingSteps).isEqualTo(0)
+        assertThat(lowSurplusQuest.progressFraction).isEqualTo(1.0f)
+        assertThat(lowSurplusQuest.isCompleted).isTrue()
+
+        // High surplus coercion (max 8000)
+        val highSurplusQuest = RecoveryQuest.create(
+            dateIso = "2026-11-24",
+            surplusKcal = 1000,
+            startingStepsSnapshot = 1000,
+            currentTotalSteps = 1000
+        )
+        assertThat(highSurplusQuest.targetOffsetSteps).isEqualTo(8000)
+        assertThat(highSurplusQuest.currentOffsetSteps).isEqualTo(0)
+        assertThat(highSurplusQuest.isCompleted).isFalse()
+    }
 }
