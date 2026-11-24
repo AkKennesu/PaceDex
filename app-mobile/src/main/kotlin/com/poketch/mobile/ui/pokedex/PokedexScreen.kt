@@ -170,7 +170,8 @@ fun PokedexScreen(
             ) {
                 items(
                     items = state.filteredPokemon,
-                    key = { it.pokedexNumber }
+                    key = { it.pokedexNumber },
+                    contentType = { "pokemon_card" }
                 ) { pokemon ->
                     StitchPokemonCollectorCard(
                         pokemon = pokemon,
@@ -276,20 +277,14 @@ private fun StitchPokemonCollectorCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier
-            .shadow(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(20.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.06f)
-            )
-            .bouncyPress(onClick = onClick),
+        modifier = modifier.bouncyPress(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = StitchSurfaceCard,
         border = BorderStroke(
             if (isPartner) 2.dp else 1.dp,
             if (isPartner) StitchPrimary else StitchBorderSubtle
-        )
+        ),
+        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier.padding(10.dp),
@@ -432,17 +427,11 @@ private fun StitchActiveMissionCard(
     val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = if (isDark) 0.dp else 8.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.05f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.08f)
-            ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier.padding(18.dp),

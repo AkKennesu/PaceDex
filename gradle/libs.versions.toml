@@ -31,8 +31,11 @@ playServicesAuth = "21.2.0"
 zxing = "3.5.4"
 playServicesCodeScanner = "16.1.0"
 glance = "1.2.0"
+kotlinxCollectionsImmutable = "0.3.8"
 
 [libraries]
+# Immutable Collections
+kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
 # Coroutines
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }

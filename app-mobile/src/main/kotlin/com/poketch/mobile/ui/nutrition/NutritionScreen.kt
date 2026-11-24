@@ -161,7 +161,7 @@ fun NutritionScreen(
                         shape = RoundedCornerShape(20.dp),
                         color = StitchSurfaceCard,
                         border = BorderStroke(1.dp, StitchBorderSubtle),
-                        shadowElevation = 2.dp
+                        shadowElevation = 0.dp
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -275,7 +275,7 @@ fun NutritionScreen(
                                 .bouncyPress { showAddMealDialog = true },
                             shape = CircleShape,
                             color = StitchPrimary,
-                            shadowElevation = 2.dp
+                            shadowElevation = 0.dp
                         ) {
                             Box(
                                 modifier = Modifier.size(28.dp),
@@ -301,7 +301,8 @@ fun NutritionScreen(
             } else {
                 items(
                     items = state.todayLogs,
-                    key = { it.logId }
+                    key = { it.logId },
+                    contentType = { "meal_item" }
                 ) { log ->
                     StitchMealLogCard(
                         log = log,
@@ -353,16 +354,10 @@ private fun StitchTdeeHeroCard(
     val animatedProgress by rememberAnimatedProgress(progress)
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 12.dp,
-                shape = RoundedCornerShape(26.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.15f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.25f)
-            ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
-        color = StitchDarkSlate
+        color = StitchDarkSlate,
+        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier.padding(22.dp),
@@ -548,16 +543,11 @@ private fun StitchMacroCard(
     val pct = (animatedRatio * 100).toInt()
 
     Surface(
-        modifier = modifier
-            .shadow(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.06f)
-            ),
+        modifier = modifier,
         shape = RoundedCornerShape(22.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier.padding(vertical = 14.dp, horizontal = 10.dp),
@@ -659,17 +649,11 @@ private fun SampleMealCard(
     isWatch: Boolean
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(20.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.05f)
-            ),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -781,17 +765,11 @@ private fun StitchMealLogCard(
     }
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(20.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.05f)
-            ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -905,17 +883,11 @@ private fun StitchBiometricsEditorCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.08f)
-            ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier.padding(18.dp),

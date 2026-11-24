@@ -17,6 +17,9 @@ import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.UserRepository
 import com.poketch.core.sync.PoketchSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -69,7 +72,8 @@ data class NutritionUiState(
     val fatText: String = "",
     // List & Filter State
     val filterCategory: MealCategory? = null,
-    val todayLogs: List<CalorieLog> = emptyList(),
+    val todayLogs: ImmutableList<CalorieLog> = persistentListOf(),
+    val meals: ImmutableList<CalorieLog> = persistentListOf(),
     val totalCaloriesToday: Int = 0,
     val budgetState: CalorieBudgetState = CalorieBudgetState.OnTrack(0, 1800, 1800, 0.0),
     val weeklyNutrition: List<DailyNutritionSummary> = emptyList(),
@@ -148,7 +152,8 @@ class NutritionViewModel @Inject constructor(
             carbsText = form.carbsText,
             fatText = form.fatText,
             filterCategory = form.filterCategory,
-            todayLogs = filteredLogs,
+            todayLogs = filteredLogs.toImmutableList(),
+            meals = filteredLogs.toImmutableList(),
             totalCaloriesToday = totalCalories,
             budgetState = budgetState,
             weeklyNutrition = weekly,

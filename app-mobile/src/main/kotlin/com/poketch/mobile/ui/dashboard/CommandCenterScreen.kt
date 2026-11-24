@@ -474,17 +474,11 @@ private fun StitchCalorieBudgetCard(
     val animatedProgress by rememberAnimatedProgress(targetRatio)
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 10.dp,
-                shape = RoundedCornerShape(26.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.08f)
-            ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             // Card Title Row
@@ -692,16 +686,11 @@ private fun StitchActivePartnerCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(26.dp),
-                ambientColor = StitchPrimary.copy(alpha = 0.05f),
-                spotColor = StitchPrimary.copy(alpha = 0.08f)
-            )
             .clickable { handleBuddyCardTap() },
         shape = RoundedCornerShape(26.dp),
         color = StitchPartnerMint,
-        border = BorderStroke(1.dp, StitchPartnerBorder)
+        border = BorderStroke(1.dp, StitchPartnerBorder),
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -881,17 +870,11 @@ private fun StitchTwoColumnHabitCards(
         val waterGoalLiters = String.format(Locale.US, "%.1f", dailyWaterGoalMl / 1000.0)
 
         Surface(
-            modifier = Modifier
-                .weight(1f)
-                .shadow(
-                    elevation = 6.dp,
-                    shape = RoundedCornerShape(22.dp),
-                    ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
-                    spotColor = StitchDarkSlate.copy(alpha = 0.06f)
-                ),
+            modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(22.dp),
             color = StitchSurfaceCard,
-            border = BorderStroke(1.dp, StitchBorderSubtle)
+            border = BorderStroke(1.dp, StitchBorderSubtle),
+            shadowElevation = 0.dp
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -984,17 +967,11 @@ private fun StitchTwoColumnHabitCards(
         val animatedStepsProgress by rememberAnimatedProgress(stepsRatio)
 
         Surface(
-            modifier = Modifier
-                .weight(1f)
-                .shadow(
-                    elevation = 6.dp,
-                    shape = RoundedCornerShape(22.dp),
-                    ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
-                    spotColor = StitchDarkSlate.copy(alpha = 0.06f)
-                ),
+            modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(22.dp),
             color = StitchSurfaceCard,
-            border = BorderStroke(1.dp, StitchBorderSubtle)
+            border = BorderStroke(1.dp, StitchBorderSubtle),
+            shadowElevation = 0.dp
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -1098,15 +1075,10 @@ private fun StitchPrimaryActionCTA(
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp)
-            .shadow(
-                elevation = if (isDark) 0.dp else 8.dp,
-                shape = RoundedCornerShape(26.dp),
-                ambientColor = StitchPrimary.copy(alpha = 0.2f),
-                spotColor = StitchPrimary.copy(alpha = 0.35f)
-            )
             .bouncyPress(onClick = onClick),
         shape = RoundedCornerShape(26.dp),
-        color = StitchPrimary
+        color = StitchPrimary,
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -1141,17 +1113,11 @@ private fun StitchSnorlaxRecoveryCard(
     val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = if (isDark) 0.dp else 4.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.06f)
-            ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier

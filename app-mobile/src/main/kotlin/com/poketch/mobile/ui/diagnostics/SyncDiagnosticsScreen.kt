@@ -249,17 +249,11 @@ fun SyncDiagnosticsScreen(
 
             // 3. Appearance & Trainer Account Card
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(
-                        elevation = if (isDark) 0.dp else 6.dp,
-                        shape = RoundedCornerShape(22.dp),
-                        ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
-                        spotColor = StitchDarkSlate.copy(alpha = 0.06f)
-                    ),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
                 color = StitchSurfaceCard,
-                border = BorderStroke(1.dp, StitchBorderSubtle)
+                border = BorderStroke(1.dp, StitchBorderSubtle),
+                shadowElevation = 0.dp
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -412,17 +406,11 @@ private fun StitchWearOsStatusCard(
     }
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = if (isDark) 0.dp else 10.dp,
-                shape = RoundedCornerShape(26.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.04f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.08f)
-            ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -588,17 +576,11 @@ private fun StitchReminderToggleCard(
     val isDark = LocalStitchColors.current.isOledDark
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = if (isDark) 0.dp else 4.dp,
-                shape = RoundedCornerShape(20.dp),
-                ambientColor = StitchDarkSlate.copy(alpha = 0.03f),
-                spotColor = StitchDarkSlate.copy(alpha = 0.06f)
-            ),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = StitchSurfaceCard,
-        border = BorderStroke(1.dp, StitchBorderSubtle)
+        border = BorderStroke(1.dp, StitchBorderSubtle),
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier

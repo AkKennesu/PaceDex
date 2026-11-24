@@ -7,6 +7,9 @@ import com.poketch.core.domain.model.PokemonCategory
 import com.poketch.core.domain.repository.PokemonRepository
 import com.poketch.core.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +32,7 @@ enum class PokedexFilter(val label: String) {
 
 data class PokedexUiState(
     val allPokemon: List<Pokemon> = emptyList(),
-    val filteredPokemon: List<Pokemon> = emptyList(),
+    val filteredPokemon: ImmutableList<Pokemon> = persistentListOf(),
     val unlockedCount: Int = 0,
     val totalCount: Int = 151,
     val activeBuddyId: Int = 1,
@@ -79,7 +82,7 @@ class PokedexViewModel @Inject constructor(
 
         PokedexUiState(
             allPokemon = sortedCatalog,
-            filteredPokemon = filtered,
+            filteredPokemon = filtered.toImmutableList(),
             unlockedCount = unlockedCount,
             totalCount = 151,
             activeBuddyId = activeBuddyId,
