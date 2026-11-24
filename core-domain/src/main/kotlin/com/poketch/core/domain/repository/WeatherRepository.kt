@@ -7,7 +7,8 @@ data class CurrentWeather(
     val conditionShort: String = "SUN",
     val badgeText: String = "28°C / SUNNY",
     val isDaytime: Boolean = true,
-    val conditionText: String = "SUNNY"
+    val conditionText: String = "SUNNY",
+    val wmoCode: Int? = null
 )
 
 interface WeatherRepository {

@@ -246,7 +246,8 @@ class OfflineWeatherRepository @Inject constructor(
                 conditionShort = condition,
                 badgeText = badge,
                 isDaytime = isDaytime,
-                conditionText = conditionFull
+                conditionText = conditionFull,
+                wmoCode = cachedHour.wmoCode
             )
         }
 
@@ -266,7 +267,8 @@ class OfflineWeatherRepository @Inject constructor(
             conditionShort = condition,
             badgeText = badge,
             isDaytime = isDaytime,
-            conditionText = conditionFull
+            conditionText = conditionFull,
+            wmoCode = latestCached?.wmoCode
         )
     }
 

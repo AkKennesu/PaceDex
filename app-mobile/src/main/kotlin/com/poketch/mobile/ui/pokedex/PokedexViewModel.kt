@@ -18,6 +18,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.poketch.core.domain.model.WeatherBoost
+import com.poketch.core.domain.repository.WeatherRepository
+import java.time.LocalTime
+
 enum class PokedexFilter(val label: String) {
     ALL("All (151)"),
     UNLOCKED("Unlocked"),
@@ -39,12 +43,14 @@ data class PokedexUiState(
     val selectedFilter: PokedexFilter = PokedexFilter.ALL,
     val selectedPokemon: Pokemon? = null,
     val isLoading: Boolean = false,
+    val activeWeatherBoostType: String? = null,
 )
 
 @HiltViewModel
 class PokedexViewModel @Inject constructor(
     pokemonRepository: PokemonRepository,
     private val userRepository: UserRepository,
+    private val weatherRepository: WeatherRepository,
 ) : ViewModel() {
 
     private val _selectedFilter = MutableStateFlow(PokedexFilter.ALL)
@@ -52,16 +58,21 @@ class PokedexViewModel @Inject constructor(
 
     private val allPokemonFlow = pokemonRepository.observeAllPokemon()
     private val userProfileFlow = userRepository.observeUserProfile()
+    private val weatherFlow = weatherRepository.observeCurrentWeather()
 
     val uiState: StateFlow<PokedexUiState> = combine(
         allPokemonFlow,
         userProfileFlow,
         _selectedFilter,
         _selectedPokemon,
-    ) { catalog, userProfile, filter, selectedPokemon ->
+        weatherFlow
+    ) { catalog, userProfile, filter, selectedPokemon, weather ->
         val sortedCatalog = catalog.sortedBy { it.pokedexNumber }
         val unlockedCount = sortedCatalog.count { it.isUnlocked }
         val activeBuddyId = userProfile?.activeBuddyPokemonId ?: 1
+        val hour = LocalTime.now().hour
+        val isNight = hour >= 20 || hour < 5
+        val boost = WeatherBoost.from(weather.wmoCode, isNight)
 
         val filtered = when (filter) {
             PokedexFilter.ALL -> sortedCatalog
@@ -89,6 +100,7 @@ class PokedexViewModel @Inject constructor(
             selectedFilter = filter,
             selectedPokemon = updatedSelected,
             isLoading = false,
+            activeWeatherBoostType = boost.boostType,
         )
     }.stateIn(
         scope = viewModelScope,

@@ -73,6 +73,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.poketch.core.domain.engine.PokemonUnlockEngine
 import com.poketch.core.domain.model.Pokemon
 import com.poketch.mobile.ui.theme.StitchAlertCoral
 import com.poketch.mobile.ui.theme.StitchBorderSubtle
@@ -173,9 +174,11 @@ fun PokedexScreen(
                     key = { it.pokedexNumber },
                     contentType = { "pokemon_card" }
                 ) { pokemon ->
+                    val isWeatherBoosted = PokemonUnlockEngine.isWeatherBoosted(pokemon, state.activeWeatherBoostType)
                     StitchPokemonCollectorCard(
                         pokemon = pokemon,
                         isPartner = pokemon.pokedexNumber == state.activeBuddyId,
+                        isWeatherBoosted = isWeatherBoosted,
                         onClick = { viewModel.onPokemonClicked(pokemon) },
                         modifier = Modifier.animateItem()
                     )
@@ -203,9 +206,11 @@ fun PokedexScreen(
                 },
                 label = "pokemon_detail_transition"
             ) { currentPokemon ->
+                val isWeatherBoosted = PokemonUnlockEngine.isWeatherBoosted(currentPokemon, state.activeWeatherBoostType)
                 StitchPokemonDetailSheet(
                     pokemon = currentPokemon,
                     isPartner = currentPokemon.pokedexNumber == state.activeBuddyId,
+                    isWeatherBoosted = isWeatherBoosted,
                     onSetAsPartner = {
                         viewModel.setActiveBuddy(currentPokemon.pokedexNumber)
                         viewModel.onDismissBottomSheet()
@@ -273,6 +278,7 @@ private fun StitchPokedexFilterChips(
 private fun StitchPokemonCollectorCard(
     pokemon: Pokemon,
     isPartner: Boolean,
+    isWeatherBoosted: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -332,6 +338,21 @@ private fun StitchPokemonCollectorCard(
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                         )
                     }
+                } else if (isWeatherBoosted) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = StitchStepsAmber.copy(alpha = 0.18f),
+                        border = BorderStroke(1.dp, StitchStepsAmber.copy(alpha = 0.8f))
+                    ) {
+                        Text(
+                            text = "2× Boost",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = StitchStepsAmber,
+                            fontSize = 9.sp,
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                        )
+                    }
                 } else {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
@@ -350,7 +371,13 @@ private fun StitchPokemonCollectorCard(
 
             // Creature Pedestal
             val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
-            val pedestalBg = if (isDark) Color(0xFF090F0D) else (if (pokemon.isUnlocked) Color(0xFFF7FAF8) else Color(0xFFF1F4F2))
+            val pedestalBg = if (isDark) {
+                if (!pokemon.isUnlocked && isWeatherBoosted) Color(0xFF1E1A0E) else Color(0xFF090F0D)
+            } else {
+                if (pokemon.isUnlocked) Color(0xFFF7FAF8)
+                else if (isWeatherBoosted) Color(0xFFFFFBEB)
+                else Color(0xFFF1F4F2)
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -376,8 +403,8 @@ private fun StitchPokemonCollectorCard(
                 } else {
                     Icon(
                         imageVector = Icons.Default.Lock,
-                        contentDescription = "Locked",
-                        tint = StitchTextMuted,
+                        contentDescription = if (isWeatherBoosted) "Locked (Weather Boosted)" else "Locked",
+                        tint = if (isWeatherBoosted) StitchStepsAmber else StitchTextMuted,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -568,6 +595,7 @@ private fun StitchActiveMissionCard(
 private fun StitchPokemonDetailSheet(
     pokemon: Pokemon,
     isPartner: Boolean,
+    isWeatherBoosted: Boolean = false,
     onSetAsPartner: () -> Unit
 ) {
     Column(
@@ -613,6 +641,29 @@ private fun StitchPokemonDetailSheet(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
+        }
+
+        if (!pokemon.isUnlocked && isWeatherBoosted) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = StitchStepsAmber.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, StitchStepsAmber.copy(alpha = 0.6f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(text = "⚡", fontSize = 16.sp)
+                    Text(
+                        text = "Weather Boost Active! Unlocks 2× faster today.",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = StitchStepsAmber
+                    )
+                }
+            }
         }
 
         Surface(

@@ -19,6 +19,8 @@ import com.poketch.mobile.health.HealthConnectManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.poketch.core.domain.model.CalorieLog
 import com.poketch.core.domain.model.MealCategory
+import com.poketch.core.domain.model.WeatherBoost
+import com.poketch.core.domain.repository.WeatherRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,6 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalTime
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
@@ -60,7 +63,8 @@ data class CommandCenterUiState(
     val unlockedBuddies: List<Pokemon> = emptyList(),
     val isSyncingWatch: Boolean = false,
     val syncMessage: String? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val weatherBoost: WeatherBoost? = null
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -72,7 +76,8 @@ class CommandCenterViewModel @Inject constructor(
     private val pokemonRepository: PokemonRepository,
     private val evaluateAchievementsUseCase: EvaluateAchievementsUseCase,
     private val healthConnectManager: HealthConnectManager,
-    private val syncManager: PoketchSyncManager
+    private val syncManager: PoketchSyncManager,
+    weatherRepository: WeatherRepository
 ) : ViewModel() {
 
     private val todayIso: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
@@ -134,11 +139,17 @@ class CommandCenterViewModel @Inject constructor(
         Triple(water, steps, run)
     }
 
-    private val buddyAndUnlockedFlow = combine(
+    private val weatherFlow = weatherRepository.observeCurrentWeather()
+
+    private val buddyAndWeatherFlow = combine(
         activeBuddyFlow,
-        unlockedBuddiesFlow
-    ) { active, unlocked ->
-        Pair(active, unlocked)
+        unlockedBuddiesFlow,
+        weatherFlow
+    ) { active, unlocked, weather ->
+        val hour = LocalTime.now().hour
+        val isNight = hour >= 20 || hour < 5
+        val boost = WeatherBoost.from(weather.wmoCode, isNight, active?.primaryType)
+        Triple(active, unlocked, boost)
     }
 
     private val watchSyncFlow = combine(
@@ -152,9 +163,9 @@ class CommandCenterViewModel @Inject constructor(
     val uiState: StateFlow<CommandCenterUiState> = combine(
         calorieAndProfileFlow,
         habitFlow,
-        buddyAndUnlockedFlow,
+        buddyAndWeatherFlow,
         watchSyncFlow
-    ) { (profile, consumed, budgetState, snorlaxRecovery), (waterMl, steps, runMiles), (buddy, unlockedBuddies), (nodes, isSyncing, syncMsg) ->
+    ) { (profile, consumed, budgetState, snorlaxRecovery), (waterMl, steps, runMiles), (buddy, unlockedBuddies, weatherBoost), (nodes, isSyncing, syncMsg) ->
         val watch = nodes.firstOrNull()
         CommandCenterUiState(
             todayIso = todayIso,
@@ -174,7 +185,8 @@ class CommandCenterViewModel @Inject constructor(
             unlockedBuddies = unlockedBuddies,
             isSyncingWatch = isSyncing,
             syncMessage = syncMsg,
-            isLoading = false
+            isLoading = false,
+            weatherBoost = weatherBoost
         )
     }.stateIn(
         scope = viewModelScope,

@@ -106,6 +106,7 @@ import androidx.compose.material3.OutlinedButton
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.model.DeficitTier
 import com.poketch.core.domain.model.Pokemon
+import com.poketch.core.domain.model.WeatherBoost
 import com.poketch.mobile.ui.theme.AnimatedStatNumber
 import com.poketch.mobile.ui.theme.rememberAnimatedCounter
 import com.poketch.mobile.ui.theme.StitchAlertCoral
@@ -222,6 +223,7 @@ fun CommandCenterScreen(
             // 5. Active Partner Bento Card (Soft Mint with Floating 3D Mascot)
             StitchActivePartnerCard(
                 partner = uiState.activeBuddy,
+                weatherBoost = uiState.weatherBoost,
                 onSelectBuddyClick = { showBuddyPickerSheet = true }
             )
 
@@ -659,6 +661,7 @@ private fun StitchCalorieBudgetCard(
 @Composable
 private fun StitchActivePartnerCard(
     partner: Pokemon?,
+    weatherBoost: WeatherBoost? = null,
     onSelectBuddyClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -765,6 +768,29 @@ private fun StitchActivePartnerCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = StitchTextSecondary
                     )
+                }
+
+                // Weather Boost Chip
+                weatherBoost?.let { boost ->
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = StitchPrimaryTint.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, StitchPrimary.copy(alpha = 0.25f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = boost.chipLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = StitchDarkSlate,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
                 }
 
                 // Evo Gauge Progress
