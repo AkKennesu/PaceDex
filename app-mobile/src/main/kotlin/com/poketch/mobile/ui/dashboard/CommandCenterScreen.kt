@@ -823,11 +823,17 @@ private fun StitchActivePartnerCard(
                         .background(StitchPrimaryTint.copy(alpha = 0.7f))
                 )
 
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
+                val context = LocalContext.current
+                val partnerImageRequest = remember(partnerAsset) {
+                    ImageRequest.Builder(context)
                         .data("file:///android_asset/$partnerAsset")
-                        .crossfade(true)
-                        .build(),
+                        .size(128)
+                        .crossfade(120)
+                        .build()
+                }
+
+                AsyncImage(
+                    model = partnerImageRequest,
                     contentDescription = partnerName,
                     modifier = Modifier
                         .size(76.dp)
@@ -1154,6 +1160,15 @@ private fun StitchSnorlaxRecoveryCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            val context = LocalContext.current
+            val snorlaxImageRequest = remember {
+                ImageRequest.Builder(context)
+                    .data("file:///android_asset/sprites/pokemon_143.png")
+                    .size(128)
+                    .crossfade(120)
+                    .build()
+            }
+
             Box(
                 modifier = Modifier
                     .size(52.dp)
@@ -1162,10 +1177,7 @@ private fun StitchSnorlaxRecoveryCard(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data("file:///android_asset/sprites/pokemon_143.png")
-                        .crossfade(true)
-                        .build(),
+                    model = snorlaxImageRequest,
                     contentDescription = "Snorlax #143",
                     modifier = Modifier.size(44.dp)
                 )
@@ -1575,11 +1587,16 @@ private fun BuddyPickerSheetContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
+                        val context = LocalContext.current
+                        val buddyImageRequest = remember(buddy.spriteAssetPath) {
+                            ImageRequest.Builder(context)
                                 .data("file:///android_asset/${buddy.spriteAssetPath}")
-                                .crossfade(true)
-                                .build(),
+                                .size(128)
+                                .crossfade(120)
+                                .build()
+                        }
+                        AsyncImage(
+                            model = buddyImageRequest,
                             contentDescription = buddy.name,
                             modifier = Modifier.size(50.dp)
                         )

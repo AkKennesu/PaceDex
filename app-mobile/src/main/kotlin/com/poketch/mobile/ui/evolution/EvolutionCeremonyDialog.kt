@@ -165,12 +165,16 @@ fun EvolutionCeremonyDialog(
                 ) {
                     val activePokemon = if (stage == 1 && preEvolution != null) preEvolution else evolvedPokemon
                     val spriteUri = "file:///android_asset/${activePokemon.spriteAssetPath}"
+                    val spriteRequest = remember(spriteUri) {
+                        ImageRequest.Builder(context)
+                            .data(spriteUri)
+                            .size(128)
+                            .crossfade(120)
+                            .build()
+                    }
 
                     AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(spriteUri)
-                            .crossfade(true)
-                            .build(),
+                        model = spriteRequest,
                         contentDescription = activePokemon.name,
                         filterQuality = FilterQuality.None,
                         modifier = Modifier

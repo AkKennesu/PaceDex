@@ -365,11 +365,16 @@ private fun StitchPokemonCollectorCard(
                 contentAlignment = Alignment.Center
             ) {
                 if (pokemon.isUnlocked) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
+                    val context = LocalContext.current
+                    val spriteRequest = remember(pokemon.spriteAssetPath) {
+                        ImageRequest.Builder(context)
                             .data("file:///android_asset/${pokemon.spriteAssetPath}")
-                            .crossfade(true)
-                            .build(),
+                            .size(128)
+                            .crossfade(120)
+                            .build()
+                    }
+                    AsyncImage(
+                        model = spriteRequest,
                         contentDescription = pokemon.name,
                         modifier = Modifier.size(54.dp)
                     )
@@ -590,11 +595,16 @@ private fun StitchPokemonDetailSheet(
                 .background(StitchPrimaryTint.copy(alpha = 0.6f)),
             contentAlignment = Alignment.Center
         ) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
+            val context = LocalContext.current
+            val detailSpriteRequest = remember(pokemon.spriteAssetPath) {
+                ImageRequest.Builder(context)
                     .data("file:///android_asset/${pokemon.spriteAssetPath}")
-                    .crossfade(true)
-                    .build(),
+                    .size(128)
+                    .crossfade(120)
+                    .build()
+            }
+            AsyncImage(
+                model = detailSpriteRequest,
                 contentDescription = pokemon.name,
                 modifier = Modifier.size(80.dp)
             )
