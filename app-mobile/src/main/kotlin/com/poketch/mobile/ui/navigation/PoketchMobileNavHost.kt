@@ -1,16 +1,17 @@
 package com.poketch.mobile.ui.navigation
 
-import androidx.compose.animation.AnimatedContent
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,7 +29,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -35,9 +40,6 @@ import androidx.compose.material.icons.filled.CatchingPokemon
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,27 +48,25 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.poketch.core.data.gamification.UnlockEventDispatcher
 import com.poketch.core.domain.engine.UnlockEvent
 import com.poketch.core.domain.model.AuthState
@@ -86,8 +86,8 @@ import com.poketch.mobile.ui.theme.StitchCanvasBackground
 import com.poketch.mobile.ui.theme.StitchDarkSlate
 import com.poketch.mobile.ui.theme.StitchPrimary
 import com.poketch.mobile.ui.theme.StitchSurfaceCard
-import com.poketch.mobile.ui.theme.StitchTextMuted
 import com.poketch.mobile.ui.theme.StitchTextSecondary
+import kotlinx.coroutines.launch
 
 enum class MobileTab(
     val route: String,
@@ -111,7 +111,7 @@ fun PoketchMobileNavHost(
     syncDiagnosticsViewModel: SyncDiagnosticsViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
 ) {
-    val authState by authViewModel.authState.collectAsState()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
     when (authState) {
         is AuthState.Loading -> {
@@ -140,8 +140,14 @@ fun PoketchMobileNavHost(
             )
         }
         is AuthState.Authenticated -> {
-            var currentTab by rememberSaveable { mutableStateOf(MobileTab.DASHBOARD) }
+            val pagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
+            val coroutineScope = rememberCoroutineScope()
+            var isAccountOpen by rememberSaveable { mutableStateOf(false) }
             var unlockedPokemonDialog by remember { mutableStateOf<UnlockEvent.NewPokemonUnlocked?>(null) }
+
+            BackHandler(enabled = isAccountOpen) {
+                isAccountOpen = false
+            }
 
             LaunchedEffect(unlockEventDispatcher) {
                 unlockEventDispatcher.unlockEvents.collect { event ->
@@ -154,8 +160,16 @@ fun PoketchMobileNavHost(
                 containerColor = StitchCanvasBackground,
                 bottomBar = {
                     StitchFloatingBottomNav(
-                        currentTab = currentTab,
-                        onTabSelected = { currentTab = it }
+                        pagerState = pagerState,
+                        isAccountOpen = isAccountOpen,
+                        onTabSelected = { pageIndex ->
+                            isAccountOpen = false
+                            if (pagerState.currentPage != pageIndex) {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pageIndex)
+                                }
+                            }
+                        }
                     )
                 }
             ) { innerPadding ->
@@ -164,28 +178,40 @@ fun PoketchMobileNavHost(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    AnimatedContent(
-                        targetState = currentTab,
-                        transitionSpec = {
-                            (fadeIn(animationSpec = tween(220)) + slideInVertically(animationSpec = tween(220)) { it / 28 }) togetherWith
-                                    fadeOut(animationSpec = tween(160))
-                        },
-                        label = "tab_crossfade_micro_slide"
-                    ) { targetTab ->
-                        when (targetTab) {
-                            MobileTab.DASHBOARD -> CommandCenterScreen(
+                    HorizontalPager(
+                        state = pagerState,
+                        beyondViewportPageCount = 3,
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        when (page) {
+                            0 -> CommandCenterScreen(
                                 viewModel = commandCenterViewModel,
-                                onOpenProfile = { currentTab = MobileTab.ACCOUNT },
-                                onOpenLogMeal = { currentTab = MobileTab.NUTRITION }
+                                onOpenProfile = { isAccountOpen = true },
+                                onOpenLogMeal = {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(1)
+                                    }
+                                }
                             )
-                            MobileTab.NUTRITION -> NutritionScreen(viewModel = nutritionViewModel)
-                            MobileTab.POKEDEX -> PokedexScreen(viewModel = pokedexViewModel)
-                            MobileTab.DIAGNOSTICS -> SyncDiagnosticsScreen(
+                            1 -> NutritionScreen(viewModel = nutritionViewModel)
+                            2 -> PokedexScreen(viewModel = pokedexViewModel)
+                            3 -> SyncDiagnosticsScreen(
                                 viewModel = syncDiagnosticsViewModel,
-                                onOpenAccount = { currentTab = MobileTab.ACCOUNT }
+                                onOpenAccount = { isAccountOpen = true }
                             )
-                            MobileTab.ACCOUNT -> AuthScreen(viewModel = authViewModel)
                         }
+                    }
+
+                    AnimatedVisibility(
+                        visible = isAccountOpen,
+                        enter = fadeIn(animationSpec = tween(220)) + slideInVertically(animationSpec = tween(220)) { it / 28 },
+                        exit = fadeOut(animationSpec = tween(160)),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        AuthScreen(
+                            viewModel = authViewModel,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                 }
             }
@@ -204,12 +230,13 @@ fun PoketchMobileNavHost(
 /**
  * Google Stitch Floating Capsule Bottom Navigation Dock
  * Matches DESIGN.md: Floating white capsule dock with 30px radius, soft drop shadow,
- * and animated solid #0F172A dark slate pill for the active tab.
+ * and single continuous sliding pill driven by graphicsLayer translationX for 120fps physics.
  */
 @Composable
 private fun StitchFloatingBottomNav(
-    currentTab: MobileTab,
-    onTabSelected: (MobileTab) -> Unit,
+    pagerState: PagerState,
+    isAccountOpen: Boolean,
+    onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val navTabs = listOf(
@@ -220,6 +247,7 @@ private fun StitchFloatingBottomNav(
     )
 
     val isDark = com.poketch.mobile.ui.theme.LocalStitchColors.current.isOledDark
+    val pillColor = if (isDark) Color(0xFF34D399) else StitchDarkSlate
 
     Box(
         modifier = modifier
@@ -241,75 +269,100 @@ private fun StitchFloatingBottomNav(
             color = if (isDark) Color(0xE6090F0D) else StitchSurfaceCard,
             border = BorderStroke(1.dp, if (isDark) Color(0xFF1F2E26) else StitchBorderSubtle)
         ) {
-            Row(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(6.dp)
             ) {
-                navTabs.forEach { tab ->
-                    val isSelected = currentTab == tab
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val isPressed by interactionSource.collectIsPressedAsState()
-                    val scale by animateFloatAsState(
-                        targetValue = if (isPressed) 0.93f else 1f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                        label = "tab_scale"
-                    )
+                val tabWidth = maxWidth / navTabs.size
+                val density = LocalDensity.current
+                val tabWidthPx = with(density) { tabWidth.toPx() }
 
-                    val pillBgColor by animateColorAsState(
-                        targetValue = if (isSelected) {
-                            if (isDark) Color(0xFF34D399) else StitchDarkSlate
-                        } else Color.Transparent,
-                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                        label = "tab_bg"
-                    )
-                    val contentColor by animateColorAsState(
-                        targetValue = if (isSelected) {
-                            if (isDark) Color(0xFF022C22) else Color.White
-                        } else StitchTextSecondary,
-                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                        label = "tab_content_color"
-                    )
+                // Continuous sliding pill driven by RenderThread / graphicsLayer (zero recomposition on swipe)
+                Box(
+                    modifier = Modifier
+                        .width(tabWidth)
+                        .height(44.dp)
+                        .graphicsLayer {
+                            translationX = (pagerState.currentPage + pagerState.currentPageOffsetFraction) * tabWidthPx
+                            alpha = if (isAccountOpen) 0f else 1f
+                        }
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(pillColor)
+                )
 
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(44.dp)
-                            .graphicsLayer {
-                                scaleX = scale
-                                scaleY = scale
-                            }
-                            .clip(RoundedCornerShape(26.dp))
-                            .background(pillBgColor)
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onClick = { onTabSelected(tab) }
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(horizontal = 10.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    navTabs.forEachIndexed { index, tab ->
+                        val isSelected = !isAccountOpen && pagerState.currentPage == index
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val isPressed by interactionSource.collectIsPressedAsState()
+                        val scale by animateFloatAsState(
+                            targetValue = if (isPressed) 0.93f else 1f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                            label = "tab_scale"
+                        )
+
+                        val contentColor by animateColorAsState(
+                            targetValue = if (isSelected) {
+                                if (isDark) Color(0xFF022C22) else Color.White
+                            } else StitchTextSecondary,
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                            label = "tab_content_color"
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .width(tabWidth)
+                                .height(44.dp)
+                                .graphicsLayer {
+                                    scaleX = scale
+                                    scaleY = scale
+                                }
+                                .clip(RoundedCornerShape(26.dp))
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { onTabSelected(index) }
+                                ),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = tab.icon,
-                                contentDescription = tab.title,
-                                tint = contentColor,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            if (isSelected) {
-                                Spacer(modifier = Modifier.size(6.dp))
-                                Text(
-                                    text = tab.title,
-                                    color = contentColor,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(horizontal = 6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = tab.icon,
+                                    contentDescription = tab.title,
+                                    tint = contentColor,
+                                    modifier = Modifier.size(20.dp)
                                 )
+                                AnimatedVisibility(
+                                    visible = isSelected,
+                                    enter = fadeIn(animationSpec = tween(180)) + expandHorizontally(
+                                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                        expandFrom = Alignment.Start
+                                    ),
+                                    exit = fadeOut(animationSpec = tween(120)) + shrinkHorizontally(
+                                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                        shrinkTowards = Alignment.Start
+                                    )
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Spacer(modifier = Modifier.size(6.dp))
+                                        Text(
+                                            text = tab.title,
+                                            color = contentColor,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
