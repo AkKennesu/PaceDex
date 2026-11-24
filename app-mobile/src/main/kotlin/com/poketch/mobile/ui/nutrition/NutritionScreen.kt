@@ -49,28 +49,42 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -82,7 +96,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -112,13 +128,16 @@ import com.poketch.mobile.ui.theme.StitchSurfaceCard
 import com.poketch.mobile.ui.theme.StitchTextMuted
 import com.poketch.mobile.ui.theme.StitchTextPrimary
 import com.poketch.mobile.ui.theme.StitchTextSecondary
+import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * Google Stitch Nutrition & TDEE Log Screen
  * Features Dark Slate TDEE Hero Banner, 3 Bento Macro Cards with animated circular rings,
- * and clean meal cards with Phone/Watch device badges.
+ * 1-Tap Recent & Favorites strip, Swipe-to-Delete with Undo, and Barcode Scanner confirmation sheet.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NutritionScreen(
     modifier: Modifier = Modifier,
@@ -126,6 +145,9 @@ fun NutritionScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var showAddMealDialog by rememberSaveable { mutableStateOf(false) }
     var scannedFoundFood by remember { mutableStateOf<SavedFood?>(null) }
@@ -236,7 +258,31 @@ fun NutritionScreen(
                 )
             }
 
-            // 3. Today's Log Section Header + Add & Barcode Scan Buttons
+            // 2.8. 1-Tap "Recent & Favorites" Horizontal Strip (Above Today's Log)
+            if (state.favoriteFoods.isNotEmpty() || state.recentFoods.isNotEmpty()) {
+                item(key = "food_favorites_strip") {
+                    StitchFoodFavoritesRow(
+                        favorites = state.favoriteFoods,
+                        recents = state.recentFoods,
+                        onLogFood = { food ->
+                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            val logId = viewModel.logSavedFood(food)
+                            coroutineScope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Logged ${food.name} (+${food.caloriesPerServing} kcal)",
+                                    actionLabel = "Undo",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.deleteLog(logId)
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+
+            // 3. Today's Log Section Header + Sleek "Scan Barcode" & "+ Log Meal" Pill Buttons
             item(key = "log_header") {
                 Row(
                     modifier = Modifier
@@ -267,24 +313,10 @@ fun NutritionScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            AnimatedStatNumber(
-                                targetValue = state.totalCaloriesToday,
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = StitchTextMuted
-                            )
-                            Text(
-                                text = " / ${state.targetCalorieCeiling} kcal",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = StitchTextMuted,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        // Barcode Food Scanner Button
+                        // Sleek "Scan Barcode" Pill Button
                         Surface(
                             modifier = Modifier
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(20.dp))
                                 .bouncyPress {
                                     BarcodeFoodScanner.startScan(
                                         context = context,
@@ -299,8 +331,8 @@ fun NutritionScreen(
                                                     showAddMealDialog = true
                                                     Toast.makeText(
                                                         context,
-                                                        "Barcode scanned ($code). Enter details to save!",
-                                                        Toast.LENGTH_LONG
+                                                        "Barcode not found ($code). Pre-filled for manual entry!",
+                                                        Toast.LENGTH_SHORT
                                                     ).show()
                                                 }
                                             )
@@ -310,45 +342,59 @@ fun NutritionScreen(
                                         }
                                     )
                                 },
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(20.dp),
                             color = StitchSurfaceCard,
                             border = BorderStroke(1.dp, StitchBorderSubtle),
                             shadowElevation = 0.dp
                         ) {
-                            Box(
-                                modifier = Modifier.size(28.dp),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.QrCodeScanner,
-                                    contentDescription = "Scan Food Barcode",
+                                    contentDescription = "Scan Barcode",
                                     tint = StitchDarkSlate,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Text(
+                                    text = "Scan Barcode",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = StitchDarkSlate
                                 )
                             }
                         }
 
-                        // Manual Add Meal Button
+                        // Sleek "+ Log Meal" Pill Button
                         Surface(
                             modifier = Modifier
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(20.dp))
                                 .bouncyPress {
                                     pendingBarcodeForManualAdd = null
                                     showAddMealDialog = true
                                 },
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(20.dp),
                             color = StitchPrimary,
                             shadowElevation = 0.dp
                         ) {
-                            Box(
-                                modifier = Modifier.size(28.dp),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
-                                    contentDescription = "Add Meal",
+                                    contentDescription = "Log Meal",
                                     tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "Log Meal",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
                                 )
                             }
                         }
@@ -356,25 +402,7 @@ fun NutritionScreen(
                 }
             }
 
-            // 3.5. 1-Tap Offline Food Favorites & Recents Row
-            if (state.favoriteFoods.isNotEmpty() || state.recentFoods.isNotEmpty()) {
-                item(key = "food_favorites_carousel") {
-                    StitchFoodFavoritesRow(
-                        favorites = state.favoriteFoods,
-                        recents = state.recentFoods,
-                        onLogFood = { food ->
-                            viewModel.logSavedFood(food)
-                            Toast.makeText(
-                                context,
-                                "Logged ${food.name} (+${food.caloriesPerServing} kcal)",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    )
-                }
-            }
-
-            // 4. Meal Cards List with Modifier.animateItem() for smooth insertion/deletion
+            // 4. Meal Cards List with SwipeToDismissBox & Undo
             if (state.todayLogs.isEmpty()) {
                 item(key = "default_meal_cards") {
                     StitchDefaultMealCards(onAddClick = { showAddMealDialog = true })
@@ -385,11 +413,76 @@ fun NutritionScreen(
                     key = { it.logId },
                     contentType = { "meal_item" }
                 ) { log ->
-                    StitchMealLogCard(
-                        log = log,
-                        onDelete = { viewModel.deleteLog(log.logId) },
-                        modifier = Modifier.animateItem()
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { dismissValue ->
+                            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+                                val deletedLog = log
+                                viewModel.deleteLog(log.logId)
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                coroutineScope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "Deleted ${deletedLog.foodDescription}",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.restoreLog(deletedLog)
+                                    }
+                                }
+                                true
+                            } else {
+                                false
+                            }
+                        }
                     )
+
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        modifier = Modifier.animateItem(),
+                        backgroundContent = {
+                            val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                                StitchAlertCoral
+                            } else {
+                                Color.Transparent
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(color)
+                                    .padding(horizontal = 22.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete Meal",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        },
+                        enableDismissFromStartToEnd = false,
+                        enableDismissFromEndToStart = true
+                    ) {
+                        StitchMealLogCard(
+                            log = log,
+                            onDelete = {
+                                val deletedLog = log
+                                viewModel.deleteLog(log.logId)
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                coroutineScope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "Deleted ${deletedLog.foodDescription}",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.restoreLog(deletedLog)
+                                    }
+                                }
+                            }
+                        )
+                    }
                 }
             }
 
@@ -397,31 +490,54 @@ fun NutritionScreen(
                 Spacer(modifier = Modifier.height(28.dp))
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 84.dp, start = 16.dp, end = 16.dp)
+        )
     }
 
-    scannedFoundFood?.let { food ->
-        StitchScannedFoodDialog(
+    val activeScannedFood = scannedFoundFood ?: state.scannedFood
+    activeScannedFood?.let { food ->
+        StitchScannedFoodConfirmationSheet(
             food = food,
-            onDismiss = { scannedFoundFood = null },
-            onLog = { category ->
-                viewModel.logSavedFood(food, category)
-                Toast.makeText(
-                    context,
-                    "Logged ${food.name} (+${food.caloriesPerServing} kcal)",
-                    Toast.LENGTH_SHORT
-                ).show()
+            onDismiss = {
                 scannedFoundFood = null
+                viewModel.dismissScannedFood()
+            },
+            onLog = { category, multiplier, isFavorite ->
+                val logId = viewModel.logSavedFood(food, category, multiplier)
+                if (isFavorite != food.isFavorite) {
+                    viewModel.toggleFavoriteFood(food.foodId, isFavorite)
+                }
+                scannedFoundFood = null
+                viewModel.dismissScannedFood()
+                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                coroutineScope.launch {
+                    val computedCal = (food.caloriesPerServing * multiplier).roundToInt().coerceAtLeast(1)
+                    val result = snackbarHostState.showSnackbar(
+                        message = "Logged ${food.name} (+$computedCal kcal)",
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.deleteLog(logId)
+                    }
+                }
             }
         )
     }
 
     if (showAddMealDialog) {
         StitchAddMealModal(
-            initialBarcode = pendingBarcodeForManualAdd,
+            initialBarcode = pendingBarcodeForManualAdd ?: state.pendingBarcodeForManualAdd,
             favorites = state.favoriteFoods,
             onDismiss = {
                 showAddMealDialog = false
                 pendingBarcodeForManualAdd = null
+                viewModel.clearPendingBarcode()
             },
             onScanRequested = {
                 BarcodeFoodScanner.startScan(
@@ -437,7 +553,7 @@ fun NutritionScreen(
                                 pendingBarcodeForManualAdd = code
                                 Toast.makeText(
                                     context,
-                                    "Barcode scanned ($code). Enter details to save!",
+                                    "Barcode not found ($code). Pre-filled for manual entry!",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -1151,42 +1267,23 @@ private fun StitchFoodFavoritesRow(
                     border = BorderStroke(1.dp, StitchBorderSubtle),
                     shadowElevation = 0.dp
                 ) {
+                    val label = if (food.isFavorite) {
+                        "★ ${food.name} • ${food.caloriesPerServing}"
+                    } else {
+                        "${food.name} • ${food.caloriesPerServing}"
+                    }
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        if (food.isFavorite) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = "Favorite",
-                                tint = StitchStepsAmber,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Bookmark,
-                                contentDescription = "Recent",
-                                tint = StitchTextMuted,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-
-                        Column {
-                            Text(
-                                text = food.name,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = StitchDarkSlate,
-                                maxLines = 1
-                            )
-                            Text(
-                                text = "+${food.caloriesPerServing} kcal",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = StitchPrimary
-                            )
-                        }
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = StitchDarkSlate,
+                            maxLines = 1
+                        )
                     }
                 }
             }
@@ -1195,16 +1292,22 @@ private fun StitchFoodFavoritesRow(
 }
 
 /**
- * Dialog shown when barcode is scanned and identified in local database
+ * Bottom sheet shown when barcode is scanned and identified in local database or OpenFoodFacts
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StitchScannedFoodDialog(
+private fun StitchScannedFoodConfirmationSheet(
     food: SavedFood,
     onDismiss: () -> Unit,
-    onLog: (MealCategory) -> Unit,
+    onLog: (category: MealCategory, multiplier: Float, isFavorite: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedCategory by remember { mutableStateOf(MealCategory.LUNCH) }
+    var multiplier by remember { mutableFloatStateOf(1.0f) }
+    var isFavorite by remember { mutableStateOf(food.isFavorite) }
+
+    val multipliers = remember { listOf(0.5f, 1.0f, 1.5f, 2.0f) }
     val categories = remember {
         listOf(
             MealCategory.BREAKFAST,
@@ -1214,121 +1317,187 @@ private fun StitchScannedFoodDialog(
         )
     }
 
-    AlertDialog(
+    val scaledCalories = (food.caloriesPerServing * multiplier).roundToInt().coerceAtLeast(1)
+    val scaledProtein = (food.proteinG * multiplier).roundToInt()
+    val scaledCarbs = (food.carbsG * multiplier).roundToInt()
+    val scaledFat = (food.fatG * multiplier).roundToInt()
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
+        sheetState = sheetState,
+        containerColor = StitchSurfaceCard,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = StitchBorderSubtle
+            )
+        }
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 24.dp, bottom = 36.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header Row: Food Name + Star Toggle
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(StitchPrimaryTint),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.QrCodeScanner,
-                        contentDescription = null,
-                        tint = StitchPrimary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Food Found!",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = food.name,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = StitchDarkSlate
                     )
+                    val brand = food.brand
+                    if (!brand.isNullOrBlank()) {
+                        Text(
+                            text = brand,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = StitchTextMuted
+                        )
+                    }
                     Text(
                         text = "Barcode: ${food.foodId}",
                         style = MaterialTheme.typography.labelSmall,
                         color = StitchTextMuted
                     )
                 }
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+
+                // "Save to Favorites ★" Toggle Button
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = StitchCanvasBackground,
-                    border = BorderStroke(1.dp, StitchBorderSubtle),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable { isFavorite = !isFavorite },
+                    shape = CircleShape,
+                    color = if (isFavorite) StitchStepsAmber.copy(alpha = 0.15f) else StitchBorderSubtle.copy(alpha = 0.5f)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    Box(
+                        modifier = Modifier.padding(10.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = food.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = StitchDarkSlate
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = if (isFavorite) "Favorited" else "Save to Favorites",
+                            tint = if (isFavorite) StitchStepsAmber else StitchTextMuted,
+                            modifier = Modifier.size(22.dp)
                         )
-                        val brand = food.brand
-                        if (!brand.isNullOrBlank()) {
+                    }
+                }
+            }
+
+            // Calorie & Macro Bento Card
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = StitchCanvasBackground,
+                border = BorderStroke(1.dp, StitchBorderSubtle)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Column {
                             Text(
-                                text = brand,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = StitchTextMuted
+                                text = "CALORIES",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = StitchTextMuted,
+                                letterSpacing = 0.5.sp
                             )
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "${food.caloriesPerServing} kcal",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Black,
-                                color = StitchPrimary
-                            )
-                            Text(
-                                text = food.servingLabel,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = StitchTextMuted
-                            )
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    text = "$scaledCalories",
+                                    style = MaterialTheme.typography.headlineLarge,
+                                    fontWeight = FontWeight.Black,
+                                    color = StitchPrimary
+                                )
+                                Text(
+                                    text = " kcal",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = StitchTextMuted,
+                                    modifier = Modifier.padding(bottom = 4.dp, start = 2.dp)
+                                )
+                            }
                         }
 
-                        // Macro breakdown
-                        Row(
+                        Text(
+                            text = "${food.servingLabel}${if (multiplier != 1.0f) " (×$multiplier)" else ""}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = StitchTextSecondary
+                        )
+                    }
+
+                    HorizontalDivider(color = StitchBorderSubtle.copy(alpha = 0.6f))
+
+                    // Macros Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        MacroStat(label = "Protein", value = "${scaledProtein}g", color = StitchAlertCoral)
+                        MacroStat(label = "Carbs", value = "${scaledCarbs}g", color = StitchStepsAmber)
+                        MacroStat(label = "Fat", value = "${scaledFat}g", color = StitchHydration)
+                    }
+                }
+            }
+
+            // Serving Multiplier Stepper: 0.5×, 1×, 1.5×, 2×
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Serving Multiplier",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = StitchDarkSlate
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    multipliers.forEach { m ->
+                        val isSelected = multiplier == m
+                        val label = when (m) {
+                            1.0f -> "1×"
+                            2.0f -> "2×"
+                            else -> "$m×"
+                        }
+                        Surface(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { multiplier = m },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) StitchPrimary else StitchSurfaceCard,
+                            border = BorderStroke(1.dp, if (isSelected) StitchPrimary else StitchBorderSubtle)
                         ) {
-                            Text(
-                                text = "P: ${food.proteinG}g",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = StitchAlertCoral
-                            )
-                            Text(
-                                text = "C: ${food.carbsG}g",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = StitchStepsAmber
-                            )
-                            Text(
-                                text = "F: ${food.fatG}g",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = StitchHydration
-                            )
+                            Box(
+                                modifier = Modifier.padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else StitchDarkSlate
+                                )
+                            }
                         }
                     }
                 }
+            }
 
-                // Category selector
+            // Meal Category Selection
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Meal Category",
                     style = MaterialTheme.typography.labelMedium,
@@ -1357,27 +1526,51 @@ private fun StitchScannedFoodDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
+
+            // 1-Tap "Log Meal" Button
             Button(
-                onClick = { onLog(selectedCategory) },
+                onClick = { onLog(selectedCategory, multiplier, isFavorite) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = StitchPrimary),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(26.dp)
             ) {
-                Text("Log Food")
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Log Meal (+$scaledCalories kcal)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
             }
-        },
-        dismissButton = {
-            OutlinedButton(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Text("Cancel")
-            }
-        },
-        containerColor = StitchSurfaceCard,
-        shape = RoundedCornerShape(26.dp)
-    )
+        }
+    }
+}
+
+@Composable
+private fun MacroStat(
+    label: String,
+    value: String,
+    color: Color
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = StitchTextMuted
+        )
+    }
 }
 
 /**
@@ -1433,12 +1626,31 @@ private fun StitchAddMealModal(
                     color = StitchDarkSlate
                 )
                 if (initialBarcode == null) {
-                    IconButton(onClick = onScanRequested) {
-                        Icon(
-                            imageVector = Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan Barcode",
-                            tint = StitchPrimary
-                        )
+                    Surface(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .bouncyPress(onClick = onScanRequested),
+                        shape = RoundedCornerShape(16.dp),
+                        color = StitchPrimaryTint
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan Barcode",
+                                tint = StitchPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Scan Barcode",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = StitchPrimary
+                            )
+                        }
                     }
                 }
             }

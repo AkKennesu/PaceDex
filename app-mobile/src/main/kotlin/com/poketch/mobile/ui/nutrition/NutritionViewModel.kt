@@ -33,6 +33,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 enum class WeightUnit {
     KG,
@@ -78,6 +79,8 @@ data class NutritionUiState(
     val meals: ImmutableList<CalorieLog> = persistentListOf(),
     val favoriteFoods: ImmutableList<SavedFood> = persistentListOf(),
     val recentFoods: ImmutableList<SavedFood> = persistentListOf(),
+    val scannedFood: SavedFood? = null,
+    val pendingBarcodeForManualAdd: String? = null,
     val totalCaloriesToday: Int = 0,
     val budgetState: CalorieBudgetState = CalorieBudgetState.OnTrack(0, 1800, 1800, 0.0),
     val weeklyNutrition: List<DailyNutritionSummary> = emptyList(),
@@ -168,6 +171,8 @@ class NutritionViewModel @Inject constructor(
             meals = filteredLogs.toImmutableList(),
             favoriteFoods = favorites.toImmutableList(),
             recentFoods = recents.toImmutableList(),
+            scannedFood = form.scannedFood,
+            pendingBarcodeForManualAdd = form.pendingBarcodeForManualAdd,
             totalCaloriesToday = totalCalories,
             budgetState = budgetState,
             weeklyNutrition = weekly,
@@ -555,16 +560,26 @@ class NutritionViewModel @Inject constructor(
         }
     }
 
-    fun logSavedFood(food: SavedFood, category: MealCategory = MealCategory.LUNCH) {
+    fun logSavedFood(
+        food: SavedFood,
+        category: MealCategory = MealCategory.LUNCH,
+        multiplier: Float = 1.0f
+    ): String {
+        val logId = UUID.randomUUID().toString()
+        val cals = (food.caloriesPerServing * multiplier).roundToInt().coerceAtLeast(1)
+        val p = (food.proteinG * multiplier).roundToInt()
+        val c = (food.carbsG * multiplier).roundToInt()
+        val f = (food.fatG * multiplier).roundToInt()
+
         val log = CalorieLog(
-            logId = UUID.randomUUID().toString(),
+            logId = logId,
             dateIso = todayIso,
             mealCategory = category,
             foodDescription = if (!food.brand.isNullOrBlank()) "${food.brand} - ${food.name}" else food.name,
-            caloriesKcal = food.caloriesPerServing,
-            proteinG = food.proteinG,
-            carbsG = food.carbsG,
-            fatG = food.fatG,
+            caloriesKcal = cals,
+            proteinG = p,
+            carbsG = c,
+            fatG = f,
             sourceDevice = DeviceSource.MOBILE,
             timestampMillis = System.currentTimeMillis(),
             isSynced = false,
@@ -577,6 +592,42 @@ class NutritionViewModel @Inject constructor(
                 syncManager.coalesceAndSyncCalorie(log)
             }
         }
+        return logId
+    }
+
+    fun restoreLog(log: CalorieLog) {
+        viewModelScope.launch {
+            calorieRepository.upsertCalorieLog(log)
+            evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncCalorie(log)
+            }
+        }
+    }
+
+    fun onBarcodeScanned(barcode: String) {
+        viewModelScope.launch {
+            val food = savedFoodRepository.getByBarcode(barcode)
+            if (food != null) {
+                _formState.value = _formState.value.copy(
+                    scannedFood = food,
+                    pendingBarcodeForManualAdd = null
+                )
+            } else {
+                _formState.value = _formState.value.copy(
+                    scannedFood = null,
+                    pendingBarcodeForManualAdd = barcode
+                )
+            }
+        }
+    }
+
+    fun dismissScannedFood() {
+        _formState.value = _formState.value.copy(scannedFood = null)
+    }
+
+    fun clearPendingBarcode() {
+        _formState.value = _formState.value.copy(pendingBarcodeForManualAdd = null)
     }
 
     fun onBarcodeScanned(
@@ -587,8 +638,10 @@ class NutritionViewModel @Inject constructor(
         viewModelScope.launch {
             val food = savedFoodRepository.getByBarcode(barcode)
             if (food != null) {
+                _formState.value = _formState.value.copy(scannedFood = food, pendingBarcodeForManualAdd = null)
                 onFound(food)
             } else {
+                _formState.value = _formState.value.copy(scannedFood = null, pendingBarcodeForManualAdd = barcode)
                 onNotFound(barcode)
             }
         }
@@ -719,4 +772,6 @@ private data class NutritionFormState(
     val carbsText: String = "",
     val fatText: String = "",
     val filterCategory: MealCategory? = null,
+    val scannedFood: SavedFood? = null,
+    val pendingBarcodeForManualAdd: String? = null,
 )
