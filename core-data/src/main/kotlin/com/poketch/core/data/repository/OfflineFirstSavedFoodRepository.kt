@@ -14,6 +14,12 @@ class OfflineFirstSavedFoodRepository @Inject constructor(
     private val savedFoodDao: SavedFoodDao
 ) : SavedFoodRepository {
 
+    override fun observeFavoritesAndRecents(limit: Int): Flow<List<SavedFood>> {
+        return savedFoodDao.observeFavoritesAndRecents(limit).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
     override fun observeFavorites(): Flow<List<SavedFood>> {
         return savedFoodDao.observeFavorites().map { list ->
             list.map { it.toDomain() }
@@ -36,8 +42,12 @@ class OfflineFirstSavedFoodRepository @Inject constructor(
         return savedFoodDao.getFoodById(foodId)?.toDomain()
     }
 
+    override suspend fun getByBarcode(barcode: String): SavedFood? {
+        return savedFoodDao.getByBarcode(barcode)?.toDomain()
+    }
+
     override suspend fun saveFood(food: SavedFood) {
-        savedFoodDao.upsertSavedFood(food.toEntity())
+        savedFoodDao.upsert(food.toEntity())
     }
 
     override suspend fun toggleFavorite(foodId: String, isFavorite: Boolean) {
@@ -45,7 +55,7 @@ class OfflineFirstSavedFoodRepository @Inject constructor(
     }
 
     override suspend fun recordFoodUsage(foodId: String) {
-        savedFoodDao.recordFoodUsage(foodId, System.currentTimeMillis())
+        savedFoodDao.incrementUsage(foodId, System.currentTimeMillis())
     }
 
     override suspend fun deleteSavedFood(foodId: String) {
