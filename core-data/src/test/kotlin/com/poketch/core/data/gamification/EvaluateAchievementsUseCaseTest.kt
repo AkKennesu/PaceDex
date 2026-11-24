@@ -83,4 +83,32 @@ class EvaluateAchievementsUseCaseTest {
         )
         assertThat(recoveryDays).isEqualTo(1)
     }
+
+    @Test
+    fun resolveWeatherBoostType_mapsRainAndStormToWaterElectric() {
+        assertThat(EvaluateAchievementsUseCase.resolveWeatherBoostType(weatherCode = 61, isNightWindow = false))
+            .isEqualTo("WATER_ELECTRIC")
+        assertThat(EvaluateAchievementsUseCase.resolveWeatherBoostType(weatherCode = 80, isNightWindow = false))
+            .isEqualTo("WATER_ELECTRIC")
+        assertThat(EvaluateAchievementsUseCase.resolveWeatherBoostType(weatherCode = 95, isNightWindow = true))
+            .isEqualTo("WATER_ELECTRIC")
+    }
+
+    @Test
+    fun resolveWeatherBoostType_mapsNightWindowToGhostFairy() {
+        assertThat(EvaluateAchievementsUseCase.resolveWeatherBoostType(weatherCode = 0, isNightWindow = true))
+            .isEqualTo("GHOST_FAIRY")
+        assertThat(EvaluateAchievementsUseCase.resolveWeatherBoostType(weatherCode = null, isNightWindow = true))
+            .isEqualTo("GHOST_FAIRY")
+    }
+
+    @Test
+    fun resolveWeatherBoostType_mapsClearDaytimeToFireGrass() {
+        assertThat(EvaluateAchievementsUseCase.resolveWeatherBoostType(weatherCode = 0, isNightWindow = false))
+            .isEqualTo("FIRE_GRASS")
+        assertThat(EvaluateAchievementsUseCase.resolveWeatherBoostType(weatherCode = 1, isNightWindow = false))
+            .isEqualTo("FIRE_GRASS")
+        assertThat(EvaluateAchievementsUseCase.resolveWeatherBoostType(weatherCode = null, isNightWindow = false))
+            .isEqualTo("FIRE_GRASS")
+    }
 }

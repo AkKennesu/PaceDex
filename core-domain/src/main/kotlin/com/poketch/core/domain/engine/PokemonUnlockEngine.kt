@@ -2,8 +2,22 @@ package com.poketch.core.domain.engine
 
 import com.poketch.core.domain.model.KantoEvolutionChains
 import com.poketch.core.domain.model.Pokemon
+import kotlin.math.roundToInt
 
 object PokemonUnlockEngine {
+
+    const val DEFAULT_WEATHER_BOOST_MULTIPLIER: Double = 1.5
+
+    fun isWeatherBoosted(pokemon: Pokemon, activeBoostType: String?): Boolean {
+        if (activeBoostType.isNullOrBlank()) return false
+        val types = listOfNotNull(pokemon.primaryType, pokemon.secondaryType)
+        return when (activeBoostType.uppercase()) {
+            "WATER_ELECTRIC" -> types.any { it.equals("Water", ignoreCase = true) || it.equals("Electric", ignoreCase = true) }
+            "FIRE_GRASS" -> types.any { it.equals("Fire", ignoreCase = true) || it.equals("Grass", ignoreCase = true) }
+            "GHOST_FAIRY" -> types.any { it.equals("Ghost", ignoreCase = true) || it.equals("Fairy", ignoreCase = true) }
+            else -> false
+        }
+    }
 
     fun evaluate(
         catalog: List<Pokemon>,
@@ -17,7 +31,14 @@ object PokemonUnlockEngine {
         fun updateProgressAndUnlock(pokedexNumber: Int, calculatedProgress: Int, reason: String) {
             val current = workingMap[pokedexNumber] ?: return
             val targetThreshold = current.unlockRule.targetThreshold
-            val newProgress = maxOf(current.currentProgress, calculatedProgress)
+            val isBoosted = isWeatherBoosted(current, context.activeWeatherBoostType)
+            val effectiveProgress = if (isBoosted && calculatedProgress > 0) {
+                val mult = if (context.weatherBoostMultiplier > 1.0) context.weatherBoostMultiplier else DEFAULT_WEATHER_BOOST_MULTIPLIER
+                (calculatedProgress * mult).roundToInt().coerceAtLeast(calculatedProgress + 1)
+            } else {
+                calculatedProgress
+            }
+            val newProgress = maxOf(current.currentProgress, effectiveProgress)
 
             if (newProgress > current.currentProgress && !current.isUnlocked) {
                 progressList.add(
@@ -40,10 +61,11 @@ object PokemonUnlockEngine {
                 workingMap[pokedexNumber] = unlocked
                 val preEvolutionId = KantoEvolutionChains.getPreEvolutionId(pokedexNumber)
                 val preEvolution = preEvolutionId?.let { workingMap[it] }
+                val triggerReason = if (isBoosted) "$reason (Weather Boosted!)" else reason
                 newlyUnlockedList.add(
                     UnlockEvent.NewPokemonUnlocked(
                         pokemon = unlocked,
-                        triggerReason = reason,
+                        triggerReason = triggerReason,
                         timestampMillis = nowMillis,
                         isEvolution = preEvolutionId != null,
                         preEvolution = preEvolution

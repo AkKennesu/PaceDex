@@ -365,6 +365,15 @@ class OfflineWeatherRepository @Inject constructor(
         }
     }
 
+    suspend fun getLatestCachedWeatherWmoCode(): Int? = withContext(Dispatchers.IO) {
+        val loc = resolveActiveLocation()
+        val zone = runCatching { ZoneId.of(loc.timeZoneId) }.getOrElse { ZoneId.systemDefault() }
+        val now = LocalDateTime.now(zone)
+        val currentHourIso = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:00", Locale.US))
+        hourlyWeatherCacheDao.getWeatherForHour(currentHourIso)?.wmoCode
+            ?: hourlyWeatherCacheDao.getLatestCachedWeather()?.wmoCode
+    }
+
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_PRESSURE) {
             val hpa = event.values.firstOrNull() ?: return

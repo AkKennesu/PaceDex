@@ -22,5 +22,6 @@ data class UnlockTriggerContext(
     val cumulativeSleepSessionsCount: Int = 0,
     val weatherCode: Int? = null,
     val isNightWindow: Boolean = false,
-    val activeWeatherBoostType: String? = null
+    val activeWeatherBoostType: String? = null,
+    val weatherBoostMultiplier: Double = 1.5
 )

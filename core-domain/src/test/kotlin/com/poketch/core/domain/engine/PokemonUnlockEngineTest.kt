@@ -321,5 +321,81 @@ class PokemonUnlockEngineTest {
         assertThat(mapDay3[143]?.currentProgress).isEqualTo(3)
         assertThat(resultDay3.newlyUnlockedEvents.map { it.pokemon.pokedexNumber }).contains(143)
     }
+
+    @Test
+    fun isWeatherBoosted_matchesTypesAccurately() {
+        val waterMon = Pokemon(
+            pokedexNumber = 7,
+            name = "Squirtle",
+            primaryType = "Water",
+            secondaryType = null,
+            unlockRule = UnlockRule("R", PokemonCategory.WATER_HYDRATION, "Desc", 1),
+            currentProgress = 0,
+            isUnlocked = false,
+            unlockedAtMillis = null,
+            spriteAssetPath = "s.png"
+        )
+        val grassPoisonMon = Pokemon(
+            pokedexNumber = 1,
+            name = "Bulbasaur",
+            primaryType = "Grass",
+            secondaryType = "Poison",
+            unlockRule = UnlockRule("R", PokemonCategory.STARTER, "Desc", 1),
+            currentProgress = 0,
+            isUnlocked = false,
+            unlockedAtMillis = null,
+            spriteAssetPath = "s.png"
+        )
+        val ghostMon = Pokemon(
+            pokedexNumber = 92,
+            name = "Gastly",
+            primaryType = "Ghost",
+            secondaryType = "Poison",
+            unlockRule = UnlockRule("R", PokemonCategory.SLEEP_STREAK, "Desc", 1),
+            currentProgress = 0,
+            isUnlocked = false,
+            unlockedAtMillis = null,
+            spriteAssetPath = "s.png"
+        )
+
+        assertThat(PokemonUnlockEngine.isWeatherBoosted(waterMon, "WATER_ELECTRIC")).isTrue()
+        assertThat(PokemonUnlockEngine.isWeatherBoosted(waterMon, "FIRE_GRASS")).isFalse()
+
+        assertThat(PokemonUnlockEngine.isWeatherBoosted(grassPoisonMon, "FIRE_GRASS")).isTrue()
+        assertThat(PokemonUnlockEngine.isWeatherBoosted(grassPoisonMon, "GHOST_FAIRY")).isFalse()
+
+        assertThat(PokemonUnlockEngine.isWeatherBoosted(ghostMon, "GHOST_FAIRY")).isTrue()
+        assertThat(PokemonUnlockEngine.isWeatherBoosted(ghostMon, "WATER_ELECTRIC")).isFalse()
+    }
+
+    @Test
+    fun weatherBoost_appliesMultiplierToBoostedPokemonProgress() {
+        val customCatalog = listOf(
+            Pokemon(
+                pokedexNumber = 60, // Poliwag
+                name = "Poliwag",
+                primaryType = "Water",
+                secondaryType = null,
+                unlockRule = UnlockRule("RULE_60", PokemonCategory.WATER_HYDRATION, "Water progress", 4),
+                currentProgress = 0,
+                isUnlocked = false,
+                unlockedAtMillis = null,
+                spriteAssetPath = "sprites/pokemon_060.png"
+            )
+        )
+
+        // 1 glass (250ml) -> base calculatedProgress = minOf(4, 250 / 250) = 1
+        // With WATER_ELECTRIC boost (1.5x) -> (1 * 1.5).roundToInt() = 2
+        val contextBoosted = UnlockTriggerContext(
+            todayWaterMl = 250,
+            activeWeatherBoostType = "WATER_ELECTRIC",
+            weatherBoostMultiplier = 1.5
+        )
+        val result = PokemonUnlockEngine.evaluate(customCatalog, contextBoosted, 1000L)
+        val poliwag = result.updatedCatalog.first { it.pokedexNumber == 60 }
+
+        assertThat(poliwag.currentProgress).isEqualTo(2)
+        assertThat(result.progressEvents.first().newProgress).isEqualTo(2)
+    }
 }
 

@@ -1,5 +1,6 @@
 package com.poketch.core.data.gamification
 
+import com.poketch.core.data.repository.OfflineWeatherRepository
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.engine.PokemonUnlockEngine
 import com.poketch.core.domain.engine.UnlockEvaluationResult
@@ -11,6 +12,8 @@ import com.poketch.core.domain.repository.HabitRepository
 import com.poketch.core.domain.repository.PokemonRepository
 import com.poketch.core.domain.repository.UserRepository
 import kotlinx.coroutines.flow.firstOrNull
+import java.time.LocalDateTime
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +23,8 @@ class EvaluateAchievementsUseCase @Inject constructor(
     private val calorieRepository: CalorieRepository,
     private val habitRepository: HabitRepository,
     private val pokemonRepository: PokemonRepository,
-    private val unlockEventDispatcher: UnlockEventDispatcher
+    private val unlockEventDispatcher: UnlockEventDispatcher,
+    private val offlineWeatherRepository: OfflineWeatherRepository? = null
 ) {
 
     suspend fun evaluate(
@@ -45,6 +49,12 @@ class EvaluateAchievementsUseCase @Inject constructor(
         val recentNutrition = calorieRepository.getRecentDailyNutrition(14)
         val recoveryDays = calculateRecoveryDays(recentNutrition, targetCeiling, todayIso)
 
+        val weatherCode = runCatching { offlineWeatherRepository?.getLatestCachedWeatherWmoCode() }.getOrNull()
+        val zoneId = runCatching { ZoneId.of(offlineWeatherRepository?.getResolvedTimeZoneId().orEmpty()) }.getOrElse { ZoneId.systemDefault() }
+        val localHour = LocalDateTime.now(zoneId).hour
+        val isNight = localHour >= 20 || localHour < 5
+        val activeWeatherBoostType = resolveWeatherBoostType(weatherCode, isNight)
+
         val context = UnlockTriggerContext(
             starterChoiceId = userProfile?.activeBuddyPokemonId ?: 1,
             currentLoggingStreakDays = 1, // Base active day
@@ -63,7 +73,11 @@ class EvaluateAchievementsUseCase @Inject constructor(
             recoveryDaysAfterSurplus = recoveryDays,
             sleepStreakDays = if (todaySleepHours >= 7.0) 1 else if (todaySleepHours > 0.0) 1 else 0,
             todaySleepHours = todaySleepHours,
-            hasSleepSessionToday = todaySleepHours > 0.0
+            hasSleepSessionToday = todaySleepHours > 0.0,
+            weatherCode = weatherCode,
+            isNightWindow = isNight,
+            activeWeatherBoostType = activeWeatherBoostType,
+            weatherBoostMultiplier = 1.5
         )
 
         val result = PokemonUnlockEngine.evaluate(
@@ -86,6 +100,14 @@ class EvaluateAchievementsUseCase @Inject constructor(
     }
 
     companion object {
+        fun resolveWeatherBoostType(weatherCode: Int?, isNightWindow: Boolean): String {
+            return when {
+                weatherCode != null && (weatherCode in 51..67 || weatherCode in 80..82 || weatherCode in 95..99) -> "WATER_ELECTRIC"
+                isNightWindow -> "GHOST_FAIRY"
+                else -> "FIRE_GRASS"
+            }
+        }
+
         fun calculateRecoveryDays(
             recentDaily: List<DailyNutritionSummary>,
             targetCeilingKcal: Int,
