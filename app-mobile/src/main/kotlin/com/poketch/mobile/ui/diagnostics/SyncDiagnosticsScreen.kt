@@ -58,11 +58,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -528,7 +528,9 @@ private fun StitchWearOsStatusCard(
                         tint = syncTextColor,
                         modifier = Modifier
                             .size(18.dp)
-                            .then(if (isSyncing) Modifier.rotate(rotation) else Modifier)
+                            .graphicsLayer {
+                                rotationZ = if (isSyncing) rotation else 0f
+                            }
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(

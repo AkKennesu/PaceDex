@@ -128,15 +128,16 @@ fun AnimatedProgressValue(targetFraction: Float): Float {
 /**
  * Gentle idle breathing float + tap-to-hop physics for the Active Buddy sprite.
  * Uses exact dp conversions via LocalDensity for consistent 60/120fps motion.
+ * Returns a lambda provider (() -> Float) to ensure evaluation occurs strictly in the draw phase (0 recompositions).
  */
 @Composable
-fun rememberBuddyMotion(): Pair<Float, () -> Unit> {
+fun rememberBuddyMotion(): Pair<() -> Float, () -> Unit> {
     val density = androidx.compose.ui.platform.LocalDensity.current.density
     val idleMaxOffsetPx = -4f * density
     val hopHeightPx = -18f * density
 
     val infinite = rememberInfiniteTransition(label = "buddyIdle")
-    val idleBob by infinite.animateFloat(
+    val idleBob = infinite.animateFloat(
         initialValue = 0f,
         targetValue = idleMaxOffsetPx,
         animationSpec = infiniteRepeatable(
@@ -159,5 +160,7 @@ fun rememberBuddyMotion(): Pair<Float, () -> Unit> {
         }
     }
 
-    return (idleBob + jumpOffset.value) to triggerHop
+    val offsetProvider: () -> Float = { idleBob.value + jumpOffset.value }
+
+    return offsetProvider to triggerHop
 }

@@ -42,10 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -175,7 +175,11 @@ fun EvolutionCeremonyDialog(
                         filterQuality = FilterQuality.None,
                         modifier = Modifier
                             .size(120.dp)
-                            .scale(if (stage == 1) pulseScale else finalScale)
+                            .graphicsLayer {
+                                val s = if (stage == 1) pulseScale else finalScale
+                                scaleX = s
+                                scaleY = s
+                            }
                     )
                 }
 

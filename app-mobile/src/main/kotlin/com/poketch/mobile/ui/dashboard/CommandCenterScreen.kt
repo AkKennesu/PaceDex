@@ -671,8 +671,8 @@ private fun StitchActivePartnerCard(
     val partnerName = partner?.name ?: "Bulbasaur"
     val partnerAsset = partner?.spriteAssetPath ?: "sprites/pokemon_1.png"
 
-    // Dynamic mascot breathing float & tap-to-hop physics via PoketchMotion
-    val (buddyMotionY, triggerHop) = rememberBuddyMotion()
+    // Dynamic mascot breathing float & tap-to-hop physics via PoketchMotion (draw phase only)
+    val (buddyOffsetProvider, triggerHop) = rememberBuddyMotion()
     val scope = rememberCoroutineScope()
     val heartAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
     val heartY = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -832,22 +832,20 @@ private fun StitchActivePartnerCard(
                     modifier = Modifier
                         .size(76.dp)
                         .graphicsLayer {
-                            translationY = buddyMotionY
+                            translationY = buddyOffsetProvider()
                         }
                 )
 
-                // Floating heart & sparkle pop
-                if (heartAlpha.value > 0.01f) {
-                    Text(
-                        text = "✨❤️✨",
-                        fontSize = 14.sp,
-                        modifier = Modifier
-                            .graphicsLayer {
-                                alpha = heartAlpha.value
-                                translationY = heartY.value
-                            }
-                    )
-                }
+                // Floating heart & sparkle pop (draw phase evaluation)
+                Text(
+                    text = "✨❤️✨",
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .graphicsLayer {
+                            alpha = heartAlpha.value
+                            translationY = heartY.value
+                        }
+                )
             }
         }
     }
