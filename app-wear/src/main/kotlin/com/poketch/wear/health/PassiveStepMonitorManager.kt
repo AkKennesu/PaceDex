@@ -8,6 +8,7 @@ import com.poketch.core.data.gamification.EvaluateAchievementsUseCase
 import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.HabitType
 import com.poketch.core.domain.repository.HabitRepository
+import com.poketch.core.sync.PoketchSyncManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,6 +23,7 @@ class PassiveStepMonitorManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val habitRepository: HabitRepository,
     private val evaluateAchievementsUseCase: EvaluateAchievementsUseCase,
+    private val syncManager: PoketchSyncManager? = null,
 ) {
     private val passiveClient = HealthServices.getClient(context).passiveMonitoringClient
 
@@ -58,6 +60,7 @@ class PassiveStepMonitorManager @Inject constructor(
                 numericValue = steps.toDouble(),
                 sourceDevice = DeviceSource.WEAR
             )
+            syncManager?.updateRecoveryQuestProgress(steps.toInt())
             evaluateAchievementsUseCase.evaluate(todayIso)
         }
     }

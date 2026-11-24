@@ -88,4 +88,42 @@ class OverTargetRedAlertScreenTest {
         composeTestRule.onNodeWithText("2500 / 6667 Steps").assertIsDisplayed()
         composeTestRule.onNodeWithText("4167 steps remaining to balance").assertIsDisplayed()
     }
+
+    @Test
+    fun redAlertScreen_rendersCelebrationAndClearsAlert_whenQuestCompleted() {
+        var dismissedClicked = false
+        val quest = com.poketch.core.domain.model.RecoveryQuest(
+            dateIso = "2026-11-24",
+            surplusKcal = 300,
+            targetOffsetSteps = 6667,
+            startingStepsSnapshot = 1000,
+            currentOffsetSteps = 6667,
+            isCompleted = true
+        )
+        val testState = OverTargetRedAlertUiState(
+            consumedKcal = 2100,
+            targetCalorieCeiling = 1800,
+            surplusKcal = 300,
+            activeBuddy = null,
+            recoveryQuest = quest,
+            isLoading = false
+        )
+
+        composeTestRule.setContent {
+            OverTargetRedAlertContent(
+                state = testState,
+                onStartRun = {},
+                onAcknowledge = { dismissedClicked = true }
+            )
+        }
+
+        composeTestRule.onNodeWithText("🎉 DEFICIT RESTORED 🎉").assertIsDisplayed()
+        composeTestRule.onNodeWithText("RECOVERY QUEST CLEARED!").assertIsDisplayed()
+        composeTestRule.onNodeWithText("🎉 QUEST COMPLETE!").assertIsDisplayed()
+
+        val dismissButton = composeTestRule.onNodeWithText("Dismiss (Deficit Restored)")
+        dismissButton.assertIsDisplayed()
+        dismissButton.performClick()
+        assertThat(dismissedClicked).isTrue()
+    }
 }

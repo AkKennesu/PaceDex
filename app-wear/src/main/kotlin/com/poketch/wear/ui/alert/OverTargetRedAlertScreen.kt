@@ -54,6 +54,12 @@ fun OverTargetRedAlertScreen(
         viewModel.triggerAlertHaptic()
     }
 
+    LaunchedEffect(state.recoveryQuest?.isCompleted) {
+        if (state.recoveryQuest?.isCompleted == true) {
+            viewModel.triggerCelebrationHaptic()
+        }
+    }
+
     OverTargetRedAlertContent(
         state = state,
         onStartRun = onStartRun,
@@ -71,11 +77,12 @@ fun OverTargetRedAlertContent(
 ) {
     val columnState = rememberResponsiveColumnState()
     val context = LocalContext.current
+    val isQuestCompleted = state.recoveryQuest?.isCompleted == true
 
     Scaffold(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFB71C1C)),
+            .background(if (isQuestCompleted) Color(0xFF1B5E20) else Color(0xFFB71C1C)),
         timeText = { TimeText() },
         positionIndicator = { PositionIndicator(scalingLazyListState = columnState.listState) }
     ) {
@@ -94,22 +101,22 @@ fun OverTargetRedAlertContent(
             // Warning Icon & Badge
             item {
                 Text(
-                    text = "🚨 RED ALERT 🚨",
+                    text = if (isQuestCompleted) "🎉 DEFICIT RESTORED 🎉" else "🚨 RED ALERT 🚨",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
-                    color = Color(0xFFFFD54F),
+                    color = if (isQuestCompleted) Color(0xFF81C784) else Color(0xFFFFD54F),
                     letterSpacing = 1.sp,
                     textAlign = TextAlign.Center
                 )
             }
 
-            // Distressed Buddy Sprite
+            // Distressed or Celebratory Buddy Sprite
             item {
                 Box(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF7F0000)),
+                        .background(if (isQuestCompleted) Color(0xFF2E7D32) else Color(0xFF7F0000)),
                     contentAlignment = Alignment.Center
                 ) {
                     val spritePath = state.activeBuddy?.spriteAssetPath ?: "sprites/pokemon/other/official-artwork/1.png"
@@ -118,15 +125,15 @@ fun OverTargetRedAlertContent(
                             .data("file:///android_asset/$spritePath")
                             .crossfade(true)
                             .build(),
-                        contentDescription = "Distressed Buddy",
+                        contentDescription = if (isQuestCompleted) "Happy Buddy" else "Distressed Buddy",
                         filterQuality = FilterQuality.None,
-                        colorFilter = ColorFilter.tint(Color(0xFFFF8A80), BlendMode.Modulate),
+                        colorFilter = if (isQuestCompleted) null else ColorFilter.tint(Color(0xFFFF8A80), BlendMode.Modulate),
                         modifier = Modifier.size(46.dp)
                     )
 
-                    // Sweat drop indicator
+                    // Indicator
                     Text(
-                        text = "💦",
+                        text = if (isQuestCompleted) "⭐" else "💦",
                         fontSize = 14.sp,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -142,14 +149,14 @@ fun OverTargetRedAlertContent(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
                     Text(
-                        text = "OVER TARGET BY +${state.surplusKcal} KCAL",
+                        text = if (isQuestCompleted) "RECOVERY QUEST CLEARED!" else "OVER TARGET BY +${state.surplusKcal} KCAL",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "${state.consumedKcal} / ${state.targetCalorieCeiling} kcal",
+                        text = if (isQuestCompleted) "Deficit Restored • Snorlax Awake!" else "${state.consumedKcal} / ${state.targetCalorieCeiling} kcal",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFFFE082),
@@ -202,40 +209,42 @@ fun OverTargetRedAlertContent(
                 }
             }
 
-            // Action 1: Start 1-Mile Burn Run
-            item {
-                CompactChip(
-                    onClick = onStartRun,
-                    label = {
-                        Text(
-                            text = "Start 1-Mile Burn Run",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    colors = ChipDefaults.primaryChipColors(
-                        backgroundColor = Color(0xFFFFD54F),
-                        contentColor = Color(0xFF212121)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .height(32.dp)
-                )
+            // Action 1: Start 1-Mile Burn Run (only if not completed)
+            if (!isQuestCompleted) {
+                item {
+                    CompactChip(
+                        onClick = onStartRun,
+                        label = {
+                            Text(
+                                text = "Start 1-Mile Burn Run",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        colors = ChipDefaults.primaryChipColors(
+                            backgroundColor = Color(0xFFFFD54F),
+                            contentColor = Color(0xFF212121)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .height(32.dp)
+                    )
+                }
             }
 
-            // Action 2: Acknowledge
+            // Action 2: Acknowledge / Dismiss
             item {
                 CompactChip(
                     onClick = onAcknowledge,
                     label = {
                         Text(
-                            text = "Acknowledge",
+                            text = if (isQuestCompleted) "Dismiss (Deficit Restored)" else "Acknowledge",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     },
                     colors = ChipDefaults.secondaryChipColors(
-                        backgroundColor = Color(0x66000000),
+                        backgroundColor = if (isQuestCompleted) Color(0xFF43A047) else Color(0x66000000),
                         contentColor = Color.White
                     ),
                     modifier = Modifier

@@ -88,7 +88,8 @@ class EndToEndSyncScenariosTest {
             calorieRepository = watchCalorieRepository,
             habitRepository = watchHabitRepository,
             pokemonRepository = watchPokemonRepository,
-            unlockEventDispatcher = watchUnlockEventDispatcher
+            unlockEventDispatcher = watchUnlockEventDispatcher,
+            recoveryQuestDao = watchDatabase.recoveryQuestDao()
         )
 
         // 2. Initialize Phone Database and repositories
@@ -107,7 +108,8 @@ class EndToEndSyncScenariosTest {
             calorieRepository = phoneCalorieRepository,
             habitRepository = phoneHabitRepository,
             pokemonRepository = phonePokemonRepository,
-            unlockEventDispatcher = phoneUnlockEventDispatcher
+            unlockEventDispatcher = phoneUnlockEventDispatcher,
+            recoveryQuestDao = phoneDatabase.recoveryQuestDao()
         )
 
         // 3. Connect via FakeWearableTransport
@@ -120,7 +122,9 @@ class EndToEndSyncScenariosTest {
             calorieRepository = watchCalorieRepository,
             habitRepository = watchHabitRepository,
             pokemonRepository = watchPokemonRepository,
-            unlockEventDispatcher = watchUnlockEventDispatcher
+            unlockEventDispatcher = watchUnlockEventDispatcher,
+            recoveryQuestDao = watchDatabase.recoveryQuestDao(),
+            evaluateAchievementsUseCase = watchEvaluateAchievementsUseCase
         )
 
         phoneSyncManager = PoketchSyncManager(
@@ -130,7 +134,9 @@ class EndToEndSyncScenariosTest {
             calorieRepository = phoneCalorieRepository,
             habitRepository = phoneHabitRepository,
             pokemonRepository = phonePokemonRepository,
-            unlockEventDispatcher = phoneUnlockEventDispatcher
+            unlockEventDispatcher = phoneUnlockEventDispatcher,
+            recoveryQuestDao = phoneDatabase.recoveryQuestDao(),
+            evaluateAchievementsUseCase = phoneEvaluateAchievementsUseCase
         )
 
         watchService = BasePoketchWearableListenerService().apply {
@@ -368,5 +374,94 @@ class EndToEndSyncScenariosTest {
 
         val phoneTotalWaterAfter = phoneHabitRepository.observeDailyWaterMl(todayIso).first()
         assertThat(phoneTotalWaterAfter).isEqualTo(250.0)
+    }
+
+    @Test
+    fun overCalorieSurplus_generatesRecoveryQuest_andStepsCompletion_clearsAlertAndAdvancesSnorlax() = runTest {
+        // Given target ceiling of 1800 kcal
+        val profile = UserProfile(
+            id = 1,
+            ageYears = 26,
+            sex = BiologicalSex.MALE,
+            heightCm = 175.0,
+            weightKg = 75.0,
+            activityLevel = ActivityLevel.MODERATELY_ACTIVE,
+            deficitTier = DeficitTier.STANDARD,
+            bmrKcal = 1700,
+            tdeeKcal = 2400,
+            targetCalorieCeiling = 1800,
+            dailyWaterGoalMl = 2500,
+            activeBuddyPokemonId = 1,
+            updatedAtEpochMillis = System.currentTimeMillis()
+        )
+        phoneUserRepository.upsertUserProfile(profile)
+        watchUserRepository.upsertUserProfile(profile)
+
+        // 1. Initial baseline: user has 2000 steps logged
+        phoneHabitRepository.logHabit(
+            dateIso = todayIso,
+            habitType = HabitType.DAILY_STEPS,
+            numericValue = 2000.0,
+            sourceDevice = DeviceSource.MOBILE
+        )
+
+        val completedQuests = mutableListOf<com.poketch.core.domain.model.RecoveryQuest>()
+        val collectJob = launch(UnconfinedTestDispatcher()) {
+            phoneSyncManager.recoveryQuestCompletedEvents.collect {
+                completedQuests.add(it)
+            }
+        }
+
+        // 2. User logs a 2100 kcal meal (300 kcal over the 1800 target ceiling)
+        val overageLog = CalorieLog(
+            logId = UUID.randomUUID().toString(),
+            dateIso = todayIso,
+            mealCategory = MealCategory.DINNER,
+            foodDescription = "Large Pizza Feast",
+            caloriesKcal = 2100,
+            sourceDevice = DeviceSource.MOBILE,
+            timestampMillis = System.currentTimeMillis(),
+            isSynced = false
+        )
+        phoneCalorieRepository.upsertCalorieLog(overageLog)
+
+        // Sync triggers reEvaluateDailyCalorieCeiling
+        phoneSyncManager.syncCalorieLog(overageLog)
+
+        // 3. Verify RecoveryQuest automatically generated with ~22 steps per kcal
+        val generatedQuest = phoneSyncManager.recoveryQuestFlow.value
+        assertThat(generatedQuest).isNotNull()
+        assertThat(generatedQuest?.surplusKcal).isEqualTo(300)
+        assertThat(generatedQuest?.startingStepsSnapshot).isEqualTo(2000)
+        assertThat(generatedQuest?.targetOffsetSteps).isEqualTo(6667) // 300 / 0.045
+        assertThat(generatedQuest?.isCompleted).isFalse()
+
+        // Verify it synced to watch
+        val watchQuest = watchSyncManager.recoveryQuestFlow.value
+        assertThat(watchQuest).isNotNull()
+        assertThat(watchQuest?.surplusKcal).isEqualTo(300)
+        assertThat(watchQuest?.targetOffsetSteps).isEqualTo(6667)
+
+        // 4. As steps increase (from 2000 to 5000), update currentOffsetSteps
+        phoneSyncManager.updateRecoveryQuestProgress(5000)
+        val partialQuest = phoneSyncManager.recoveryQuestFlow.value
+        assertThat(partialQuest?.currentOffsetSteps).isEqualTo(3000)
+        assertThat(partialQuest?.isCompleted).isFalse()
+        assertThat(completedQuests).isEmpty()
+
+        // 5. User reaches 8667 steps (2000 starting + 6667 targetOffsetSteps)
+        phoneSyncManager.updateRecoveryQuestProgress(8667)
+        val completedQuest = phoneSyncManager.recoveryQuestFlow.value
+        assertThat(completedQuest?.currentOffsetSteps).isEqualTo(6667)
+        assertThat(completedQuest?.isCompleted).isTrue()
+        assertThat(completedQuests).hasSize(1)
+
+        // 6. Verify Cubone and Snorlax (#143) progression
+        val cubone = phonePokemonRepository.observePokemonById(104).first()
+        assertThat(cubone?.isUnlocked).isTrue()
+        val snorlax = phonePokemonRepository.observePokemonById(143).first()
+        assertThat(snorlax?.currentProgress).isAtLeast(1)
+
+        collectJob.cancel()
     }
 }

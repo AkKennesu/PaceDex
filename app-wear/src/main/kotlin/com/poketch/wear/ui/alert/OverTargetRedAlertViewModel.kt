@@ -100,4 +100,8 @@ class OverTargetRedAlertViewModel @Inject constructor(
     fun triggerAlertHaptic() {
         wearHapticController.playRedAlertWaveform()
     }
+
+    fun triggerCelebrationHaptic() {
+        wearHapticController.playUnlockFanfareHaptic()
+    }
 }

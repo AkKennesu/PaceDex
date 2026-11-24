@@ -1,5 +1,6 @@
 package com.poketch.core.data.gamification
 
+import com.poketch.core.data.local.dao.RecoveryQuestDao
 import com.poketch.core.data.repository.OfflineWeatherRepository
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.engine.PokemonUnlockEngine
@@ -24,7 +25,8 @@ class EvaluateAchievementsUseCase @Inject constructor(
     private val habitRepository: HabitRepository,
     private val pokemonRepository: PokemonRepository,
     private val unlockEventDispatcher: UnlockEventDispatcher,
-    private val offlineWeatherRepository: OfflineWeatherRepository? = null
+    private val offlineWeatherRepository: OfflineWeatherRepository? = null,
+    private val recoveryQuestDao: RecoveryQuestDao? = null,
 ) {
 
     suspend fun evaluate(
@@ -43,11 +45,18 @@ class EvaluateAchievementsUseCase @Inject constructor(
         val cumulativeMilesRun = habitRepository.getLifetimeHabitTotal(HabitType.RUN_MILES)
         val allCatalog = pokemonRepository.observeAllPokemon().firstOrNull().orEmpty()
 
-        val isWithinCalorieTarget = budgetState !is CalorieBudgetState.OverTargetWarning
+        val todayQuest = recoveryQuestDao?.getQuestByDate(todayIso)
+        val isTodayQuestCompleted = todayQuest?.isCompleted == true
+        val isWithinCalorieTarget = (budgetState !is CalorieBudgetState.OverTargetWarning) || isTodayQuestCompleted
 
         val targetCeiling = userProfile?.targetCalorieCeiling ?: 2000
         val recentNutrition = calorieRepository.getRecentDailyNutrition(14)
-        val recoveryDays = calculateRecoveryDays(recentNutrition, targetCeiling, todayIso)
+        val recoveryDays = calculateRecoveryDays(
+            recentDaily = recentNutrition,
+            targetCeilingKcal = targetCeiling,
+            todayIso = todayIso,
+            isTodayQuestCompleted = isTodayQuestCompleted
+        )
 
         val weatherCode = runCatching { offlineWeatherRepository?.getLatestCachedWeatherWmoCode() }.getOrNull()
         val zoneId = runCatching { ZoneId.of(offlineWeatherRepository?.getResolvedTimeZoneId().orEmpty()) }.getOrElse { ZoneId.systemDefault() }
@@ -111,18 +120,33 @@ class EvaluateAchievementsUseCase @Inject constructor(
         fun calculateRecoveryDays(
             recentDaily: List<DailyNutritionSummary>,
             targetCeilingKcal: Int,
-            todayIso: String
+            todayIso: String,
+            isTodayQuestCompleted: Boolean = false
         ): Int {
             val sorted = recentDaily.filter { it.totalCalories > 0 }.sortedBy { it.dateIso }
-            if (sorted.isEmpty()) return 0
+            if (sorted.isEmpty()) return if (isTodayQuestCompleted) 1 else 0
 
             val todayItem = sorted.find { it.dateIso == todayIso }
             if (todayItem != null && todayItem.totalCalories > targetCeilingKcal) {
-                return 0 // Today is in active surplus
+                if (isTodayQuestCompleted) {
+                    val lastPastSurplusIndex = sorted.dropLast(1).indexOfLast { it.totalCalories > targetCeilingKcal }
+                    val pastRecoveryDays = if (lastPastSurplusIndex == -1) {
+                        0
+                    } else {
+                        var count = 0
+                        for (i in (lastPastSurplusIndex + 1) until (sorted.size - 1)) {
+                            if (sorted[i].totalCalories in 1..targetCeilingKcal) count++ else break
+                        }
+                        count
+                    }
+                    return pastRecoveryDays + 1
+                } else {
+                    return 0 // Today is in active surplus
+                }
             }
 
             val lastSurplusIndex = sorted.indexOfLast { it.totalCalories > targetCeilingKcal }
-            if (lastSurplusIndex == -1) return 0 // No past surplus day recorded
+            if (lastSurplusIndex == -1) return if (isTodayQuestCompleted) 1 else 0
 
             val daysAfterSurplus = sorted.subList(lastSurplusIndex + 1, sorted.size)
             var consecutiveRecoveryDays = 0
@@ -132,6 +156,9 @@ class EvaluateAchievementsUseCase @Inject constructor(
                 } else {
                     break
                 }
+            }
+            if (isTodayQuestCompleted && consecutiveRecoveryDays == 0) {
+                consecutiveRecoveryDays = 1
             }
             return consecutiveRecoveryDays
         }

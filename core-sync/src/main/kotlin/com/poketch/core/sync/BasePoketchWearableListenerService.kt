@@ -281,17 +281,8 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
         // Idempotent upsert
         calorieRepository.upsertCalorieLog(calorieLog)
 
-        // Check if combined intake exceeds target calorie ceiling
-        val profile = userRepository.getUserProfile()
-        val ceiling = profile?.targetCalorieCeiling ?: 0
-        if (ceiling > 0) {
-            val totalCalories = calorieRepository.observeTotalCaloriesByDate(dateIso).firstOrNull() ?: 0
-            if (totalCalories > ceiling) {
-                val surplus = totalCalories - ceiling
-                syncManager.sendOverCalorieAlert(surplus)
-                syncManager.emitOverCalorieAlert(surplus)
-            }
-        }
+        // Automatically generate or update recovery quest if surplus exists
+        syncManager.reEvaluateDailyCalorieCeiling(dateIso)
 
         val evalResult = evaluateAchievementsUseCase.evaluate(dateIso)
         if (evalResult.newlyUnlockedEvents.isNotEmpty()) {
@@ -346,18 +337,8 @@ open class BasePoketchWearableListenerService : WearableListenerService() {
             calorieRepository.upsertCalorieLogs(logsToUpsert)
         }
 
-        val profile = userRepository.getUserProfile()
-        val ceiling = profile?.targetCalorieCeiling ?: 0
-
         for (dateIso in affectedDates) {
-            if (ceiling > 0) {
-                val totalCalories = calorieRepository.observeTotalCaloriesByDate(dateIso).firstOrNull() ?: 0
-                if (totalCalories > ceiling) {
-                    val surplus = totalCalories - ceiling
-                    syncManager.sendOverCalorieAlert(surplus)
-                    syncManager.emitOverCalorieAlert(surplus)
-                }
-            }
+            syncManager.reEvaluateDailyCalorieCeiling(dateIso)
 
             val evalResult = evaluateAchievementsUseCase.evaluate(dateIso)
             if (evalResult.newlyUnlockedEvents.isNotEmpty()) {

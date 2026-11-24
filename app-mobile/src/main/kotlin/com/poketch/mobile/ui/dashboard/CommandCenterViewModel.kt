@@ -6,10 +6,12 @@ import com.poketch.core.data.gamification.EvaluateAchievementsUseCase
 import com.poketch.core.domain.calculator.CalorieBudgetState
 import com.poketch.core.domain.model.ActivityLevel
 import com.poketch.core.domain.model.BiologicalSex
+import com.poketch.core.domain.model.DailyNutritionSummary
 import com.poketch.core.domain.model.DeficitTier
 import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.HabitType
 import com.poketch.core.domain.model.Pokemon
+import com.poketch.core.domain.model.UserProfile
 import com.poketch.core.domain.repository.CalorieRepository
 import com.poketch.core.domain.repository.HabitRepository
 import com.poketch.core.domain.repository.PokemonRepository
@@ -23,9 +25,12 @@ import com.poketch.core.domain.model.RecoveryQuest
 import com.poketch.core.domain.model.WeatherBoost
 import com.poketch.core.domain.repository.WeatherRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -105,6 +110,11 @@ class CommandCenterViewModel @Inject constructor(
     private val isSyncingWatchFlow = MutableStateFlow(false)
     private val syncMessageFlow = MutableStateFlow<String?>(null)
 
+    private val _recoveryQuestClearedEvents = MutableSharedFlow<String>(extraBufferCapacity = 16)
+    val recoveryQuestClearedEvents: SharedFlow<String> = _recoveryQuestClearedEvents.asSharedFlow()
+
+    private val recoveryQuestFlow = syncManager.recoveryQuestFlow
+
     private val calorieAndProfileFlow = combine(
         userProfileFlow,
         totalCaloriesFlow,
@@ -112,25 +122,7 @@ class CommandCenterViewModel @Inject constructor(
         recentNutritionFlow,
         snorlaxFlow
     ) { profile, consumed, budgetState, recentNutrition, snorlax ->
-        val targetCeiling = profile?.targetCalorieCeiling ?: 1800
-        val isSurplus = budgetState is CalorieBudgetState.OverTargetWarning
-        val surplusKcal = if (budgetState is CalorieBudgetState.OverTargetWarning) budgetState.surplusKcal else 0
-
-        val recoveryDays = EvaluateAchievementsUseCase.calculateRecoveryDays(
-            recentDaily = recentNutrition,
-            targetCeilingKcal = targetCeiling,
-            todayIso = todayIso
-        )
-
-        val snorlaxRecovery = SnorlaxRecoveryState(
-            isUnlocked = snorlax?.isUnlocked == true,
-            recoveryDays = if (snorlax?.isUnlocked == true) 3 else recoveryDays,
-            isCurrentlyInSurplus = isSurplus,
-            surplusAmountKcal = surplusKcal,
-            progressFraction = if (snorlax?.isUnlocked == true) 1.0f else (recoveryDays / 3f).coerceIn(0f, 1f)
-        )
-
-        Tuple5(profile, consumed, budgetState, snorlaxRecovery)
+        CalorieRawData(profile, consumed, budgetState, recentNutrition, snorlax)
     }
 
     private val habitFlow = combine(
@@ -166,29 +158,61 @@ class CommandCenterViewModel @Inject constructor(
         calorieAndProfileFlow,
         habitFlow,
         buddyAndWeatherFlow,
-        watchSyncFlow
-    ) { (profile, consumed, budgetState, snorlaxRecovery), (waterMl, steps, runMiles), (buddy, unlockedBuddies, weatherBoost), (nodes, isSyncing, syncMsg) ->
+        watchSyncFlow,
+        recoveryQuestFlow
+    ) { calorieData, (waterMl, steps, runMiles), (buddy, unlockedBuddies, weatherBoost), (nodes, isSyncing, syncMsg), syncedQuest ->
         val watch = nodes.firstOrNull()
-        val recoveryQuest = if (budgetState is CalorieBudgetState.OverTargetWarning) {
+        val currentSteps = steps.toInt()
+        val profile = calorieData.profile
+        val consumed = calorieData.consumed
+        val budgetState = calorieData.budgetState
+        val targetCeiling = profile?.targetCalorieCeiling ?: 1800
+
+        val recoveryQuest = if (syncedQuest != null && syncedQuest.dateIso == todayIso) {
+            val offset = maxOf(0, currentSteps - syncedQuest.startingStepsSnapshot)
+            syncedQuest.copy(
+                currentOffsetSteps = offset,
+                isCompleted = offset >= syncedQuest.targetOffsetSteps
+            )
+        } else if (budgetState is CalorieBudgetState.OverTargetWarning) {
             RecoveryQuest.create(
                 dateIso = todayIso,
                 surplusKcal = budgetState.surplusKcal,
                 startingStepsSnapshot = 0,
-                currentTotalSteps = steps.toInt()
+                currentTotalSteps = currentSteps
             )
         } else null
+
+        val isCompleted = recoveryQuest?.isCompleted == true
+        val isSurplus = (budgetState is CalorieBudgetState.OverTargetWarning) && !isCompleted
+        val surplusKcal = if (isSurplus && budgetState is CalorieBudgetState.OverTargetWarning) budgetState.surplusKcal else 0
+
+        val recoveryDays = EvaluateAchievementsUseCase.calculateRecoveryDays(
+            recentDaily = calorieData.recentNutrition,
+            targetCeilingKcal = targetCeiling,
+            todayIso = todayIso,
+            isTodayQuestCompleted = isCompleted
+        )
+
+        val snorlaxRecovery = SnorlaxRecoveryState(
+            isUnlocked = calorieData.snorlax?.isUnlocked == true,
+            recoveryDays = if (calorieData.snorlax?.isUnlocked == true) 3 else recoveryDays,
+            isCurrentlyInSurplus = isSurplus,
+            surplusAmountKcal = surplusKcal,
+            progressFraction = if (calorieData.snorlax?.isUnlocked == true) 1.0f else (recoveryDays / 3f).coerceIn(0f, 1f)
+        )
 
         CommandCenterUiState(
             todayIso = todayIso,
             tdeeKcal = profile?.tdeeKcal ?: 2200,
-            targetCeilingKcal = profile?.targetCalorieCeiling ?: 1800,
+            targetCeilingKcal = targetCeiling,
             consumedKcal = consumed,
             budgetState = budgetState,
             activeBuddy = buddy,
             snorlaxRecovery = snorlaxRecovery,
             todayWaterMl = waterMl.toInt(),
             dailyWaterGoalMl = profile?.dailyWaterGoalMl ?: 2500,
-            todaySteps = steps.toInt(),
+            todaySteps = currentSteps,
             latestRunMiles = runMiles,
             isWatchConnected = nodes.isNotEmpty(),
             connectedWatchName = watch?.displayName?.ifBlank { "Pokétch Watch" },
@@ -207,6 +231,11 @@ class CommandCenterViewModel @Inject constructor(
     )
 
     init {
+        viewModelScope.launch {
+            syncManager.recoveryQuestCompletedEvents.collect {
+                _recoveryQuestClearedEvents.emit("Recovery Quest Cleared! Deficit Restored")
+            }
+        }
         viewModelScope.launch {
             if (userRepository.getUserProfile() == null) {
                 // Initialize default profile on first launch: Male 26, 175cm, 75kg, Moderately Active, Standard Deficit
@@ -334,9 +363,10 @@ class CommandCenterViewModel @Inject constructor(
     }
 }
 
-private data class Tuple5<A, B, C, D>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D
+private data class CalorieRawData(
+    val profile: UserProfile?,
+    val consumed: Int,
+    val budgetState: CalorieBudgetState,
+    val recentNutrition: List<DailyNutritionSummary>,
+    val snorlax: Pokemon?
 )

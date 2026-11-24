@@ -13,6 +13,7 @@ import com.poketch.core.data.gamification.EvaluateAchievementsUseCase
 import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.HabitType
 import com.poketch.core.domain.repository.HabitRepository
+import com.poketch.core.sync.PoketchSyncManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,7 +38,8 @@ data class HealthSyncSummary(
 class HealthConnectManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val habitRepository: HabitRepository,
-    private val evaluateAchievementsUseCase: EvaluateAchievementsUseCase
+    private val evaluateAchievementsUseCase: EvaluateAchievementsUseCase,
+    private val syncManager: PoketchSyncManager? = null
 ) {
 
     val permissions = setOf(
@@ -130,6 +132,7 @@ class HealthConnectManager @Inject constructor(
                     numericValue = totalSteps.toDouble(),
                     sourceDevice = DeviceSource.MOBILE
                 )
+                syncManager?.updateRecoveryQuestProgress(totalSteps.toInt())
             }
 
             // 3. Read Distance (DistanceRecord)

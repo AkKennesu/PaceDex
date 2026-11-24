@@ -25,6 +25,9 @@ class PassiveDataReceiver : PassiveListenerService() {
     @Inject
     lateinit var evaluateAchievementsUseCase: EvaluateAchievementsUseCase
 
+    @Inject
+    lateinit var syncManager: com.poketch.core.sync.PoketchSyncManager
+
     private val serviceScope = CoroutineScope(Dispatchers.IO)
 
     override fun onNewDataPointsReceived(dataPoints: DataPointContainer) {
@@ -39,6 +42,7 @@ class PassiveDataReceiver : PassiveListenerService() {
                 numericValue = latestSteps.toDouble(),
                 sourceDevice = DeviceSource.WEAR
             )
+            syncManager.updateRecoveryQuestProgress(latestSteps.toInt())
             evaluateAchievementsUseCase.evaluate(todayIso)
         }
     }

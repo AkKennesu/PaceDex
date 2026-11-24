@@ -37,6 +37,32 @@ class EvaluateAchievementsUseCaseTest {
     }
 
     @Test
+    fun calculateRecoveryDays_awardsRecoveryDay_whenTodaySurplusClearedByRecoveryQuest() {
+        val summaries = listOf(
+            DailyNutritionSummary("2026-10-28", totalCalories = 1700, 100, 150, 50),
+            DailyNutritionSummary("2026-10-29", totalCalories = 1650, 110, 140, 45),
+            DailyNutritionSummary("2026-10-30", totalCalories = 2200, 120, 160, 55) // Active surplus today
+        )
+        // Without quest cleared: 0 recovery days
+        val uncompleted = EvaluateAchievementsUseCase.calculateRecoveryDays(
+            recentDaily = summaries,
+            targetCeilingKcal = 1800,
+            todayIso = "2026-10-30",
+            isTodayQuestCompleted = false
+        )
+        assertThat(uncompleted).isEqualTo(0)
+
+        // With quest cleared: 1 recovery day!
+        val completed = EvaluateAchievementsUseCase.calculateRecoveryDays(
+            recentDaily = summaries,
+            targetCeilingKcal = 1800,
+            todayIso = "2026-10-30",
+            isTodayQuestCompleted = true
+        )
+        assertThat(completed).isEqualTo(1)
+    }
+
+    @Test
     fun calculateRecoveryDays_countsConsecutiveDaysFollowingLastSurplus() {
         val summaries = listOf(
             DailyNutritionSummary("2026-10-26", totalCalories = 2300, 80, 250, 80), // Surplus Day N

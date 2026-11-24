@@ -71,6 +71,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -92,7 +95,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -151,6 +156,8 @@ fun CommandCenterScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var showQuickAddDialog by rememberSaveable { mutableStateOf(false) }
     var showBuddyPickerSheet by rememberSaveable { mutableStateOf(false) }
@@ -158,6 +165,16 @@ fun CommandCenterScreen(
     LaunchedEffect(uiState.syncMessage) {
         uiState.syncMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.recoveryQuestClearedEvents.collect { message ->
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
         }
     }
 
@@ -201,10 +218,12 @@ fun CommandCenterScreen(
                 isWatchConnected = uiState.isWatchConnected
             )
 
-            // 3. Dynamic Red Over-Calorie Warning Card (Pinned when surplus)
+            // 3. Dynamic Red Over-Calorie Warning Card (Pinned when surplus and quest not completed)
             val budgetState = uiState.budgetState
+            val isRecoveryCompleted = uiState.recoveryQuest?.isCompleted == true
+            val isOverTargetActive = budgetState is CalorieBudgetState.OverTargetWarning && !isRecoveryCompleted
             AnimatedVisibility(
-                visible = budgetState is CalorieBudgetState.OverTargetWarning,
+                visible = isOverTargetActive,
                 enter = slideInVertically() + fadeIn(),
                 exit = slideOutVertically() + fadeOut()
             ) {
@@ -221,7 +240,8 @@ fun CommandCenterScreen(
                 consumedKcal = uiState.consumedKcal,
                 targetCeilingKcal = uiState.targetCeilingKcal,
                 tdeeKcal = uiState.tdeeKcal,
-                budgetState = budgetState
+                budgetState = budgetState,
+                isRecoveryCompleted = isRecoveryCompleted
             )
 
             // 5. Active Partner Bento Card (Soft Mint with Floating 3D Mascot)
@@ -255,6 +275,13 @@ fun CommandCenterScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
     }
 
     // Quick Add Calorie Dialog
@@ -435,15 +462,17 @@ private fun StitchCalorieBudgetCard(
     targetCeilingKcal: Int,
     tdeeKcal: Int,
     budgetState: CalorieBudgetState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isRecoveryCompleted: Boolean = false
 ) {
-    val isOnTrack = budgetState is CalorieBudgetState.OnTrack
-    val isOver = budgetState is CalorieBudgetState.OverTargetWarning
+    val isOnTrack = budgetState is CalorieBudgetState.OnTrack || isRecoveryCompleted
+    val isOver = budgetState is CalorieBudgetState.OverTargetWarning && !isRecoveryCompleted
 
-    val statusBadgeText = when (budgetState) {
-        is CalorieBudgetState.OnTrack -> "On Track"
-        is CalorieBudgetState.ApproachingCeiling -> "Near Ceiling"
-        is CalorieBudgetState.OverTargetWarning -> "Over Target"
+    val statusBadgeText = when {
+        isRecoveryCompleted -> "Deficit Restored"
+        budgetState is CalorieBudgetState.OnTrack -> "On Track"
+        budgetState is CalorieBudgetState.ApproachingCeiling -> "Near Ceiling"
+        else -> "Over Target"
     }
 
     val targetBadgeColor = when {

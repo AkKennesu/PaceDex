@@ -2,6 +2,7 @@ package com.poketch.core.sync
 
 import android.content.Context
 import com.google.android.gms.wearable.DataMap
+import com.poketch.core.data.gamification.EvaluateAchievementsUseCase
 import com.poketch.core.data.gamification.UnlockEventDispatcher
 import com.poketch.core.data.local.dao.RecoveryQuestDao
 import com.poketch.core.data.local.entity.RecoveryQuestEntity
@@ -44,11 +45,15 @@ class PoketchSyncManager @Inject constructor(
     private val habitRepository: HabitRepository,
     private val pokemonRepository: PokemonRepository,
     private val unlockEventDispatcher: UnlockEventDispatcher,
-    private val recoveryQuestDao: RecoveryQuestDao? = null
+    private val recoveryQuestDao: RecoveryQuestDao? = null,
+    private val evaluateAchievementsUseCase: EvaluateAchievementsUseCase? = null,
 ) {
 
     private val _overCalorieAlerts = MutableSharedFlow<Int>(extraBufferCapacity = 16)
     val overCalorieAlerts: SharedFlow<Int> = _overCalorieAlerts.asSharedFlow()
+
+    private val _recoveryQuestCompletedEvents = MutableSharedFlow<RecoveryQuest>(extraBufferCapacity = 16)
+    val recoveryQuestCompletedEvents: SharedFlow<RecoveryQuest> = _recoveryQuestCompletedEvents.asSharedFlow()
 
     private val _recoveryQuestFlow = MutableStateFlow<RecoveryQuest?>(null)
     val recoveryQuestFlow: StateFlow<RecoveryQuest?> = _recoveryQuestFlow.asStateFlow()
@@ -127,24 +132,54 @@ class PoketchSyncManager @Inject constructor(
     }
 
     fun emitRecoveryQuest(quest: RecoveryQuest?) {
-        _recoveryQuestFlow.value = quest
-        if (quest != null) {
+        val previous = _recoveryQuestFlow.value
+        val merged = if (quest != null && previous != null && previous.dateIso == quest.dateIso) {
+            val bestStartingSteps = maxOf(previous.startingStepsSnapshot, quest.startingStepsSnapshot)
+            val bestOffset = maxOf(previous.currentOffsetSteps, quest.currentOffsetSteps)
+            val isCompleted = previous.isCompleted || quest.isCompleted || (bestOffset >= quest.targetOffsetSteps)
+            quest.copy(
+                startingStepsSnapshot = bestStartingSteps,
+                currentOffsetSteps = bestOffset,
+                isCompleted = isCompleted
+            )
+        } else {
+            quest
+        }
+        _recoveryQuestFlow.value = merged
+        if (merged != null) {
             syncScope.launch {
-                recoveryQuestDao?.upsertQuest(RecoveryQuestEntity.fromDomain(quest))
+                recoveryQuestDao?.upsertQuest(RecoveryQuestEntity.fromDomain(merged))
+                if (merged.isCompleted && previous?.isCompleted != true) {
+                    evaluateAchievementsUseCase?.evaluate(merged.dateIso)
+                    _recoveryQuestCompletedEvents.emit(merged)
+                }
             }
         }
     }
 
     suspend fun sendRecoveryQuest(quest: RecoveryQuest) {
-        _recoveryQuestFlow.value = quest
-        recoveryQuestDao?.upsertQuest(RecoveryQuestEntity.fromDomain(quest))
+        val current = _recoveryQuestFlow.value
+        val merged = if (current != null && current.dateIso == quest.dateIso) {
+            val bestStartingSteps = maxOf(current.startingStepsSnapshot, quest.startingStepsSnapshot)
+            val bestOffset = maxOf(current.currentOffsetSteps, quest.currentOffsetSteps)
+            val isCompleted = current.isCompleted || quest.isCompleted || (bestOffset >= quest.targetOffsetSteps)
+            quest.copy(
+                startingStepsSnapshot = bestStartingSteps,
+                currentOffsetSteps = bestOffset,
+                isCompleted = isCompleted
+            )
+        } else {
+            quest
+        }
+        _recoveryQuestFlow.value = merged
+        recoveryQuestDao?.upsertQuest(RecoveryQuestEntity.fromDomain(merged))
         val dataMap = DataMap().apply {
-            putString("dateIso", quest.dateIso)
-            putInt("surplusKcal", quest.surplusKcal)
-            putInt("targetOffsetSteps", quest.targetOffsetSteps)
-            putInt("startingStepsSnapshot", quest.startingStepsSnapshot)
-            putInt("currentOffsetSteps", quest.currentOffsetSteps)
-            putBoolean("isCompleted", quest.isCompleted)
+            putString("dateIso", merged.dateIso)
+            putInt("surplusKcal", merged.surplusKcal)
+            putInt("targetOffsetSteps", merged.targetOffsetSteps)
+            putInt("startingStepsSnapshot", merged.startingStepsSnapshot)
+            putInt("currentOffsetSteps", merged.currentOffsetSteps)
+            putBoolean("isCompleted", merged.isCompleted)
             putLong("timestamp", System.currentTimeMillis())
         }
         runCatching {
@@ -152,16 +187,22 @@ class PoketchSyncManager @Inject constructor(
         }
     }
 
-    suspend fun updateRecoveryQuestProgress(currentTotalSteps: Int): RecoveryQuest? {
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val quest = _recoveryQuestFlow.value ?: recoveryQuestDao?.getQuestByDate(today)?.toDomain() ?: return null
+    suspend fun updateRecoveryQuestProgress(currentTotalSteps: Int, dateIso: String? = null): RecoveryQuest? {
+        val targetDate = dateIso ?: _recoveryQuestFlow.value?.dateIso ?: SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val quest = _recoveryQuestFlow.value ?: recoveryQuestDao?.getQuestByDate(targetDate)?.toDomain() ?: return null
+        if (quest.dateIso != targetDate) return null
         val offset = maxOf(0, currentTotalSteps - quest.startingStepsSnapshot)
         val isCompleted = offset >= quest.targetOffsetSteps
+        val wasAlreadyCompleted = quest.isCompleted
         val updated = quest.copy(
             currentOffsetSteps = offset,
             isCompleted = isCompleted
         )
         sendRecoveryQuest(updated)
+        if (isCompleted && !wasAlreadyCompleted) {
+            evaluateAchievementsUseCase?.evaluate(targetDate)
+            _recoveryQuestCompletedEvents.emit(updated)
+        }
         return updated
     }
 
@@ -184,11 +225,13 @@ class PoketchSyncManager @Inject constructor(
             val existingQuest = _recoveryQuestFlow.value ?: recoveryQuestDao?.getQuestByDate(targetDate)?.toDomain()
             val quest = if (existingQuest != null && existingQuest.dateIso == targetDate) {
                 val offset = maxOf(0, currentSteps - existingQuest.startingStepsSnapshot)
+                val target = RecoveryQuest.calculateTargetOffsetSteps(surplus)
+                val bestOffset = maxOf(existingQuest.currentOffsetSteps, offset)
                 existingQuest.copy(
                     surplusKcal = surplus,
-                    targetOffsetSteps = RecoveryQuest.calculateTargetOffsetSteps(surplus),
-                    currentOffsetSteps = offset,
-                    isCompleted = offset >= existingQuest.targetOffsetSteps
+                    targetOffsetSteps = target,
+                    currentOffsetSteps = bestOffset,
+                    isCompleted = bestOffset >= target
                 )
             } else {
                 RecoveryQuest.create(
@@ -199,8 +242,10 @@ class PoketchSyncManager @Inject constructor(
                 )
             }
             sendRecoveryQuest(quest)
-            sendOverCalorieAlert(surplus)
-            emitOverCalorieAlert(surplus)
+            if (!quest.isCompleted) {
+                sendOverCalorieAlert(surplus)
+                emitOverCalorieAlert(surplus)
+            }
             return surplus
         }
         return 0
@@ -250,6 +295,7 @@ class PoketchSyncManager @Inject constructor(
     }
 
     suspend fun syncCalorieLog(log: CalorieLog) {
+        reEvaluateDailyCalorieCeiling(log.dateIso)
         val dataMap = DataMap().apply {
             putString("logId", log.logId)
             putString("dateIso", log.dateIso)
@@ -309,6 +355,9 @@ class PoketchSyncManager @Inject constructor(
                     runCatching {
                         syncCaloriesBatch(batch)
                         calorieRepository.markLogsAsSynced(batch.map { it.logId })
+                        for (date in batch.map { it.dateIso }.distinct()) {
+                            reEvaluateDailyCalorieCeiling(date)
+                        }
                     }
                 }
             }
@@ -326,6 +375,9 @@ class PoketchSyncManager @Inject constructor(
         if (batch.isNotEmpty()) {
             syncCaloriesBatch(batch)
             calorieRepository.markLogsAsSynced(batch.map { it.logId })
+            for (date in batch.map { it.dateIso }.distinct()) {
+                reEvaluateDailyCalorieCeiling(date)
+            }
         }
     }
 
