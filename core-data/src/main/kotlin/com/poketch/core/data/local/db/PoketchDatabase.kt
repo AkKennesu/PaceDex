@@ -9,11 +9,13 @@ import com.poketch.core.data.local.dao.CalorieDao
 import com.poketch.core.data.local.dao.HabitDao
 import com.poketch.core.data.local.dao.HourlyWeatherCacheDao
 import com.poketch.core.data.local.dao.PokemonDao
+import com.poketch.core.data.local.dao.SavedFoodDao
 import com.poketch.core.data.local.dao.UserDao
 import com.poketch.core.data.local.entity.CalorieLogEntity
 import com.poketch.core.data.local.entity.HabitLogEntity
 import com.poketch.core.data.local.entity.HourlyWeatherCacheEntity
 import com.poketch.core.data.local.entity.PokemonEntity
+import com.poketch.core.data.local.entity.SavedFoodEntity
 import com.poketch.core.data.local.entity.UserProfileEntity
 import com.poketch.core.data.local.seed.PokemonSeedParser
 import kotlinx.coroutines.CoroutineScope
@@ -26,9 +28,10 @@ import kotlinx.coroutines.launch
         CalorieLogEntity::class,
         HabitLogEntity::class,
         PokemonEntity::class,
-        HourlyWeatherCacheEntity::class
+        HourlyWeatherCacheEntity::class,
+        SavedFoodEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class PoketchDatabase : RoomDatabase() {
@@ -38,6 +41,7 @@ abstract class PoketchDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun pokemonDao(): PokemonDao
     abstract fun hourlyWeatherCacheDao(): HourlyWeatherCacheDao
+    abstract fun savedFoodDao(): SavedFoodDao
 
     suspend fun ensureSeeded(context: Context?) {
         val count = pokemonDao().getUnlockedCount()
@@ -45,6 +49,76 @@ abstract class PoketchDatabase : RoomDatabase() {
         if (starters.isEmpty() && count == 0) {
             val seedList = PokemonSeedParser.loadPokemonSeed(context)
             pokemonDao().upsertAllPokemon(seedList)
+        }
+        if (savedFoodDao().getCount() == 0) {
+            val defaultFavorites = listOf(
+                SavedFoodEntity(
+                    foodId = "fav_oatmeal_whey",
+                    name = "Oatmeal with Whey",
+                    brand = "Trainer Fuel",
+                    caloriesPerServing = 360,
+                    proteinG = 28,
+                    carbsG = 48,
+                    fatG = 6,
+                    servingLabel = "1 bowl",
+                    isFavorite = true,
+                    useCount = 5,
+                    lastUsedMillis = System.currentTimeMillis() - 3600_000
+                ),
+                SavedFoodEntity(
+                    foodId = "fav_chicken_bowl",
+                    name = "Grilled Chicken Bowl",
+                    brand = "Meal Prep",
+                    caloriesPerServing = 520,
+                    proteinG = 44,
+                    carbsG = 55,
+                    fatG = 12,
+                    servingLabel = "1 bowl",
+                    isFavorite = true,
+                    useCount = 4,
+                    lastUsedMillis = System.currentTimeMillis() - 7200_000
+                ),
+                SavedFoodEntity(
+                    foodId = "fav_greek_yogurt",
+                    name = "Greek Yogurt Parfait",
+                    brand = "Chobani",
+                    caloriesPerServing = 240,
+                    proteinG = 22,
+                    carbsG = 30,
+                    fatG = 3,
+                    servingLabel = "1 cup",
+                    isFavorite = true,
+                    useCount = 3,
+                    lastUsedMillis = System.currentTimeMillis() - 10800_000
+                ),
+                SavedFoodEntity(
+                    foodId = "fav_boiled_eggs",
+                    name = "Boiled Eggs (2 Large)",
+                    brand = "Farm Fresh",
+                    caloriesPerServing = 140,
+                    proteinG = 12,
+                    carbsG = 1,
+                    fatG = 10,
+                    servingLabel = "2 eggs",
+                    isFavorite = true,
+                    useCount = 2,
+                    lastUsedMillis = System.currentTimeMillis() - 14400_000
+                ),
+                SavedFoodEntity(
+                    foodId = "0888849000018",
+                    name = "Quest Bar Chocolate Chip",
+                    brand = "Quest Nutrition",
+                    caloriesPerServing = 200,
+                    proteinG = 21,
+                    carbsG = 22,
+                    fatG = 7,
+                    servingLabel = "1 bar (60g)",
+                    isFavorite = true,
+                    useCount = 1,
+                    lastUsedMillis = System.currentTimeMillis() - 18000_000
+                )
+            )
+            savedFoodDao().upsertAllSavedFoods(defaultFavorites)
         }
         if (userDao().getUserProfileOnce() == null) {
             val defaultProfile = UserProfileEntity(

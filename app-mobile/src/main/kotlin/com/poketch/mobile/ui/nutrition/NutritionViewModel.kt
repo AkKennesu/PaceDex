@@ -13,7 +13,9 @@ import com.poketch.core.domain.model.DailyNutritionSummary
 import com.poketch.core.domain.model.DeficitTier
 import com.poketch.core.domain.model.DeviceSource
 import com.poketch.core.domain.model.MealCategory
+import com.poketch.core.domain.model.SavedFood
 import com.poketch.core.domain.repository.CalorieRepository
+import com.poketch.core.domain.repository.SavedFoodRepository
 import com.poketch.core.domain.repository.UserRepository
 import com.poketch.core.sync.PoketchSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -74,6 +76,8 @@ data class NutritionUiState(
     val filterCategory: MealCategory? = null,
     val todayLogs: ImmutableList<CalorieLog> = persistentListOf(),
     val meals: ImmutableList<CalorieLog> = persistentListOf(),
+    val favoriteFoods: ImmutableList<SavedFood> = persistentListOf(),
+    val recentFoods: ImmutableList<SavedFood> = persistentListOf(),
     val totalCaloriesToday: Int = 0,
     val budgetState: CalorieBudgetState = CalorieBudgetState.OnTrack(0, 1800, 1800, 0.0),
     val weeklyNutrition: List<DailyNutritionSummary> = emptyList(),
@@ -84,6 +88,7 @@ data class NutritionUiState(
 class NutritionViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val calorieRepository: CalorieRepository,
+    private val savedFoodRepository: SavedFoodRepository,
     private val evaluateAchievementsUseCase: EvaluateAchievementsUseCase,
     private val syncManager: PoketchSyncManager,
 ) : ViewModel() {
@@ -117,8 +122,15 @@ class NutritionViewModel @Inject constructor(
         logsFlow,
         totalCaloriesFlow,
         budgetStateFlow,
-        combine(userProfileFlow, weeklyNutritionFlow) { profile, weekly -> Pair(profile, weekly) }
-    ) { form, logs, totalCalories, budgetState, (profile, weekly) ->
+        combine(
+            combine(userProfileFlow, weeklyNutritionFlow) { profile, weekly -> Pair(profile, weekly) },
+            savedFoodRepository.observeFavorites(),
+            savedFoodRepository.observeRecentFoods(10)
+        ) { profileWeekly, favorites, recents ->
+            Triple(profileWeekly, favorites, recents)
+        }
+    ) { form, logs, totalCalories, budgetState, (profileWeekly, favorites, recents) ->
+        val (profile, weekly) = profileWeekly
         val filteredLogs = if (form.filterCategory != null) {
             logs.filter { it.mealCategory == form.filterCategory }
         } else {
@@ -154,6 +166,8 @@ class NutritionViewModel @Inject constructor(
             filterCategory = form.filterCategory,
             todayLogs = filteredLogs.toImmutableList(),
             meals = filteredLogs.toImmutableList(),
+            favoriteFoods = favorites.toImmutableList(),
+            recentFoods = recents.toImmutableList(),
             totalCaloriesToday = totalCalories,
             budgetState = budgetState,
             weeklyNutrition = weekly,
@@ -538,6 +552,111 @@ class NutritionViewModel @Inject constructor(
             runCatching {
                 syncManager.coalesceAndSyncCalorie(log)
             }
+        }
+    }
+
+    fun logSavedFood(food: SavedFood, category: MealCategory = MealCategory.LUNCH) {
+        val log = CalorieLog(
+            logId = UUID.randomUUID().toString(),
+            dateIso = todayIso,
+            mealCategory = category,
+            foodDescription = if (!food.brand.isNullOrBlank()) "${food.brand} - ${food.name}" else food.name,
+            caloriesKcal = food.caloriesPerServing,
+            proteinG = food.proteinG,
+            carbsG = food.carbsG,
+            fatG = food.fatG,
+            sourceDevice = DeviceSource.MOBILE,
+            timestampMillis = System.currentTimeMillis(),
+            isSynced = false,
+        )
+        viewModelScope.launch {
+            calorieRepository.upsertCalorieLog(log)
+            savedFoodRepository.recordFoodUsage(food.foodId)
+            evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncCalorie(log)
+            }
+        }
+    }
+
+    fun onBarcodeScanned(
+        barcode: String,
+        onFound: (SavedFood) -> Unit,
+        onNotFound: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val food = savedFoodRepository.getFoodById(barcode)
+            if (food != null) {
+                onFound(food)
+            } else {
+                onNotFound(barcode)
+            }
+        }
+    }
+
+    fun saveAndLogMeal(
+        name: String,
+        brand: String? = null,
+        kcal: Int,
+        category: MealCategory,
+        protein: Int? = null,
+        carbs: Int? = null,
+        fat: Int? = null,
+        saveAsFavorite: Boolean = false,
+        barcode: String? = null
+    ) {
+        val foodId = barcode ?: ("food_" + UUID.randomUUID().toString().take(8))
+        val p = protein ?: 0
+        val c = carbs ?: 0
+        val f = fat ?: 0
+
+        val log = CalorieLog(
+            logId = UUID.randomUUID().toString(),
+            dateIso = todayIso,
+            mealCategory = category,
+            foodDescription = if (!brand.isNullOrBlank()) "$brand - $name" else name,
+            caloriesKcal = kcal,
+            proteinG = p,
+            carbsG = c,
+            fatG = f,
+            sourceDevice = DeviceSource.MOBILE,
+            timestampMillis = System.currentTimeMillis(),
+            isSynced = false,
+        )
+
+        viewModelScope.launch {
+            calorieRepository.upsertCalorieLog(log)
+            evaluateAchievementsUseCase.evaluate(todayIso)
+            runCatching {
+                syncManager.coalesceAndSyncCalorie(log)
+            }
+
+            savedFoodRepository.saveFood(
+                SavedFood(
+                    foodId = foodId,
+                    name = name,
+                    brand = brand,
+                    caloriesPerServing = kcal,
+                    proteinG = p,
+                    carbsG = c,
+                    fatG = f,
+                    isFavorite = saveAsFavorite,
+                    useCount = 1,
+                    lastUsedMillis = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
+    fun toggleFavoriteFood(foodId: String, isFavorite: Boolean) {
+        viewModelScope.launch {
+            savedFoodRepository.toggleFavorite(foodId, isFavorite)
+        }
+    }
+
+    fun deleteSavedFood(foodId: String) {
+        viewModelScope.launch {
+            savedFoodRepository.deleteSavedFood(foodId)
         }
     }
 

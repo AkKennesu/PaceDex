@@ -57,4 +57,10 @@ abstract class RepositoryModule {
     abstract fun bindWeatherRepository(
         repository: OfflineWeatherRepository
     ): WeatherRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSavedFoodRepository(
+        repository: com.poketch.core.data.repository.OfflineFirstSavedFoodRepository
+    ): com.poketch.core.domain.repository.SavedFoodRepository
 }
