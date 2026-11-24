@@ -32,8 +32,12 @@ zxing = "3.5.4"
 playServicesCodeScanner = "16.1.0"
 glance = "1.2.0"
 kotlinxCollectionsImmutable = "0.3.8"
+profileinstaller = "1.4.1"
 
 [libraries]
+# Profileinstaller (Baseline Profiles)
+profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
+
 # Immutable Collections
 kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
 # Coroutines

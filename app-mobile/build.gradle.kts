@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.glance.material3)
 
     implementation(libs.work.runtime.ktx)
+    implementation(libs.profileinstaller)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

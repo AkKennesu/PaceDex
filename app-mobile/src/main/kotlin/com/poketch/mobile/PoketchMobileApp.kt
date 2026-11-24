@@ -7,12 +7,19 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import com.poketch.core.sync.WeatherSyncWorker
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @HiltAndroidApp
 class PoketchMobileApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
-        runCatching { WeatherSyncWorker.schedulePeriodic(this) }
+        // Defer WorkManager scheduling off the main thread onto Dispatchers.Default
+        // so cold app launch (MainActivity first frame) is never blocked by WorkManager DB initialization
+        CoroutineScope(Dispatchers.Default).launch {
+            runCatching { WeatherSyncWorker.schedulePeriodic(this@PoketchMobileApp) }
+        }
     }
 
     override fun newImageLoader(): ImageLoader {
