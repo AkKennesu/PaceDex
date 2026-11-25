@@ -705,26 +705,11 @@ private fun StitchActivePartnerCard(
 
     // Dynamic mascot breathing float & tap-to-hop physics via PoketchMotion (draw phase only)
     val (buddyOffsetProvider, triggerHop) = rememberBuddyMotion()
-    val scope = rememberCoroutineScope()
-    val heartAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
-    val heartY = remember { androidx.compose.animation.core.Animatable(0f) }
-
-    val handleBuddyCardTap = {
-        triggerHop()
-        scope.launch {
-            heartAlpha.snapTo(1f)
-            heartY.snapTo(0f)
-            launch {
-                heartAlpha.animateTo(0f, tween(750, easing = FastOutSlowInEasing))
-            }
-            heartY.animateTo(-42f, tween(750, easing = FastOutSlowInEasing))
-        }
-    }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { handleBuddyCardTap() },
+            .clickable { triggerHop() },
         shape = RoundedCornerShape(26.dp),
         color = StitchPartnerMint,
         border = BorderStroke(1.dp, StitchPartnerBorder),
@@ -889,17 +874,6 @@ private fun StitchActivePartnerCard(
                         .size(76.dp)
                         .graphicsLayer {
                             translationY = buddyOffsetProvider()
-                        }
-                )
-
-                // Floating heart & sparkle pop (draw phase evaluation)
-                Text(
-                    text = "✨❤️✨",
-                    fontSize = 14.sp,
-                    modifier = Modifier
-                        .graphicsLayer {
-                            alpha = heartAlpha.value
-                            translationY = heartY.value
                         }
                 )
             }

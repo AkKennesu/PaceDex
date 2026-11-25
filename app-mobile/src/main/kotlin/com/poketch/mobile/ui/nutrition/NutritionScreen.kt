@@ -8,6 +8,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -647,7 +649,7 @@ private fun StitchTdeeHeroCard(
                 color = Color.White
             )
 
-            // Linear Gradient Progress Indicator
+            // Linear Gradient Progress Indicator (Draw-Phase evaluation on RenderThread)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -657,8 +659,12 @@ private fun StitchTdeeHeroCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(animatedProgress)
+                        .fillMaxWidth()
                         .height(8.dp)
+                        .graphicsLayer {
+                            scaleX = animatedProgress
+                            transformOrigin = TransformOrigin(0f, 0.5f)
+                        }
                         .clip(RoundedCornerShape(4.dp))
                         .background(
                             Brush.horizontalGradient(
@@ -789,7 +795,7 @@ private fun StitchMacroCard(
 ) {
     val ratio = (current.toFloat() / goal.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
     val animatedRatio by rememberAnimatedProgress(ratio)
-    val pct = (animatedRatio * 100).toInt()
+    val pct = (ratio * 100).toInt()
 
     Surface(
         modifier = modifier,

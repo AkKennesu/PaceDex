@@ -2,6 +2,7 @@ package com.poketch.mobile.ui.navigation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -12,6 +13,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.poketch.mobile.ui.theme.PoketchMotion
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -140,8 +144,7 @@ fun PoketchMobileNavHost(
             )
         }
         is AuthState.Authenticated -> {
-            val pagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
-            val coroutineScope = rememberCoroutineScope()
+            var currentTabIndex by rememberSaveable { mutableIntStateOf(0) }
             var isAccountOpen by rememberSaveable { mutableStateOf(false) }
             var unlockedPokemonDialog by remember { mutableStateOf<UnlockEvent.NewPokemonUnlocked?>(null) }
 
@@ -160,15 +163,11 @@ fun PoketchMobileNavHost(
                 containerColor = StitchCanvasBackground,
                 bottomBar = {
                     StitchFloatingBottomNav(
-                        pagerState = pagerState,
+                        selectedTabIndex = currentTabIndex,
                         isAccountOpen = isAccountOpen,
                         onTabSelected = { pageIndex ->
                             isAccountOpen = false
-                            if (pagerState.currentPage != pageIndex) {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(pageIndex)
-                                }
-                            }
+                            currentTabIndex = pageIndex
                         }
                     )
                 }
@@ -178,20 +177,16 @@ fun PoketchMobileNavHost(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
-                    HorizontalPager(
-                        state = pagerState,
-                        beyondViewportPageCount = 3,
-                        modifier = Modifier.fillMaxSize()
+                    Crossfade(
+                        targetState = currentTabIndex,
+                        animationSpec = tween(durationMillis = 150, easing = PoketchMotion.NarrativeEaseOut),
+                        label = "tab_crossfade"
                     ) { page ->
                         when (page) {
                             0 -> CommandCenterScreen(
                                 viewModel = commandCenterViewModel,
                                 onOpenProfile = { isAccountOpen = true },
-                                onOpenLogMeal = {
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(1)
-                                    }
-                                }
+                                onOpenLogMeal = { currentTabIndex = 1 }
                             )
                             1 -> NutritionScreen(viewModel = nutritionViewModel)
                             2 -> PokedexScreen(viewModel = pokedexViewModel)
@@ -204,8 +199,8 @@ fun PoketchMobileNavHost(
 
                     AnimatedVisibility(
                         visible = isAccountOpen,
-                        enter = fadeIn(animationSpec = tween(220)) + slideInVertically(animationSpec = tween(220)) { it / 28 },
-                        exit = fadeOut(animationSpec = tween(160)),
+                        enter = fadeIn(animationSpec = PoketchMotion.EnterSpec) + slideInVertically(animationSpec = tween(220, easing = PoketchMotion.NarrativeEaseOut)) { it / 28 },
+                        exit = fadeOut(animationSpec = PoketchMotion.ExitSpec),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         AuthScreen(
@@ -234,7 +229,7 @@ fun PoketchMobileNavHost(
  */
 @Composable
 private fun StitchFloatingBottomNav(
-    pagerState: PagerState,
+    selectedTabIndex: Int,
     isAccountOpen: Boolean,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
@@ -278,13 +273,19 @@ private fun StitchFloatingBottomNav(
                 val density = LocalDensity.current
                 val tabWidthPx = with(density) { tabWidth.toPx() }
 
+                val animatedPillOffsetPx by animateFloatAsState(
+                    targetValue = selectedTabIndex * tabWidthPx,
+                    animationSpec = PoketchMotion.SnapSpring,
+                    label = "pill_offset"
+                )
+
                 // Continuous sliding pill driven by RenderThread / graphicsLayer (zero recomposition on swipe)
                 Box(
                     modifier = Modifier
                         .width(tabWidth)
                         .height(44.dp)
                         .graphicsLayer {
-                            translationX = (pagerState.currentPage + pagerState.currentPageOffsetFraction) * tabWidthPx
+                            translationX = animatedPillOffsetPx
                             alpha = if (isAccountOpen) 0f else 1f
                         }
                         .clip(RoundedCornerShape(26.dp))
@@ -297,12 +298,12 @@ private fun StitchFloatingBottomNav(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     navTabs.forEachIndexed { index, tab ->
-                        val isSelected = !isAccountOpen && pagerState.currentPage == index
+                        val isSelected = !isAccountOpen && selectedTabIndex == index
                         val interactionSource = remember { MutableInteractionSource() }
                         val isPressed by interactionSource.collectIsPressedAsState()
                         val scale by animateFloatAsState(
-                            targetValue = if (isPressed) 0.93f else 1f,
-                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                            targetValue = if (isPressed) PoketchMotion.PressedScale else 1f,
+                            animationSpec = PoketchMotion.PressSpring,
                             label = "tab_scale"
                         )
 
@@ -310,7 +311,7 @@ private fun StitchFloatingBottomNav(
                             targetValue = if (isSelected) {
                                 if (isDark) Color(0xFF022C22) else Color.White
                             } else StitchTextSecondary,
-                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                            animationSpec = tween(120, easing = PoketchMotion.NarrativeEaseOut),
                             label = "tab_content_color"
                         )
 
@@ -343,12 +344,12 @@ private fun StitchFloatingBottomNav(
                                 )
                                 AnimatedVisibility(
                                     visible = isSelected,
-                                    enter = fadeIn(animationSpec = tween(180)) + expandHorizontally(
-                                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                    enter = fadeIn(animationSpec = tween(140, easing = PoketchMotion.NarrativeEaseOut)) + expandHorizontally(
+                                        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow),
                                         expandFrom = Alignment.Start
                                     ),
-                                    exit = fadeOut(animationSpec = tween(120)) + shrinkHorizontally(
-                                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                    exit = fadeOut(animationSpec = tween(100, easing = PoketchMotion.NarrativeEaseOut)) + shrinkHorizontally(
+                                        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow),
                                         shrinkTowards = Alignment.Start
                                     )
                                 ) {

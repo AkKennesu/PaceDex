@@ -48,6 +48,7 @@ import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -552,16 +553,17 @@ fun GbaWatchBattleHomeScreen(
                 modifier = Modifier.gbaVirtualBounds(113, 147, 44, 15, scale)
             )
 
-            // Animated Cursor for Root Menu
+            // Animated Cursor for Root Menu (Draw-Phase evaluation on RenderThread)
+            val density = LocalDensity.current.density
             GbaPixelImage(
                 resId = R.drawable.gba_cursor_black,
                 contentDescription = "Cursor",
                 modifier = Modifier
-                    .offset(
-                        x = ((animatedCursorX + cursorIdleOffset) * scale).dp,
-                        y = (animatedCursorY * scale).dp
-                    )
                     .size(width = (6 * scale).dp, height = (10 * scale).dp)
+                    .graphicsLayer {
+                        translationX = (animatedCursorX + cursorIdleOffset) * scale * density
+                        translationY = animatedCursorY * scale * density
+                    }
             )
 
             // Interactive Quadrants: Box 3 is (35, 124, 122, 43)
@@ -689,16 +691,16 @@ fun GbaWatchBattleHomeScreen(
                 modifier = Modifier.gbaVirtualBounds(113, 147, 44, 15, scale)
             )
 
-            // Animated Cursor for Fight Menu
+            // Animated Cursor for Fight Menu (Draw-Phase evaluation on RenderThread)
             GbaPixelImage(
                 resId = R.drawable.gba_cursor_black,
                 contentDescription = "Fight Cursor",
                 modifier = Modifier
-                    .offset(
-                        x = ((animatedCursorX + cursorIdleOffset) * scale).dp,
-                        y = (animatedCursorY * scale).dp
-                    )
                     .size(width = (6 * scale).dp, height = (10 * scale).dp)
+                    .graphicsLayer {
+                        translationX = (animatedCursorX + cursorIdleOffset) * scale * density
+                        translationY = animatedCursorY * scale * density
+                    }
             )
 
             // Interactive Quadrants: Box 3 is (35, 124, 122, 43)

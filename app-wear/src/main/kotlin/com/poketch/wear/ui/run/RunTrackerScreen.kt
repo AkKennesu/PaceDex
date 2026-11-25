@@ -25,8 +25,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -315,12 +315,16 @@ private fun LiveBuddyCoachingSection(
     ) {
         val spritePath = buddy?.spriteAssetPath ?: "sprites/pokemon_077.png"
         val context = LocalContext.current
+        val density = androidx.compose.ui.platform.LocalDensity.current.density
 
         Box(
             modifier = Modifier
                 .size(46.dp)
-                .offset(y = bounceOffset.dp)
-                .scale(scaleFactor),
+                .graphicsLayer {
+                    translationY = bounceOffset * density
+                    scaleX = scaleFactor
+                    scaleY = scaleFactor
+                },
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(

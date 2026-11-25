@@ -10,6 +10,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import com.poketch.mobile.ui.theme.PoketchMotion
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -380,22 +381,26 @@ private fun StitchWearOsStatusCard(
     val syncInteraction = remember { MutableInteractionSource() }
     val isPressed by syncInteraction.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        targetValue = if (isPressed) PoketchMotion.PressedScale else 1f,
+        animationSpec = PoketchMotion.PressSpring,
         label = "sync_scale"
     )
 
-    // Infinite rotation for sync icon during sync
-    val infiniteTransition = rememberInfiniteTransition(label = "sync_spin")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "spin_angle"
-    )
+    // Infinite rotation for sync icon active ONLY during syncing (idle clock completely stopped)
+    val rotation = if (isSyncing) {
+        val infiniteTransition = rememberInfiniteTransition(label = "sync_spin")
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(900, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "spin_angle"
+        ).value
+    } else {
+        0f
+    }
 
     val lastSyncFormatted = remember(lastSyncTime) {
         if (lastSyncTime > 0) {
@@ -517,7 +522,7 @@ private fun StitchWearOsStatusCard(
                         modifier = Modifier
                             .size(18.dp)
                             .graphicsLayer {
-                                rotationZ = if (isSyncing) rotation else 0f
+                                rotationZ = rotation
                             }
                     )
                     Spacer(modifier = Modifier.width(8.dp))

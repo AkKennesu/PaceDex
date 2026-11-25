@@ -30,12 +30,38 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import kotlinx.coroutines.launch
 
+import androidx.compose.animation.core.CubicBezierEasing
+
+/**
+ * Standardized motion curves and spring physics conforming to Apple HIG / Appllama motion laws.
+ */
+object PoketchMotion {
+    // 1. Tactile Press Feedback (100–150ms, critically damped, zero oscillation)
+    val PressSpring = spring<Float>(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMedium
+    )
+    const val PressedScale = 0.97f
+
+    // 2. Narrative Transitions & Reveals (System-initiated, timing only, strong ease-out)
+    val NarrativeEaseOut = CubicBezierEasing(0.23f, 1.0f, 0.32f, 1.0f)
+    val EnterSpec = tween<Float>(durationMillis = 220, easing = NarrativeEaseOut)
+    val ExitSpec = tween<Float>(durationMillis = 150, easing = NarrativeEaseOut)
+
+    // 3. Responsive Drag / Gesture Settling (Critically damped, no bounce)
+    val SnapSpring = spring<Float>(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessLow
+    )
+}
+
 /**
  * Tactile spring press scale + subtle haptic tick for modern buttons & cards.
  * Uses graphicsLayer so it runs purely in the draw phase (zero recomposition lag).
+ * Strictly damped (dampingRatio = 1.0f) to eliminate toy-like trampoline oscillation.
  */
 fun Modifier.bouncyPress(
-    pressedScale: Float = 0.94f,
+    pressedScale: Float = PoketchMotion.PressedScale,
     enableHaptics: Boolean = true,
     onClick: () -> Unit
 ): Modifier = composed {
@@ -45,10 +71,7 @@ fun Modifier.bouncyPress(
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) pressedScale else 1f,
-        animationSpec = spring(
-            dampingRatio = 0.55f,
-            stiffness = Spring.StiffnessMedium
-        ),
+        animationSpec = PoketchMotion.PressSpring,
         label = "bouncyPressScale"
     )
 
@@ -62,7 +85,7 @@ fun Modifier.bouncyPress(
             indication = null
         ) {
             if (enableHaptics) {
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             }
             onClick()
         }

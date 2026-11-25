@@ -28,7 +28,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +42,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -51,8 +49,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -574,11 +574,11 @@ fun GbaWatchPokedexScreen(
                     } else null,
                     modifier = Modifier
                         .fillMaxSize()
-                        .offset(
-                            x = (tapShakeOffset * scale).dp,
-                            y = (hopY.value * scale).dp
-                        )
-                        .alpha(if (isLocked) silhouettePulse else 1.0f)
+                        .graphicsLayer {
+                            translationX = tapShakeOffset * scale * density
+                            translationY = hopY.value * scale * density
+                            alpha = if (isLocked) silhouettePulse else 1.0f
+                        }
                 )
 
                 // 140ms CRT Scanline wipe (0..34)
@@ -615,11 +615,29 @@ fun GbaWatchPokedexScreen(
             modifier = Modifier
                 .gbaVirtualBounds(93, 50, 68, 54, scale)
                 .pointerInput(Unit) {
+                    val velocityTracker = VelocityTracker()
                     var accumulatedDrag = 0f
                     detectVerticalDragGestures(
-                        onDragEnd = { accumulatedDrag = 0f },
-                        onDragCancel = { accumulatedDrag = 0f }
+                        onDragStart = {
+                            velocityTracker.resetTracking()
+                            accumulatedDrag = 0f
+                        },
+                        onDragEnd = {
+                            accumulatedDrag = 0f
+                            val velocityY = velocityTracker.calculateVelocity().y
+                            val velocityDpPerSec = velocityY / density
+                            if (abs(velocityDpPerSec) > 500f) {
+                                val flingSteps = (-velocityDpPerSec / 500f).roundToInt().coerceIn(-4, 4)
+                                if (flingSteps != 0) {
+                                    stepSelection(flingSteps)
+                                }
+                            }
+                        },
+                        onDragCancel = {
+                            accumulatedDrag = 0f
+                        }
                     ) { change, dragAmount ->
+                        velocityTracker.addPosition(change.uptimeMillis, change.position)
                         change.consume()
                         accumulatedDrag += dragAmount
                         val dragThreshold = 22f * density
@@ -641,7 +659,9 @@ fun GbaWatchPokedexScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .offset(y = (drumSlideY.value * scale).dp)
+                    .graphicsLayer {
+                        translationY = drumSlideY.value * scale * density
+                    }
             ) {
                 // Top Slot (index - 1, x = 93, y = 50, w = 68, h = 15) -> local (0, 0, 68, 15)
                 if (prevPokemon != null && count > 1) {
@@ -712,10 +732,10 @@ fun GbaWatchPokedexScreen(
                             resId = R.drawable.gba_cursor_black,
                             contentDescription = "Cursor",
                             modifier = Modifier
-                                .offset(
-                                    x = ((5 + cursorBobPx) * scale).dp,
-                                    y = (5 * scale).dp
-                                )
+                                .graphicsLayer {
+                                    translationX = (5 + cursorBobPx) * scale * density
+                                    translationY = 5 * scale * density
+                                }
                                 .size((6 * scale).dp, (10 * scale).dp)
                         )
 
